@@ -1,0 +1,59 @@
+# KN541 쇼핑몰 Cursor 규칙
+# 레포: kn541/kn541-shop
+# 오너: taiwang
+
+## 프로젝트 정보
+- 프로젝트: KN541 쇼핑몰 (Ciseco 템플릿 기반)
+- 백엔드: https://kn541-production.up.railway.app
+- 도메인: kn541shop.com (예정)
+- 기술스택: Next.js 15 + TypeScript + Tailwind CSS 4
+
+## 작업 시작 전 필수
+- CLAUDE.md 먼저 읽기
+- 기존 코드 파악 후 작업 시작
+- 문제/제안 있으면 taiwang에게 먼저 보고
+
+## 기본 규칙
+- 코드값 하드코딩 절대 금지 → /system-codes API 동적 로드
+- 환경변수 하드코딩 금지 → .env.local 사용
+- alert() 금지 → toast 사용
+- Supabase 직접 연결 금지 → FastAPI 경유 필수
+- VS Code 사용 금지 → Cursor 전담
+- 백엔드 API 인계 없이 연동 시작 금지
+- taiwanese 승인 없이 비즈니스 로직 임의 변경 금지
+
+## 환경변수
+- NEXT_PUBLIC_API_URL: https://kn541-production.up.railway.app
+- NEXT_PUBLIC_SHOP_DOMAIN: kn541shop.com (예정)
+
+## 분양몰 URL 구조
+- 일반 쇼핑몰: kn541shop.com/
+- 분양몰: kn541shop.com/{shop_url_code}
+- 동적 라우팅: /[shop_url_code]/page.tsx
+
+## API 연동 표준
+```typescript
+const BASE = process.env.NEXT_PUBLIC_API_URL
+// 인증 필요한 API
+const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+// 공개 API (분양몰 조회 등)
+const res = await fetch(`${BASE}/shop/${shopUrlCode}`)
+```
+
+## 응답 구조
+```typescript
+// 목록
+{ status: 'success', data: { items: [...], total: N } }
+// 단건
+{ status: 'success', data: { ... } }
+```
+
+## 전역변수 사용
+```typescript
+// 코드값은 반드시 API에서 동적 로드
+const res = await fetch(`${BASE}/system-codes?category=product_type`)
+```
+
+## 한국어 주석 필수
+## 반응형 필수 (PC / 태블릿 / 모바일)
+## taiwang에게 직접 보고
