@@ -31,8 +31,6 @@ const PageSearch = async () => {
     'use server'
     const searchQuery = formData.get('search-input')?.toString() || ''
     console.log('Search query:', searchQuery)
-    // Here you can implement the search logic, e.g., filter products based on the search query
-    // For now, we just log the search query
   }
 
   return (
@@ -51,7 +49,7 @@ const PageSearch = async () => {
                 size={24}
               />
               <input
-                className="block w-full rounded-full border bg-white py-4 pr-5 pl-12 placeholder:text-zinc-500 focus:border-primary-300 focus:ring-3 focus:ring-primary-200/50 sm:py-5 sm:text-sm md:pl-15 dark:bg-neutral-800 dark:placeholder:text-zinc-400 dark:focus:ring-primary-600/25"
+                className="block w-full rounded-xl border bg-white py-4 pr-5 pl-12 placeholder:text-zinc-500 focus:border-primary-300 focus:ring-3 focus:ring-primary-200/50 sm:py-5 sm:text-sm md:pl-15 dark:bg-neutral-800 dark:placeholder:text-zinc-400 dark:focus:ring-primary-600/25"
                 id="search-input"
                 type="search"
                 placeholder="Type your keywords"
