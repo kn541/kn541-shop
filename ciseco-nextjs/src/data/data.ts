@@ -2,7 +2,8 @@
  * KN541 쇼핑몰 데이터 레이어
  * - NEXT_PUBLIC_API_URL 설정 시 실제 KN541 API 호출
  * - 미설정 또는 API 오류 시 더미데이터로 자동 폴백
- * - 응답 형식: { status: "success", data: { items, total } }
+ * - API 클라이언트: src/lib/api/ (products.ts, categories.ts)
+ * - 어댑터: src/lib/adapters.ts
  */
 
 import collectionImage1 from '@/images/collections/1.png'
@@ -53,22 +54,21 @@ import avatarImage2 from '@/images/users/avatar2.jpg'
 import avatarImage3 from '@/images/users/avatar3.jpg'
 import avatarImage4 from '@/images/users/avatar4.jpg'
 import { shuffleArray } from '@/utils/shuffleArray'
+import { adaptCategories, adaptCategory, adaptProduct, adaptProducts } from '@/lib/adapters'
 import {
-  adaptCategories,
-  adaptCategory,
-  adaptProduct,
-  adaptProducts,
-} from '@/lib/adapters'
+  getCategories,
+  getCategoryById,
+  getRootCategories,
+} from '@/lib/api/categories'
 import {
-  fetchBestSellers,
-  fetchCategories,
-  fetchCategoryByHandle,
-  fetchNewArrivals,
-  fetchProductByHandle,
-  fetchProducts,
-} from '@/lib/api-products'
+  getBestProducts,
+  getNewProducts,
+  getProductById,
+  getProducts as apiGetProducts,
+  getProductsByCategory,
+} from '@/lib/api/products'
 
-// ─── 더미 상품 데이터 (폴백용) ────────────────────────────────
+// ─── 더미 상품 데이터 (폴백용) ───────────────────────────────────
 function getDummyProducts() {
   return [
     {
@@ -151,34 +151,34 @@ function getDummyProducts() {
   ]
 }
 
-// ─── 더미 컬렉션 데이터 (폴백용) ──────────────────────────────
+// ─── 더미 컬렉션 데이터 (폴백용) ─────────────────────────────────
 function getDummyCollections() {
   return [
-    { id: 'gid://1', title: 'Jackets', handle: 'jackets', description: 'Explore our collection of trendy jackets that elevate your outfit.', sortDescription: 'Newest arrivals', color: 'bg-indigo-50', count: 77, image: { src: collectionImage1.src, width: collectionImage1.width, height: collectionImage1.height, alt: 'Explore new arrivals' } },
-    { id: 'gid://2', title: 'T-Shirts', handle: 't-shirts', sortDescription: 'Best sellers', description: 'Casual t-shirts for everyday wear, combining comfort and style effortlessly. ', image: { src: collectionImage2.src, width: collectionImage2.width, height: collectionImage2.height, alt: 'Explore new arrivals' }, color: 'bg-indigo-50', count: 155 },
-    { id: 'gid://3', title: 'Jeans', handle: 'jeans', sortDescription: 'Best sellers', description: 'Trendy jeans for a casual yet stylish look. Perfect for any occasion. ', image: { src: collectionImage3.src, width: collectionImage3.width, height: collectionImage3.height, alt: 'Explore new arrivals' }, color: 'bg-indigo-50', count: 35 },
-    { id: 'gid://4', title: 'Coats', handle: 'coats', sortDescription: 'Best seasonal', description: 'Elegant coats for every season, combining warmth and style. Find your perfect outerwear.', image: { src: collectionImage4.src, width: collectionImage4.width, height: collectionImage4.height, alt: 'Explore new arrivals' }, color: 'bg-indigo-50', count: 87 },
-    { id: 'gid://5', title: 'Shoes', handle: 'shoes', sortDescription: 'Top rated', description: 'Trendy shoes for every occasion, from casual to formal. ', image: { src: collectionImage5.src, width: collectionImage5.width, height: collectionImage5.height, alt: 'Explore new arrivals' }, color: 'bg-indigo-50', count: 114 },
-    { id: 'gid://6', title: 'Accessories', handle: 'accessories', sortDescription: 'Top transparent', description: 'Stylish accessories to complete your look. Explore our collection of trendy accessories.', image: { src: collectionImage6.src, width: collectionImage6.width, height: collectionImage6.height, alt: 'Explore new arrivals' }, color: 'bg-indigo-50', count: 55 },
-    { id: 'gid://7', title: 'Bags', handle: 'bags', sortDescription: 'Best trends', description: 'Stylish bags for every occasion, from casual to formal. Find your perfect bag.', image: { src: collectionImage7.src, width: collectionImage7.width, height: collectionImage7.height, alt: 'Explore new arrivals' }, color: 'bg-indigo-50', count: 55 },
-    { id: 'gid://8', title: 'Explore new arrivals', handle: 'explore-new-arrivals', sortDescription: 'Shop the latest <br /> from top brands', description: 'Excoolent new arrivals for every occasion.', color: 'bg-orange-50', count: 77, image: { src: collectionImage5.src, width: collectionImage5.width, height: collectionImage5.height, alt: 'Explore new arrivals' } },
-    { id: 'gid://9', title: 'Sale collection', handle: 'sale-collection', sortDescription: 'Up to <br /> 80% off retail', description: 'Excoolent new arrivals for every occasion.', color: 'bg-green-50', count: 85, image: { src: collectionImage4.src, width: collectionImage4.width, height: collectionImage4.height, alt: 'Explore new arrivals' } },
-    { id: 'gid://10', title: 'Sale collection', handle: 'sale-collection-2', sortDescription: 'Up to <br /> 90% off retail', description: 'Excoolent new arrivals for every occasion.', color: 'bg-blue-50', count: 77, image: { src: collectionImage3.src, width: collectionImage3.width, height: collectionImage3.height, alt: 'Explore new arrivals' } },
-    { id: 'gid://11', title: 'Digital gift cards', handle: 'digital-gift-cards', sortDescription: 'Give the gift <br /> of choice', description: 'Excoolent new arrivals for every occasion.', color: 'bg-red-50', count: 112, image: { src: collectionImage2.src, width: collectionImage2.width, height: collectionImage2.height, alt: 'Explore new arrivals' } },
-    { id: 'gid://12', title: 'Sport Kits', handle: 'sport-kits', sortDescription: '20+ categories', description: 'Excoolent new arrivals for every occasion.', color: 'bg-neutral-100', count: 77, image: { src: boothImage1.src, width: boothImage1.width, height: boothImage1.height, alt: 'Explore new arrivals' } },
-    { id: 'gid://13', title: 'Beauty Products', handle: 'beauty-products', color: 'bg-neutral-100', sortDescription: '20+ categories', description: 'Excoolent new arrivals for every occasion.', count: 77, image: { src: boothImage2.src, width: boothImage2.width, height: boothImage2.height, alt: 'Explore new arrivals' } },
-    { id: 'gid://14', title: 'Travel Kits', handle: 'travel-kits', sortDescription: '20+ categories', description: 'Excoolent new arrivals for every occasion.', color: 'bg-neutral-100', count: 77, image: { src: boothImage3.src, width: boothImage3.width, height: boothImage3.height, alt: 'Explore new arrivals' } },
-    { id: 'gid://15', title: 'Pets Food', handle: 'pets-food', sortDescription: '44+ categories', description: 'Excoolent new arrivals for every occasion.', color: 'bg-neutral-100', count: 99, image: { src: boothImage4.src, width: boothImage4.width, height: boothImage4.height, alt: 'Explore new arrivals' } },
+    { id: 'gid://1', title: 'Jackets', handle: 'jackets', description: 'Explore our collection of trendy jackets.', sortDescription: 'Newest arrivals', color: 'bg-indigo-50', count: 77, image: { src: collectionImage1.src, width: collectionImage1.width, height: collectionImage1.height, alt: 'Explore new arrivals' } },
+    { id: 'gid://2', title: 'T-Shirts', handle: 't-shirts', sortDescription: 'Best sellers', description: 'Casual t-shirts for everyday wear.', image: { src: collectionImage2.src, width: collectionImage2.width, height: collectionImage2.height, alt: 'Explore new arrivals' }, color: 'bg-indigo-50', count: 155 },
+    { id: 'gid://3', title: 'Jeans', handle: 'jeans', sortDescription: 'Best sellers', description: 'Trendy jeans for a casual yet stylish look.', image: { src: collectionImage3.src, width: collectionImage3.width, height: collectionImage3.height, alt: 'Explore new arrivals' }, color: 'bg-indigo-50', count: 35 },
+    { id: 'gid://4', title: 'Coats', handle: 'coats', sortDescription: 'Best seasonal', description: 'Elegant coats for every season.', image: { src: collectionImage4.src, width: collectionImage4.width, height: collectionImage4.height, alt: 'Explore new arrivals' }, color: 'bg-indigo-50', count: 87 },
+    { id: 'gid://5', title: 'Shoes', handle: 'shoes', sortDescription: 'Top rated', description: 'Trendy shoes for every occasion.', image: { src: collectionImage5.src, width: collectionImage5.width, height: collectionImage5.height, alt: 'Explore new arrivals' }, color: 'bg-indigo-50', count: 114 },
+    { id: 'gid://6', title: 'Accessories', handle: 'accessories', sortDescription: 'Top transparent', description: 'Stylish accessories to complete your look.', image: { src: collectionImage6.src, width: collectionImage6.width, height: collectionImage6.height, alt: 'Explore new arrivals' }, color: 'bg-indigo-50', count: 55 },
+    { id: 'gid://7', title: 'Bags', handle: 'bags', sortDescription: 'Best trends', description: 'Stylish bags for every occasion.', image: { src: collectionImage7.src, width: collectionImage7.width, height: collectionImage7.height, alt: 'Explore new arrivals' }, color: 'bg-indigo-50', count: 55 },
+    { id: 'gid://8', title: 'Explore new arrivals', handle: 'explore-new-arrivals', sortDescription: 'Shop the latest <br /> from top brands', description: 'Explore our collection.', color: 'bg-orange-50', count: 77, image: { src: collectionImage5.src, width: collectionImage5.width, height: collectionImage5.height, alt: 'Explore new arrivals' } },
+    { id: 'gid://9', title: 'Sale collection', handle: 'sale-collection', sortDescription: 'Up to <br /> 80% off retail', description: 'Explore our collection.', color: 'bg-green-50', count: 85, image: { src: collectionImage4.src, width: collectionImage4.width, height: collectionImage4.height, alt: 'Explore new arrivals' } },
+    { id: 'gid://10', title: 'Sale collection', handle: 'sale-collection-2', sortDescription: 'Up to <br /> 90% off retail', description: 'Explore our collection.', color: 'bg-blue-50', count: 77, image: { src: collectionImage3.src, width: collectionImage3.width, height: collectionImage3.height, alt: 'Explore new arrivals' } },
+    { id: 'gid://11', title: 'Digital gift cards', handle: 'digital-gift-cards', sortDescription: 'Give the gift <br /> of choice', description: 'Explore our collection.', color: 'bg-red-50', count: 112, image: { src: collectionImage2.src, width: collectionImage2.width, height: collectionImage2.height, alt: 'Explore new arrivals' } },
+    { id: 'gid://12', title: 'Sport Kits', handle: 'sport-kits', sortDescription: '20+ categories', description: 'Explore our collection.', color: 'bg-neutral-100', count: 77, image: { src: boothImage1.src, width: boothImage1.width, height: boothImage1.height, alt: 'Explore new arrivals' } },
+    { id: 'gid://13', title: 'Beauty Products', handle: 'beauty-products', color: 'bg-neutral-100', sortDescription: '20+ categories', description: 'Explore our collection.', count: 77, image: { src: boothImage2.src, width: boothImage2.width, height: boothImage2.height, alt: 'Explore new arrivals' } },
+    { id: 'gid://14', title: 'Travel Kits', handle: 'travel-kits', sortDescription: '20+ categories', description: 'Explore our collection.', color: 'bg-neutral-100', count: 77, image: { src: boothImage3.src, width: boothImage3.width, height: boothImage3.height, alt: 'Explore new arrivals' } },
+    { id: 'gid://15', title: 'Pets Food', handle: 'pets-food', sortDescription: '44+ categories', description: 'Explore our collection.', color: 'bg-neutral-100', count: 99, image: { src: boothImage4.src, width: boothImage4.width, height: boothImage4.height, alt: 'Explore new arrivals' } },
   ]
 }
 
-// ─── 공개 API 함수 ────────────────────────────────────────────
+// ─── 공개 API 함수 ────────────────────────────────────────────────
 
 export async function getOrder(number: string) {
   const allOrders = await getOrders()
-  let order = allOrders.find((order) => order.number.toString() === number)
+  let order = allOrders.find((o) => o.number.toString() === number)
   if (!order) {
-    console.warn(`Order with number ${number} not found. Returning the first order as a fallback.`)
+    console.warn(`Order ${number} not found. Returning fallback.`)
     order = allOrders[0]
   }
   return order
@@ -187,23 +187,15 @@ export async function getOrder(number: string) {
 export async function getOrders() {
   return [
     {
-      number: '4657',
-      date: 'March 22, 2025',
-      status: 'Delivered on January 11, 2025',
-      invoiceHref: '#',
-      totalQuantity: 4,
+      number: '4657', date: 'March 22, 2025', status: 'Delivered on January 11, 2025', invoiceHref: '#', totalQuantity: 4,
       cost: { subtotal: 199, shipping: 0, tax: 0, total: 199, discount: 0 },
       products: [
         { id: 'gid://2', title: 'Nomad Tumbler', handle: 'nomad-tumbler', description: 'Insulated tumbler.', href: '#', price: 35, status: 'Preparing to ship', step: 1, date: 'March 24, 2021', datetime: '2021-03-24', address: ['Floyd Miles', '7363 Cynthia Pass', 'Toronto, ON N3Y 4H8'], email: 'f•••@example.com', phone: '1•••••••••40', featuredImage: { src: productImage2.src, width: productImage2.width, height: productImage2.height, alt: 'Insulated bottle.' }, quantity: 1, size: 'XS', color: 'Black Brown' },
-        { id: 'gid://3', title: 'Minimalist Wristwatch', handle: 'minimalist-wristwatch', description: 'Clean, minimalist wristwatch.', href: '#', price: 149, status: 'Shipped', step: 0, date: 'March 23, 2021', datetime: '2021-03-23', address: ['Floyd Miles', '7363 Cynthia Pass', 'Toronto, ON N3Y 4H8'], email: 'f•••@example.com', phone: '1•••••••••40', featuredImage: { src: productImage4.src, width: productImage4.width, height: productImage4.height, alt: 'Insulated bottle.' }, quantity: 1, size: 'XL', color: 'White' },
+        { id: 'gid://3', title: 'Minimalist Wristwatch', handle: 'minimalist-wristwatch', description: 'Clean wristwatch.', href: '#', price: 149, status: 'Shipped', step: 0, date: 'March 23, 2021', datetime: '2021-03-23', address: ['Floyd Miles', '7363 Cynthia Pass', 'Toronto, ON N3Y 4H8'], email: 'f•••@example.com', phone: '1•••••••••40', featuredImage: { src: productImage4.src, width: productImage4.width, height: productImage4.height, alt: 'Insulated bottle.' }, quantity: 1, size: 'XL', color: 'White' },
       ],
     },
     {
-      number: '4376',
-      status: 'Delivered on January 08, 2028',
-      invoiceHref: '#',
-      date: 'March 22, 2025',
-      totalQuantity: 4,
+      number: '4376', status: 'Delivered on January 08, 2028', invoiceHref: '#', date: 'March 22, 2025', totalQuantity: 4,
       cost: { subtotal: 199, shipping: 0, tax: 0, total: 199, discount: 0 },
       products: [
         { id: 'gid://1', title: 'Nomad Tumbler', handle: 'nomad-tumbler', description: 'Insulated tumbler.', href: '#', price: 99, status: 'Preparing to ship', step: 1, date: 'March 24, 2021', datetime: '2021-03-24', address: ['Floyd Miles', '7363 Cynthia Pass', 'Toronto, ON N3Y 4H8'], email: 'f•••@example.com', phone: '1•••••••••40', featuredImage: { src: productImage1.src, width: productImage1.width, height: productImage1.height, alt: 'Insulated bottle.' }, quantity: 1, size: 'M', color: 'Black' },
@@ -222,77 +214,77 @@ export async function getCountries() {
 
 export async function getShopData() {
   return {
-    description: 'An example shop with GraphQL.',
-    name: 'graphql',
-    termsOfService: { url: 'https://checkout.shopify.com/13120893/policies/30401347.html?locale=en', title: 'Terms of Service', id: 'gid://shopify/ShopPolicy/30401347', handle: 'terms-of-service', body: 'lorem ispsum dolor sit amet.' },
-    subscriptionPolicy: { body: '<p>Subscription Policy</p>', handle: 'refund-policy', id: 'gid://shopify/ShopPolicy/30401219', title: 'Refund Policy', url: 'https://checkout.shopify.com/13120893/policies/30401219.html?locale=en' },
-    shippingPolicy: { body: '<p>Shipping Policy</p>', handle: 'shipping-policy', id: 'gid://shopify/ShopPolicy/23745298488', title: 'Shipping Policy', url: 'https://checkout.shopify.com/13120893/policies/23745298488.html?locale=en' },
-    refundPolicy: { body: '<p>refundPolicy</p>', handle: 'refund-policy', id: 'gid://shopify/ShopPolicy/30401219', title: 'Refund Policy', url: 'https://checkout.shopify.com/13120893/policies/30401219.html?locale=en' },
-    privacyPolicy: { body: '<p>privacyPolicy</p>', handle: 'privacy-policy', id: 'gid://shopify/ShopPolicy/30401283', title: 'Privacy Policy', url: 'https://checkout.shopify.com/13120893/policies/30401283.html?locale=en' },
-    primaryDomain: { url: 'https://graphql.myshopify.com' },
+    description: 'KN541 쇼핑몰',
+    name: 'KN541',
+    termsOfService: { url: '#', title: 'Terms of Service', id: 'tos', handle: 'terms-of-service', body: '이용약관 내용입니다.' },
+    subscriptionPolicy: { body: '<p>구독 정책</p>', handle: 'refund-policy', id: 'sub', title: 'Refund Policy', url: '#' },
+    shippingPolicy: { body: '<p>배송 정책</p>', handle: 'shipping-policy', id: 'ship', title: 'Shipping Policy', url: '#' },
+    refundPolicy: { body: '<p>환불 정책</p>', handle: 'refund-policy', id: 'refund', title: 'Refund Policy', url: '#' },
+    privacyPolicy: { body: '<p>개인정보처리방침</p>', handle: 'privacy-policy', id: 'privacy', title: 'Privacy Policy', url: '#' },
+    primaryDomain: { url: process.env.NEXT_PUBLIC_SITE_URL || 'https://kn541.vercel.app' },
   }
 }
 
-export async function getProductReviews(handle: string) {
+export async function getProductReviews(_handle: string) {
   return [
-    { id: '1', title: "Can't say enough good things", rating: 5, content: '<p>I was really pleased with the overall shopping experience.</p>', author: 'S. Walkinshaw', authorAvatar: avatarImage1, date: 'May 16, 2025', datetime: '2025-01-06' },
-    { id: '2', title: 'Perfect for going out when you want to stay comfy', rating: 4, content: '<p>The product quality is amazing.</p>', author: 'Risako M', authorAvatar: avatarImage2, date: 'May 16, 2025', datetime: '2025-01-06' },
-    { id: '3', title: 'Very nice feeling sweater!', rating: 4, content: '<p>I would gladly recommend this store to my friends.</p>', author: 'Eden Birch', authorAvatar: avatarImage3, date: 'May 16, 2025', datetime: '2025-01-06' },
-    { id: '4', title: 'Very nice feeling sweater!', rating: 5, content: '<p>The product quality is amazing!</p>', author: 'Jonathan Edwards', authorAvatar: avatarImage4, date: 'May 16, 2025', datetime: '2025-01-06' },
+    { id: '1', title: "Can't say enough good things", rating: 5, content: '<p>정말 만족스러운 쇼핑 경험이었습니다.</p>', author: 'S. Walkinshaw', authorAvatar: avatarImage1, date: 'May 16, 2025', datetime: '2025-01-06' },
+    { id: '2', title: 'Perfect for going out when you want to stay comfy', rating: 4, content: '<p>품질이 정말 좋습니다.</p>', author: 'Risako M', authorAvatar: avatarImage2, date: 'May 16, 2025', datetime: '2025-01-06' },
+    { id: '3', title: 'Very nice feeling sweater!', rating: 4, content: '<p>친구들에게 적극 추천합니다.</p>', author: 'Eden Birch', authorAvatar: avatarImage3, date: 'May 16, 2025', datetime: '2025-01-06' },
+    { id: '4', title: 'Very nice feeling sweater!', rating: 5, content: '<p>정말 훌륭한 제품입니다!</p>', author: 'Jonathan Edwards', authorAvatar: avatarImage4, date: 'May 16, 2025', datetime: '2025-01-06' },
   ]
 }
 
 export async function getBlogPosts() {
   return [
-    { id: '1', title: 'Graduation Dresses: A Style Guide', handle: 'graduation-dresses-style-guide', excerpt: 'Illo sint voluptas. Error voluptates culpa eligendi.', featuredImage: { src: 'https://images.unsplash.com/photo-1535745122259-f1e187953c4c?q=80&w=3873&auto=format&fit=crop', alt: 'Graduation Dresses: A Style Guide', width: 3637, height: 2432 }, date: 'Mar 16, 2020', datetime: '2020-03-16', category: { title: 'Marketing', href: '#' }, timeToRead: '2 min read', author: { name: 'Scott Walkinshaw', avatar: { src: avatarImage1.src, alt: 'Scott Walkinshaw', width: avatarImage1.width, height: avatarImage1.height }, description: 'Fashion designer and stylist.' } },
-    { id: '2', title: 'How to Wear Your Eid Pieces All Year Long', handle: 'how-to-wear-your-eid-pieces-all-year-long', excerpt: 'Illo sint voluptas. Error voluptates culpa eligendi.', featuredImage: { src: 'https://images.unsplash.com/photo-1668585418249-f87c0f926583?q=80&w=3870&auto=format&fit=crop', alt: 'How to Wear Your Eid Pieces All Year Long', width: 3637, height: 2432 }, date: 'Mar 16, 2020', datetime: '2020-03-16', category: { title: 'Marketing', href: '#' }, timeToRead: '3 min read', author: { name: 'Erica Alexander', avatar: { src: avatarImage2.src, alt: 'Erica Alexander', width: avatarImage2.width, height: avatarImage2.height }, description: 'Fashion influencer and stylist.' } },
-    { id: '3', title: 'The Must-Have Hijabi Friendly Fabrics for 2024', handle: 'the-must-have-hijabi-friendly-fabrics-for-2024', excerpt: 'Illo sint voluptas. Error voluptates culpa eligendi.', featuredImage: { src: 'https://images.unsplash.com/photo-1665047189192-3a49516d496a?q=80&w=3874&auto=format&fit=crop', alt: 'The Must-Have Hijabi Friendly Fabrics for 2024', width: 3637, height: 2432 }, date: 'Mar 16, 2020', datetime: '2020-03-16', category: { title: 'Marketing', href: '#' }, timeToRead: '3 min read', author: { name: 'Wellie Edwards', avatar: { src: avatarImage3.src, alt: 'Wellie Edwards', width: avatarImage3.width, height: avatarImage3.height }, description: 'Fashion designer and stylist.' } },
-    { id: '4', title: 'The Hijabi Friendly Fabrics for 2025', handle: 'the-must-have-hijabi-friendly-fabrics-for', excerpt: 'Illo sint voluptas. Error voluptates culpa eligendi.', featuredImage: { src: 'https://images.unsplash.com/photo-1636522302676-79eb484e0b11?q=80&w=3637&auto=format&fit=crop', alt: 'The Must-Have Hijabi Friendly Fabrics for 2024', width: 3637, height: 2432 }, date: 'Mar 16, 2020', datetime: '2020-03-16', category: { title: 'Marketing', href: '#' }, timeToRead: '3 min read', author: { name: 'Alex Klein', avatar: { src: avatarImage4.src, alt: 'Alex Klein', width: avatarImage4.width, height: avatarImage4.height }, description: 'Fashion designer and stylist.' } },
-    { id: '5', title: 'Boost your conversion rate', handle: 'boost-your-conversion-rate', excerpt: 'Illo sint voluptas. Error voluptates culpa eligendi.', featuredImage: { src: 'https://images.unsplash.com/photo-1623876355139-cb77f029bd29?q=80&w=3296&auto=format&fit=crop', alt: 'Boost your conversion rate', width: 3637, height: 2432 }, date: 'Mar 16, 2020', datetime: '2020-03-16', category: { title: 'Marketing', href: '#' }, timeToRead: '3 min read', author: { name: 'Eden Birch', avatar: { src: avatarImage1.src, alt: 'Eden Birch', width: avatarImage1.width, height: avatarImage1.height }, description: 'Fashion designer and stylist.' } },
-    { id: '6', title: 'Graduation Dresses: A Style Guide', handle: 'graduation-dresses-style-guide', excerpt: 'Illo sint voluptas. Error voluptates culpa eligendi.', featuredImage: { src: 'https://images.unsplash.com/photo-1746699484949-869986068267?w=900&auto=format&fit=crop', alt: 'Graduation Dresses: A Style Guide', width: 3773, height: 600 }, date: 'Mar 16, 2020', datetime: '2020-03-16', category: { title: 'Marketing', href: '#' }, timeToRead: '3 min read', author: { name: 'Scott Edwards', avatar: { src: avatarImage2.src, alt: 'Scott Edwards', width: avatarImage2.width, height: avatarImage2.height }, description: 'Fashion designer and stylist.' } },
+    { id: '1', title: 'Graduation Dresses: A Style Guide', handle: 'graduation-dresses-style-guide', excerpt: 'Illo sint voluptas. Error voluptates culpa eligendi.', featuredImage: { src: 'https://images.unsplash.com/photo-1535745122259-f1e187953c4c?q=80&w=3873&auto=format&fit=crop', alt: 'Graduation Dresses', width: 3637, height: 2432 }, date: 'Mar 16, 2020', datetime: '2020-03-16', category: { title: 'Marketing', href: '#' }, timeToRead: '2 min read', author: { name: 'Scott Walkinshaw', avatar: { src: avatarImage1.src, alt: 'Scott Walkinshaw', width: avatarImage1.width, height: avatarImage1.height }, description: 'Fashion designer.' } },
+    { id: '2', title: 'How to Wear Your Eid Pieces All Year Long', handle: 'how-to-wear-your-eid-pieces-all-year-long', excerpt: 'Illo sint voluptas. Error voluptates culpa eligendi.', featuredImage: { src: 'https://images.unsplash.com/photo-1668585418249-f87c0f926583?q=80&w=3870&auto=format&fit=crop', alt: 'Eid Pieces', width: 3637, height: 2432 }, date: 'Mar 16, 2020', datetime: '2020-03-16', category: { title: 'Marketing', href: '#' }, timeToRead: '3 min read', author: { name: 'Erica Alexander', avatar: { src: avatarImage2.src, alt: 'Erica Alexander', width: avatarImage2.width, height: avatarImage2.height }, description: 'Fashion influencer.' } },
+    { id: '3', title: 'The Must-Have Hijabi Friendly Fabrics for 2024', handle: 'the-must-have-hijabi-friendly-fabrics-for-2024', excerpt: 'Illo sint voluptas. Error voluptates culpa eligendi.', featuredImage: { src: 'https://images.unsplash.com/photo-1665047189192-3a49516d496a?q=80&w=3874&auto=format&fit=crop', alt: 'Hijabi Fabrics', width: 3637, height: 2432 }, date: 'Mar 16, 2020', datetime: '2020-03-16', category: { title: 'Marketing', href: '#' }, timeToRead: '3 min read', author: { name: 'Wellie Edwards', avatar: { src: avatarImage3.src, alt: 'Wellie Edwards', width: avatarImage3.width, height: avatarImage3.height }, description: 'Fashion designer.' } },
+    { id: '4', title: 'The Hijabi Friendly Fabrics for 2025', handle: 'the-must-have-hijabi-friendly-fabrics-for', excerpt: 'Illo sint voluptas. Error voluptates culpa eligendi.', featuredImage: { src: 'https://images.unsplash.com/photo-1636522302676-79eb484e0b11?q=80&w=3637&auto=format&fit=crop', alt: 'Hijabi Fabrics 2025', width: 3637, height: 2432 }, date: 'Mar 16, 2020', datetime: '2020-03-16', category: { title: 'Marketing', href: '#' }, timeToRead: '3 min read', author: { name: 'Alex Klein', avatar: { src: avatarImage4.src, alt: 'Alex Klein', width: avatarImage4.width, height: avatarImage4.height }, description: 'Fashion designer.' } },
+    { id: '5', title: 'Boost your conversion rate', handle: 'boost-your-conversion-rate', excerpt: 'Illo sint voluptas. Error voluptates culpa eligendi.', featuredImage: { src: 'https://images.unsplash.com/photo-1623876355139-cb77f029bd29?q=80&w=3296&auto=format&fit=crop', alt: 'Conversion', width: 3637, height: 2432 }, date: 'Mar 16, 2020', datetime: '2020-03-16', category: { title: 'Marketing', href: '#' }, timeToRead: '3 min read', author: { name: 'Eden Birch', avatar: { src: avatarImage1.src, alt: 'Eden Birch', width: avatarImage1.width, height: avatarImage1.height }, description: 'Fashion designer.' } },
+    { id: '6', title: 'Graduation Dresses: A Style Guide', handle: 'graduation-dresses-style-guide-2', excerpt: 'Illo sint voluptas. Error voluptates culpa eligendi.', featuredImage: { src: 'https://images.unsplash.com/photo-1746699484949-869986068267?w=900&auto=format&fit=crop', alt: 'Graduation Dresses 2', width: 3773, height: 600 }, date: 'Mar 16, 2020', datetime: '2020-03-16', category: { title: 'Marketing', href: '#' }, timeToRead: '3 min read', author: { name: 'Scott Edwards', avatar: { src: avatarImage2.src, alt: 'Scott Edwards', width: avatarImage2.width, height: avatarImage2.height }, description: 'Fashion designer.' } },
   ]
 }
 
 export async function getBlogPostsByHandle(handle: string) {
   handle = handle.toLowerCase()
   const posts = await getBlogPosts()
-  let post = posts.find((post) => post.handle === handle)
+  let post = posts.find((p) => p.handle === handle)
   if (!post) {
-    console.warn(`Post with handle ${handle} not found. Returning the first post as a fallback.`)
+    console.warn(`Post '${handle}' not found. Returning fallback.`)
     post = posts[0]
   }
   return { ...post, content: 'Lorem ipsum dolor ...', tags: ['fashion', 'style', 'trends'] }
 }
 
-export function getCart(id: string) {
+export function getCart(_id: string) {
   return {
     id: 'gid://shopify/Cart/1',
-    note: 'This is a note',
+    note: '',
     createdAt: '2025-01-06',
-    totalQuantity: 4,
-    cost: { subtotal: 199, shipping: 0, tax: 0, total: 199, discount: 0 },
+    totalQuantity: 3,
+    cost: { subtotal: 417, shipping: 0, tax: 0, total: 417, discount: 0 },
     lines: [
-      { id: '1', name: 'Basic Tee', handle: 'basic-tee', price: 199, color: 'Sienna', inStock: true, size: 'L', quantity: 1, image: { src: productImage1.src, width: productImage1.width, height: productImage1.height, alt: 'Front of Basic Tee in black.' } },
-      { id: '2', name: 'Basic Coahuila', handle: 'basic-coahuila', price: 99, color: 'Black', inStock: false, leadTime: '3–4 weeks', size: 'XL', quantity: 2, image: { src: productImage2.src, width: productImage2.width, height: productImage2.height, alt: 'Front of Basic Coahuila in black.' } },
-      { id: '3', name: 'Nomad Tumbler', handle: 'nomad-tumbler', price: 119, color: 'White', inStock: true, size: 'M', quantity: 1, image: { src: productImage3.src, width: productImage3.width, height: productImage3.height, alt: 'Front of Nomad Tumbler in white.' } },
+      { id: '1', name: 'Basic Tee', handle: 'basic-tee', price: 199, color: 'Sienna', inStock: true, size: 'L', quantity: 1, image: { src: productImage1.src, width: productImage1.width, height: productImage1.height, alt: 'Basic Tee' } },
+      { id: '2', name: 'Basic Coahuila', handle: 'basic-coahuila', price: 99, color: 'Black', inStock: false, leadTime: '3–4 weeks', size: 'XL', quantity: 2, image: { src: productImage2.src, width: productImage2.width, height: productImage2.height, alt: 'Basic Coahuila' } },
+      { id: '3', name: 'Nomad Tumbler', handle: 'nomad-tumbler', price: 119, color: 'White', inStock: true, size: 'M', quantity: 1, image: { src: productImage3.src, width: productImage3.width, height: productImage3.height, alt: 'Nomad Tumbler' } },
     ],
   }
 }
 
 /**
  * 컬렉션(카테고리) 목록 조회
- * - API 성공 시 KN541 DB의 실제 카테고리 반환
- * - 실패 시 더미데이터 폴백
+ * API 성공 → 실제 KN541 카테고리 / 실패 → 더미 폴백
  */
 export async function getCollections() {
-  const apiResult = await fetchCategories()
-  if (apiResult?.items?.length) {
-    // API 카테고리를 더미 컬렉션 형식으로 변환 후,
-    // 나머지 슬롯(featured/brands 구역)은 더미로 채움
-    const apiCollections = adaptCategories(apiResult.items)
-    const dummy = getDummyCollections()
-    // 인덱스 7 이상(featured/brands 구역)은 더미 유지
-    return [...apiCollections, ...dummy.slice(7)]
+  try {
+    const categories = await getRootCategories()
+    if (categories.length > 0) {
+      const apiCollections = adaptCategories(categories)
+      const dummy = getDummyCollections()
+      return [...apiCollections, ...dummy.slice(7)]
+    }
+  } catch {
+    // API 미연결 시 조용히 폴백
   }
   return getDummyCollections()
 }
@@ -312,36 +304,28 @@ export async function getGroupCollections() {
 
 export async function getCollectionByHandle(handle: string) {
   handle = handle.toLowerCase()
-
-  // 'all' 가상 컬렉션
   if (handle === 'all') {
     return {
-      id: 'gid://all',
-      title: 'All products',
-      handle: 'all',
-      description: 'Explore our entire collection of products, from clothing to accessories.',
-      sortDescription: 'All products',
-      color: 'bg-indigo-50',
-      count: 77,
-      image: { src: collectionImage1.src, width: collectionImage1.width, height: collectionImage1.height, alt: 'Explore new arrivals' },
+      id: 'gid://all', title: 'All products', handle: 'all',
+      description: 'Explore our entire collection of products.',
+      sortDescription: 'All products', color: 'bg-indigo-50', count: 0,
+      image: { src: collectionImage1.src, width: collectionImage1.width, height: collectionImage1.height, alt: 'All products' },
     }
   }
-
-  // API에서 카테고리 조회 시도
-  const apiCategory = await fetchCategoryByHandle(handle)
-  if (apiCategory) {
-    return adaptCategory(apiCategory)
+  try {
+    const categories = await getCategories()
+    const found = categories.find((c) => c.category_code === handle)
+    if (found) return adaptCategory(found)
+  } catch {
+    // 폴백
   }
-
-  // API 실패 시 더미 폴백
-  const allCollections = getDummyCollections()
-  return allCollections.find((c) => c.handle === handle) ?? allCollections[0]
+  const dummy = getDummyCollections()
+  return dummy.find((c) => c.handle === handle) ?? dummy[0]
 }
 
 /**
  * 상품 목록 조회
- * - API 성공 시 실제 상품 반환
- * - 실패 시 더미데이터 폴백
+ * API 성공 → 실제 KN541 상품 / 실패 → 더미 폴백
  */
 export async function getProducts(params?: {
   category?: string
@@ -350,31 +334,30 @@ export async function getProducts(params?: {
   sort?: string
   q?: string
 }) {
-  const apiResult = await fetchProducts({
-    category_handle: params?.category,
-    page: params?.page,
-    size: params?.size ?? 20,
-    sort: params?.sort,
-    q: params?.q,
-  })
-
-  if (apiResult?.items?.length) {
-    return adaptProducts(apiResult.items)
+  try {
+    const result = await apiGetProducts({
+      size: params?.size ?? 20,
+      page: params?.page,
+      keyword: params?.q,
+      product_status: 'ACTIVE',
+    })
+    if (result.items.length > 0) {
+      return adaptProducts(result.items)
+    }
+  } catch {
+    // 폴백
   }
-
   return getDummyProducts()
 }
 
 export async function getProductByHandle(handle: string) {
   handle = handle.toLowerCase()
-
-  // API 단건 조회 시도
-  const apiProduct = await fetchProductByHandle(handle)
-  if (apiProduct) {
-    return adaptProduct(apiProduct)
+  try {
+    const product = await getProductById(handle)
+    if (product) return adaptProduct(product)
+  } catch {
+    // 폴백
   }
-
-  // 더미 폴백
   const products = getDummyProducts()
   return products.find((p) => p.handle === handle) ?? products[0]
 }
@@ -382,20 +365,20 @@ export async function getProductByHandle(handle: string) {
 export async function getProductDetailByHandle(handle: string) {
   handle = handle.toLowerCase()
   const product = await getProductByHandle(handle)
-
   return {
     ...product,
     status: 'In Stock',
     breadcrumbs: [
       { id: 1, name: 'Home', href: '/' },
-      { id: 2, name: 'Jackets', href: '/collections/jackets' },
+      { id: 2, name: 'Products', href: '/collections/all' },
     ],
-    description:
-      'Fashion is a form of self-expression and autonomy at a particular period and place and in a specific context, of clothing, footwear, lifestyle, accessories, makeup, hairstyle, and body posture.',
-    publishedAt: '2019-03-27T17:43:25Z',
+    description: product?.title
+      ? `${product.title} 상품입니다.`
+      : 'Fashion is a form of self-expression and autonomy at a particular period and place.',
+    publishedAt: product?.createdAt ?? '2025-01-01T00:00:00Z',
     selectedOptions: [
-      { name: 'Color', value: product?.options?.find((o: any) => o.name === 'Color')?.optionValues?.[1]?.name },
-      { name: 'Size', value: product?.options?.find((o: any) => o.name === 'Size')?.optionValues?.[0]?.name },
+      { name: 'Color', value: (product?.options as any)?.[0]?.optionValues?.[0]?.name },
+      { name: 'Size', value: (product?.options as any)?.[1]?.optionValues?.[0]?.name },
     ],
     features: [
       'Material: 43% Sorona Yarn + 57% Stretch Polyester',
@@ -403,12 +386,12 @@ export async function getProductDetailByHandle(handle: string) {
       'The pants are a bit tight so you always feel comfortable',
       'Excool technology application 4-way stretch',
     ],
-    careInstruction: 'Machine wash cold with like colors. Do not bleach. Tumble dry low. Iron low if needed. Do not dry clean.',
-    shippingAndReturn: 'We offer free shipping on all orders over $50. If you are not satisfied with your purchase, you can return it within 30 days for a full refund.',
+    careInstruction: 'Machine wash cold with like colors. Do not bleach. Tumble dry low.',
+    shippingAndReturn: '50,000원 이상 무료배송. 30일 이내 반품/교환 가능.',
   }
 }
 
-// ─── 공통 타입 ────────────────────────────────────────────────
+// ─── 공통 타입 ──────────────────────────────────────────────────
 export type TCollection = Partial<Awaited<ReturnType<typeof getDummyCollections>>[number]>
 export type TProductItem = Partial<Awaited<ReturnType<typeof getDummyProducts>>[number]>
 export type TProductDetail = Partial<Awaited<ReturnType<typeof getProductDetailByHandle>>>

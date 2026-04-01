@@ -1,64 +1,16 @@
 /**
  * KN541 API 데이터 → Ciseco 컴포넌트 형식 변환 어댑터
- * - API 응답(ApiProduct, ApiCategory)을 기존 TProductItem, TCollection 형식으로 변환
- * - 이미지 URL이 없으면 플레이스홀더 사용
+ * - lib/api/products.ts의 Product 타입 기준
+ * - lib/api/categories.ts의 Category 타입 기준
  */
 
-import type { ApiCategory, ApiProduct } from './api-products'
+import type { Category } from './api/categories'
+import type { Product } from './api/products'
 import type { TCollection, TProductItem } from '@/data/data'
 
 const PLACEHOLDER_IMG = '/placeholder-product.jpg'
 
-// ─── 상품 어댑터 ──────────────────────────────────────────────
-
-export function adaptProduct(p: ApiProduct): TProductItem {
-  return {
-    id: String(p.id),
-    title: p.name,
-    handle: p.handle,
-    price: p.price,
-    createdAt: p.created_at,
-    vendor: '',
-    featuredImage: p.featured_image_url
-      ? {
-          src: p.featured_image_url,
-          width: 600,
-          height: 600,
-          alt: p.name,
-        }
-      : {
-          src: PLACEHOLDER_IMG,
-          width: 600,
-          height: 600,
-          alt: p.name,
-        },
-    images: p.images?.map((img) => ({
-      src: img.url,
-      width: 600,
-      height: 600,
-      alt: img.alt || p.name,
-    })) || [],
-    reviewNumber: p.review_count ?? 0,
-    rating: p.rating ?? 0,
-    status: p.status || (p.stock > 0 ? 'In Stock' : 'Out of Stock'),
-    options: p.options?.map((opt) => ({
-      name: opt.name,
-      optionValues: opt.values.map((v) => ({
-        name: v.name,
-        swatch: v.color ? { color: v.color, image: null } : null,
-      })),
-    })) || [],
-    selectedOptions: [],
-  }
-}
-
-export function adaptProducts(items: ApiProduct[]): TProductItem[] {
-  return items.map(adaptProduct)
-}
-
-// ─── 카테고리 어댑터 ──────────────────────────────────────────
-
-// 카테고리별 배경색 (순환 사용)
+// 카테고리별 배경색 (순환)
 const BG_COLORS = [
   'bg-indigo-50',
   'bg-orange-50',
@@ -70,31 +22,61 @@ const BG_COLORS = [
   'bg-pink-50',
 ]
 
-export function adaptCategory(c: ApiCategory, index = 0): TCollection {
+// ─── 상품 어댑터 ──────────────────────────────────────────────
+
+export function adaptProduct(p: Product): TProductItem {
+  // 상태 레이블 결정
+  let status = 'In Stock'
+  if (p.product_status === 'SOLDOUT') status = 'Sold Out'
+  else if (p.is_new) status = 'New in'
+  else if (p.is_best) status = 'Best Seller'
+  else if (p.is_sale) status = 'Sale'
+
   return {
-    id: String(c.id),
-    title: c.name,
-    handle: c.handle,
-    description: c.description || '',
-    sortDescription: '',
-    color: BG_COLORS[index % BG_COLORS.length],
-    count: c.product_count ?? 0,
-    image: c.image_url
-      ? {
-          src: c.image_url,
-          width: 600,
-          height: 600,
-          alt: c.name,
-        }
-      : {
-          src: PLACEHOLDER_IMG,
-          width: 600,
-          height: 600,
-          alt: c.name,
-        },
+    id: String(p.id),
+    title: p.product_name,
+    handle: p.product_code,          // product_code를 URL slug로 사용
+    price: p.sale_price,
+    createdAt: p.created_at,
+    vendor: '',
+    featuredImage: p.thumbnail_url
+      ? { src: p.thumbnail_url, width: 600, height: 600, alt: p.product_name }
+      : { src: PLACEHOLDER_IMG, width: 600, height: 600, alt: p.product_name },
+    images: p.thumbnail_url
+      ? [{ src: p.thumbnail_url, width: 600, height: 600, alt: p.product_name }]
+      : [],
+    reviewNumber: 0,
+    rating: 0,
+    status,
+    options: [],
+    selectedOptions: [],
   }
 }
 
-export function adaptCategories(items: ApiCategory[]): TCollection[] {
+export function adaptProducts(items: Product[]): TProductItem[] {
+  return items.map(adaptProduct)
+}
+
+// ─── 카테고리 어댑터 ──────────────────────────────────────────
+
+export function adaptCategory(c: Category, index = 0): TCollection {
+  return {
+    id: String(c.id),
+    title: c.category_name,
+    handle: c.category_code,          // category_code를 URL handle로 사용
+    description: '',
+    sortDescription: '',
+    color: BG_COLORS[index % BG_COLORS.length],
+    count: 0,
+    image: {
+      src: PLACEHOLDER_IMG,
+      width: 600,
+      height: 600,
+      alt: c.category_name,
+    },
+  }
+}
+
+export function adaptCategories(items: Category[]): TCollection[] {
   return items.map((c, i) => adaptCategory(c, i))
 }
