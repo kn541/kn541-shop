@@ -8,7 +8,7 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import clsx from 'clsx'
 import type { EmblaOptionsType } from 'embla-carousel'
 import useEmblaCarousel from 'embla-carousel-react'
-import Link from 'next/link'
+import { Link } from '@/shared/link'
 import { FC } from 'react'
 import CollectionCard2 from './CollectionCard2'
 

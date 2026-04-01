@@ -4,13 +4,13 @@ import { Divider } from '@/components/Divider'
 import { TNavigationItem } from '@/data/navigation'
 import ButtonPrimary from '@/shared/Button/ButtonPrimary'
 import SocialsList from '@/shared/SocialsList/SocialsList'
+import { useRouter } from '@/i18n/navigation'
 import { Link } from '@/shared/link'
 import { Disclosure, DisclosureButton, DisclosurePanel, useClose } from '@headlessui/react'
 import { ChevronDownIcon } from '@heroicons/react/24/solid'
 import { Search01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import clsx from 'clsx'
-import { redirect } from 'next/navigation'
 import React from 'react'
 
 interface SidebarNavigationProps {
@@ -18,6 +18,7 @@ interface SidebarNavigationProps {
 }
 
 const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ data }) => {
+  const router = useRouter()
   const handleClose = useClose()
 
   const _renderMenuChild = (
@@ -83,7 +84,7 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ data }) => {
         onSubmit={(e) => {
           e.preventDefault()
           handleClose()
-          redirect('/search')
+          router.push('/search')
         }}
       >
         <div className="flex h-full items-center gap-x-2.5 rounded-xl bg-neutral-50 px-3 py-3 dark:bg-neutral-800">

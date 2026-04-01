@@ -1,41 +1,25 @@
 'use client'
 
 import { Link } from '@/components/Link'
-import { usePathname } from 'next/navigation'
+import { usePathname } from '@/i18n/navigation'
+import { useTranslations } from 'next-intl'
 
-const pages: {
-  name: string
-  link: string
-}[] = [
-  {
-    name: 'Settings',
-    link: '/account',
-  },
-  {
-    name: 'Wishlists',
-    link: '/account-wishlists',
-  },
-  {
-    name: 'Orders history',
-    link: '/orders',
-  },
-  {
-    name: 'Change password',
-    link: '/account-password',
-  },
-  {
-    name: 'Billing',
-    link: '/account-billing',
-  },
+const links = [
+  { nameKey: 'settings' as const, link: '/account' },
+  { nameKey: 'wishlists' as const, link: '/account-wishlists' },
+  { nameKey: 'ordersHistory' as const, link: '/orders' },
+  { nameKey: 'changePassword' as const, link: '/account-password' },
+  { nameKey: 'billing' as const, link: '/account-billing' },
 ]
 
 const PageTab = () => {
+  const t = useTranslations('Account')
   const pathname = usePathname()
 
   return (
     <div>
       <div className="hidden-scrollbar flex gap-x-8 overflow-x-auto md:gap-x-14">
-        {pages.map((item) => {
+        {links.map((item) => {
           let isActive = pathname === item.link
           if (item.link === '/orders' && pathname.includes('/orders/')) {
             isActive = true
@@ -51,7 +35,7 @@ const PageTab = () => {
                   : 'border-transparent text-neutral-500 hover:text-neutral-950 dark:text-neutral-400 dark:hover:text-neutral-100'
               }`}
             >
-              {item.name}
+              {t(item.nameKey)}
             </Link>
           )
         })}

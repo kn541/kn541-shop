@@ -8,9 +8,12 @@ import { Link } from '../Link'
 export default function MegaMenuPopover({
   megamenu,
   featuredCollection,
+  menuLabel,
 }: {
   megamenu: TNavigationItem
   featuredCollection: TCollection
+  /** 메가메뉴 상단 버튼 문구(로케일별) */
+  menuLabel?: string
 }) {
   if (megamenu.type !== 'mega-menu') {
     return null
@@ -33,7 +36,7 @@ export default function MegaMenuPopover({
     <div className="hidden lg:block">
       <Popover className="group">
         <PopoverButton className="-m-2.5 flex items-center p-2.5 text-sm font-medium text-gray-800 focus:outline-hidden dark:text-neutral-300">
-          {megamenu.name}
+          {menuLabel ?? megamenu.name}
           <ChevronDownIcon className="ms-1 size-4 group-data-open:rotate-180" aria-hidden="true" />
         </PopoverButton>
         <Transition

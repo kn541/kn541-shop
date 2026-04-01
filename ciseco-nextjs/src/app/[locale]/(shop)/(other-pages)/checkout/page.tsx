@@ -9,23 +9,32 @@ import { Link } from '@/shared/link'
 import { Coordinate01Icon, InformationCircleIcon, PaintBucketIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Metadata } from 'next'
+import { getTranslations } from 'next-intl/server'
 import Form from 'next/form'
 import Image from 'next/image'
 import Information from './Information'
 
-export const metadata: Metadata = {
-  title: 'Checkout Page',
-  description: 'Effective checkout page for your e-commerce website',
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'Checkout' })
+  return {
+    title: t('metaTitle'),
+    description: t('metaDescription'),
+  }
 }
 
 const CheckoutPage = async () => {
+  const t = await getTranslations('Checkout')
   const cart = await getCart('id://cart')
 
   const onSubmitFormDiscountCode = async (formData: FormData) => {
     'use server'
     const discountCode = formData.get('discount-code')?.toString() || ''
     console.log('Discount code:', discountCode)
-    // Here you can implement the logic to apply the discount code
   }
 
   const renderProduct = (product: TCardProduct) => {
@@ -97,7 +106,7 @@ const CheckoutPage = async () => {
             </div>
 
             <div className="relative z-10 mt-3 flex items-center text-sm font-medium text-primary-600 hover:text-primary-500">
-              <span>Remove</span>
+              <span>{t('remove')}</span>
             </div>
           </div>
         </div>
@@ -108,13 +117,13 @@ const CheckoutPage = async () => {
   return (
     <main className="container py-16 lg:pt-20 lg:pb-28">
       <div className="mb-16">
-        <h1 className="mb-5 block text-3xl font-semibold lg:text-4xl">Checkout</h1>
+        <h1 className="mb-5 block text-3xl font-semibold lg:text-4xl">{t('title')}</h1>
         <Breadcrumb
           breadcrumbs={[
-            { id: 1, name: 'Home', href: '/' },
-            { id: 2, name: 'Cart', href: '/cart' },
+            { id: 1, name: t('breadcrumbHome'), href: '/' },
+            { id: 2, name: t('breadcrumbCart'), href: '/cart' },
           ]}
-          currentPage="Checkout"
+          currentPage={t('currentPage')}
         />
       </div>
 
@@ -126,7 +135,7 @@ const CheckoutPage = async () => {
         <div className="my-10 shrink-0 border-t lg:mx-10 lg:my-0 lg:border-t-0 lg:border-l xl:lg:mx-14 2xl:mx-16" />
 
         <div className="w-full lg:w-[36%]">
-          <h3 className="text-lg font-semibold">Order summary</h3>
+          <h3 className="text-lg font-semibold">{t('orderSummary')}</h3>
           <div className="mt-8 divide-y divide-neutral-200/70 dark:divide-neutral-700">
             {cart.lines.map(renderProduct)}
           </div>
@@ -134,42 +143,42 @@ const CheckoutPage = async () => {
           <div className="mt-10 border-t border-neutral-200/70 pt-6 text-sm text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
             <Form action={onSubmitFormDiscountCode}>
               <Field>
-                <Label className="text-sm">Discount code</Label>
+                <Label className="text-sm">{t('discountCode')}</Label>
                 <div className="mt-1.5 flex gap-3">
                   <Input className="flex-1" />
                   <button
                     type="submit"
                     className="flex w-24 items-center justify-center rounded-full border bg-neutral-50 font-medium text-neutral-800 hover:bg-neutral-100 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
                   >
-                    Apply
+                    {t('apply')}
                   </button>
                 </div>
               </Field>
             </Form>
 
             <div className="mt-4 flex justify-between py-2.5">
-              <span>Subtotal</span>
+              <span>{t('subtotal')}</span>
               <span className="font-semibold text-neutral-900 dark:text-neutral-200">
                 ${cart.cost.subtotal.toFixed(2)}
               </span>
             </div>
             <div className="flex justify-between py-2.5">
-              <span>Shipping estimate</span>
+              <span>{t('shippingEstimate')}</span>
               <span className="font-semibold text-neutral-900 dark:text-neutral-200">
                 ${cart.cost.shipping.toFixed(2)}
               </span>
             </div>
             <div className="flex justify-between py-2.5">
-              <span>Tax estimate</span>
+              <span>{t('taxEstimate')}</span>
               <span className="font-semibold text-neutral-900 dark:text-neutral-200">${cart.cost.tax.toFixed(2)}</span>
             </div>
             <div className="flex justify-between pt-4 text-base font-semibold text-neutral-900 dark:text-neutral-200">
-              <span>Order total</span>
+              <span>{t('orderTotal')}</span>
               <span>${cart.cost.total.toFixed(2)}</span>
             </div>
           </div>
           <ButtonPrimary className="mt-8 w-full" href="/order-successful">
-            Confirm order
+            {t('confirmOrder')}
           </ButtonPrimary>
           <div className="mt-5 flex items-center justify-center text-sm text-neutral-500 dark:text-neutral-400">
             <p className="relative block pl-5">
@@ -180,27 +189,14 @@ const CheckoutPage = async () => {
                 className="absolute top-0.5 -left-1"
                 strokeWidth={1.5}
               />
-              Learn more{` `}
               <Link
                 target="_blank"
                 rel="noopener noreferrer"
                 href="#"
                 className="font-medium text-neutral-900 underline dark:text-neutral-200"
               >
-                Taxes
+                {t('taxShippingFooter')}
               </Link>
-              <span>
-                {` `}and{` `}
-              </span>
-              <Link
-                target="_blank"
-                rel="noopener noreferrer"
-                href="#"
-                className="font-medium text-neutral-900 underline dark:text-neutral-200"
-              >
-                Shipping
-              </Link>
-              {` `} infomation
             </p>
           </div>
         </div>

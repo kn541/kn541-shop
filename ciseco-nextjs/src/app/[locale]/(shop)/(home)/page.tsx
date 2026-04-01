@@ -17,15 +17,24 @@ import { getBlogPosts, getCollections, getGroupCollections, getProducts } from '
 import { Button } from '@/shared/Button/Button'
 import { ArrowRightIcon } from '@heroicons/react/24/solid'
 import { Metadata } from 'next'
+import { getTranslations } from 'next-intl/server'
 
-export const metadata: Metadata = {
-  title: 'Home',
-  description:
-    'Ciseco is a modern and elegant template for Next.js, Tailwind CSS, and TypeScript. It is designed to be simple and easy to use, with a focus on performance and accessibility.',
-  keywords: ['Next.js', 'Tailwind CSS', 'TypeScript', 'Ciseco', 'Headless UI', 'Fashion', 'E-commerce'],
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'Home' })
+  return {
+    title: t('metaTitle'),
+    description: t('metaDescription'),
+    keywords: ['Next.js', 'Tailwind CSS', 'TypeScript', 'Ciseco', 'Headless UI', 'Fashion', 'E-commerce'],
+  }
 }
 
 async function PageHome() {
+  const t = await getTranslations('Home')
   const allCollections = await getCollections()
   const departmentCollections = allCollections.slice(11, 15)
   const featuredCollections = allCollections.slice(7, 11)
@@ -54,8 +63,8 @@ async function PageHome() {
         </div>
         <SectionSliderProductCard
           data={carouselProducts2}
-          heading="Best Sellers"
-          subHeading="Best selling of the month"
+          heading={t('bestSellers')}
+          subHeading={t('bestSellersSubtitle')}
         />
         <SectionPromo2 />
         <SectionSliderLargeProduct products={carouselProducts3} />
@@ -64,11 +73,11 @@ async function PageHome() {
         <SectionCollectionSlider2 collections={departmentCollections} />
         <Divider />
         <div>
-          <Heading headingDim="From the Ciseco blog">The latest news</Heading>
+          <Heading headingDim={t('newsSubtitle')}>{t('newsTitle')}</Heading>
           <SectionMagazine5 posts={blogPosts} />
           <div className="mt-20 flex justify-center">
             <Button href="/blog" outline>
-              Show all blog articles
+              {t('showAllBlog')}
               <ArrowRightIcon className="h-4 w-4" />
             </Button>
           </div>

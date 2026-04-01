@@ -20,7 +20,7 @@ import {
 } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon, IconSvgElement } from '@hugeicons/react'
 import clsx from 'clsx'
-import Link from 'next/link'
+import { Link } from '@/shared/link'
 import { useState } from 'react'
 
 type Tab = 'ContactInfo' | 'ShippingAddress' | 'PaymentMethod'

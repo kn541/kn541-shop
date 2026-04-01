@@ -2,7 +2,7 @@ import { TCollection } from '@/data/data'
 import NcImage from '@/shared/NcImage/NcImage'
 import { ArrowRightIcon } from '@heroicons/react/24/outline'
 import Image from 'next/image'
-import Link from 'next/link'
+import { Link } from '@/shared/link'
 import { FC } from 'react'
 
 interface CollectionCard6Props {

@@ -4,7 +4,7 @@ import Prices from '@/components/Prices'
 import { getOrders } from '@/data/data'
 import { Metadata } from 'next'
 import Image from 'next/image'
-import Link from 'next/link'
+import { Link } from '@/shared/link'
 import { notFound } from 'next/navigation'
 
 export const metadata: Metadata = {

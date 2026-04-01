@@ -7,7 +7,7 @@ import { ArrowUpRight01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import type { EmblaOptionsType } from 'embla-carousel'
 import useEmblaCarousel from 'embla-carousel-react'
-import Link from 'next/link'
+import { Link } from '@/shared/link'
 import { FC } from 'react'
 import ProductCardLarge from './ProductCardLarge'
 

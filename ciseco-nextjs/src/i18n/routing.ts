@@ -8,3 +8,5 @@ export const routing = defineRouting({
   // 기본 언어는 URL에 prefix 없음 (/ = 한국어, /en/ = 영어)
   localePrefix: 'as-needed',
 })
+
+export type AppLocale = (typeof routing.locales)[number]

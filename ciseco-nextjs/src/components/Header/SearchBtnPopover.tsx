@@ -1,13 +1,16 @@
 'use client'
 
+import { useRouter } from '@/i18n/navigation'
 import { CloseButton, Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
 import { Cancel01Icon, Search01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { redirect } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { Divider } from '../Divider'
-import { Link } from '../Link'
 
 const SearchBtnPopover = () => {
+  const t = useTranslations('Search')
+  const router = useRouter()
+
   return (
     <Popover>
       <PopoverButton className="-m-2.5 flex cursor-pointer items-center justify-center rounded-full p-2.5 hover:bg-neutral-100 focus-visible:outline-0 dark:hover:bg-neutral-800">
@@ -25,7 +28,7 @@ const SearchBtnPopover = () => {
               className="flex w-full items-center"
               onSubmit={(e) => {
                 e.preventDefault()
-                redirect('/search')
+                router.push('/search')
               }}
             >
               <HugeiconsIcon icon={Search01Icon} size={26} color="currentColor" strokeWidth={1} />
@@ -35,7 +38,7 @@ const SearchBtnPopover = () => {
                 type="text"
                 className="w-full !border-none px-4 py-2 text-sm/6 uppercase !ring-0 focus-visible:outline-none"
                 name="q"
-                aria-label="Search for products"
+                aria-label={t('ariaLabel')}
                 autoComplete="off"
                 autoCorrect="off"
                 autoCapitalize="off"
@@ -49,20 +52,7 @@ const SearchBtnPopover = () => {
               <input type="submit" value="" hidden />
             </form>
             <Divider className="my-4 block md:hidden" />
-            <div className="block text-xs/6 text-neutral-500 uppercase md:hidden">
-              Press{' '}
-              <Link
-                href={'/search'}
-                className="rounded-sm bg-neutral-100 px-1.5 py-0.5 text-xs font-medium text-neutral-900"
-              >
-                <kbd className="text-xs font-medium">Enter</kbd>
-              </Link>{' '}
-              to search or{' '}
-              <kbd className="rounded-sm bg-neutral-100 px-1.5 py-0.5 text-xs font-medium text-neutral-900">
-                <span className="text-xs font-medium">Esc</span>
-              </kbd>{' '}
-              to cancel
-            </div>
+            <div className="block text-xs/6 text-neutral-500 md:hidden">{t('searchMobileHelp')}</div>
           </div>
         </div>
       </PopoverPanel>

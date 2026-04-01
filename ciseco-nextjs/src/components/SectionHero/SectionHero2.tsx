@@ -9,37 +9,10 @@ import { Search01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import clsx from 'clsx'
 import Image from 'next/image'
-import { FC, useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
+import { FC, useEffect, useMemo, useState } from 'react'
 import { useSwipeable } from 'react-swipeable'
 import { useInterval } from 'react-use'
-
-// DEMO DATA
-const data = [
-  {
-    id: 1,
-    imageUrl: heroImage1.src,
-    heading: 'Exclusive collection <br /> for everyone',
-    subHeading: 'In this season, find the best 🔥',
-    btnText: 'Explore shop now',
-    btnHref: '/collections/all',
-  },
-  {
-    id: 2,
-    imageUrl: heroImage2.src,
-    heading: 'Exclusive collection <br /> for everyone',
-    subHeading: 'In this season, find the best 🔥',
-    btnText: 'Explore shop now',
-    btnHref: '/collections/all',
-  },
-  {
-    id: 3,
-    imageUrl: heroImage3.src,
-    heading: 'Exclusive collection <br /> for everyone',
-    subHeading: 'In this season, find the best 🔥',
-    btnText: 'Explore shop now',
-    btnHref: '/collections/all',
-  },
-]
 
 interface Props {
   className?: string
@@ -47,6 +20,38 @@ interface Props {
 
 let TIME_OUT: NodeJS.Timeout | null = null
 const SectionHero2: FC<Props> = ({ className = '' }) => {
+  const t = useTranslations('Home')
+
+  const data = useMemo(
+    () => [
+      {
+        id: 1,
+        imageUrl: heroImage1.src,
+        heading: t('heroTitle').replace(/\n/g, '<br />'),
+        subHeading: t('heroSubtitle'),
+        btnText: t('shopNow'),
+        btnHref: '/collections/all',
+      },
+      {
+        id: 2,
+        imageUrl: heroImage2.src,
+        heading: t('heroTitle').replace(/\n/g, '<br />'),
+        subHeading: t('heroSubtitle'),
+        btnText: t('shopNow'),
+        btnHref: '/collections/all',
+      },
+      {
+        id: 3,
+        imageUrl: heroImage3.src,
+        heading: t('heroTitle').replace(/\n/g, '<br />'),
+        subHeading: t('heroSubtitle'),
+        btnText: t('shopNow'),
+        btnHref: '/collections/all',
+      },
+    ],
+    [t]
+  )
+
   // =================
 
   const [isSlided, setIsSlided] = useState(false)
@@ -182,7 +187,7 @@ const SectionHero2: FC<Props> = ({ className = '' }) => {
             sizes="(max-width: 768px) 100vw, 60vw"
             className="h-auto w-full max-w-[40rem] object-contain fade--animation__image select-none"
             src={item.imageUrl}
-            alt={item.heading}
+            alt={item.heading.replace(/<[^>]+>/g, ' ')}
             width={790}
             height={790}
             priority

@@ -1,9 +1,9 @@
 'use client'
 
+import { usePathname, useRouter } from '@/i18n/navigation'
 import { useLocale } from 'next-intl'
-import { useRouter, usePathname } from '@/i18n/navigation'
-import { useTransition } from 'react'
 import clsx from 'clsx'
+import { useTransition } from 'react'
 
 export default function LangSwitcher({ className }: { className?: string }) {
   const locale = useLocale()
@@ -20,10 +20,11 @@ export default function LangSwitcher({ className }: { className?: string }) {
   return (
     <div className={clsx('flex items-center gap-1 text-sm font-medium', className)}>
       <button
+        type="button"
         onClick={() => switchLang('ko')}
         disabled={isPending}
         className={clsx(
-          'px-2 py-1 rounded-lg transition-colors',
+          'rounded-lg px-2 py-1 transition-colors',
           locale === 'ko'
             ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900'
             : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
@@ -33,10 +34,11 @@ export default function LangSwitcher({ className }: { className?: string }) {
       </button>
       <span className="text-neutral-300 dark:text-neutral-600">|</span>
       <button
+        type="button"
         onClick={() => switchLang('en')}
         disabled={isPending}
         className={clsx(
-          'px-2 py-1 rounded-lg transition-colors',
+          'rounded-lg px-2 py-1 transition-colors',
           locale === 'en'
             ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900'
             : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'

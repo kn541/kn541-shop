@@ -1,7 +1,7 @@
 import ButtonPrimary from '@/shared/Button/ButtonPrimary'
 import { Input } from '@/shared/input'
 import { Metadata } from 'next'
-import Link from 'next/link'
+import { Link } from '@/shared/link'
 
 export const metadata: Metadata = {
   title: 'Coming Soon',

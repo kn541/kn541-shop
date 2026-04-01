@@ -30,13 +30,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html className={`${poppins.variable} ${notoSansKR.variable}`}>
+    <html lang="ko" className={`${poppins.variable} ${notoSansKR.variable}`} suppressHydrationWarning>
       <body
         className={`${notoSansKR.className} bg-white text-neutral-900 dark:bg-neutral-900 dark:text-neutral-200`}
       >
         <Aside.Provider>
           {children}
-          {/* Client component: Toaster, ... */}
           <GlobalClient />
         </Aside.Provider>
       </body>

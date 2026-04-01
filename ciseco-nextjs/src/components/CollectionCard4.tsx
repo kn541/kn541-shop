@@ -2,7 +2,7 @@ import { TCollection } from '@/data/data'
 import { ArrowUpRightIcon } from '@heroicons/react/24/solid'
 import clsx from 'clsx'
 import Image from 'next/image'
-import Link from 'next/link'
+import { Link } from '@/shared/link'
 import { FC } from 'react'
 
 interface CollectionCard4Props {

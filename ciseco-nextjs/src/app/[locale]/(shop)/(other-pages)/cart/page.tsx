@@ -8,7 +8,7 @@ import { Coordinate01Icon, InformationCircleIcon, PaintBucketIcon } from '@hugei
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Metadata } from 'next'
 import Image from 'next/image'
-import Link from 'next/link'
+import { Link } from '@/shared/link'
 
 export const metadata: Metadata = {
   title: 'Cart Page',
