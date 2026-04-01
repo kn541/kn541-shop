@@ -1,10 +1,3 @@
-import createMiddleware from 'next-intl/middleware'
-import { routing } from './i18n/routing'
-
-export default createMiddleware(routing)
-
-export const config = {
-  // 언어 미들웨어 적용 경로
-  // _next, api, 이미지 등 제외
-  matcher: ['/((?!_next|_vercel|api|.*\\..*).*)'],
-}
+// 이 파일은 Next.js 16에서 proxy.ts로 대체되었습니다.
+// This file is replaced by proxy.ts in Next.js 16.
+// See: ciseco-nextjs/src/proxy.ts
