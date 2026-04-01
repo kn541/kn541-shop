@@ -8,7 +8,7 @@ interface Props {
 
 const Layout: FC<Props> = ({ children }) => {
   return (
-    <ApplicationLayout header={<Header hasBorderBottom />} footer={<div />}>
+    <ApplicationLayout header={<Header />} footer={<div />}>
       {children}
     </ApplicationLayout>
   )

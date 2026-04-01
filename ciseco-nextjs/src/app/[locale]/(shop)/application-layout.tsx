@@ -15,7 +15,7 @@ interface ComponentProps {
 const ApplicationLayout: React.FC<ComponentProps> = ({ children, header, footer }) => {
   return (
     <div>
-      {header ? header : <Header hasBorderBottom />}
+      {header ? header : <Header />}
       {children}
       {footer ? footer : <Footer />}
 
