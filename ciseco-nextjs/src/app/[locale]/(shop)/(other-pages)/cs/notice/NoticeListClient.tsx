@@ -2,7 +2,7 @@
 // KN541 공지사항 목록 — 클라이언트 컴포넌트
 // 핀 공지 상단 고정 / 페이지네이션 / 클릭 시 상세 이동
 
-import { useState, useEffect } from 'react'  
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { MegaphoneIcon, PinIcon } from 'lucide-react'
 
@@ -43,8 +43,11 @@ export default function NoticeListClient({
       setItems(json.data?.items || [])
       setCurrentTotal(json.data?.total || 0)
       setPage(p)
-    } catch {}
-    finally { setLoading(false) }
+    } catch {
+      // 네트워크 오류 시 무시
+    } finally {
+      setLoading(false)
+    }
   }
 
   const formatDate = (iso: string) =>
@@ -135,7 +138,7 @@ function NoticeRow({
         pinned ? 'bg-blue-50/50 dark:bg-blue-950/20' : '',
       ].join(' ')}
     >
-      {/* 핀 아이콘 or 번호 */}
+      {/* 핀 아이콘 or 조회수 */}
       <div className="flex w-10 shrink-0 items-center justify-center">
         {pinned ? (
           <PinIcon className="h-4 w-4 rotate-45 text-blue-500" />
