@@ -15,18 +15,31 @@ interface FaqItem {
 interface Props {
   shopFaqs: FaqItem[]
   memberFaqs: FaqItem[]
+  scmFaqs: FaqItem[]
 }
 
-const TABS = [
-  { key: 'shop', label: '쓼핑맰' },
-  { key: 'member', label: '회원' },
+type TabKey = 'all' | 'shop' | 'member' | 'scm'
+
+const TABS: { key: TabKey; label: string; emoji: string }[] = [
+  { key: 'all', label: '전체', emoji: '📝' },
+  { key: 'shop', label: '쓼핑몰', emoji: '🛍️' },
+  { key: 'member', label: '회원', emoji: '👤' },
+  { key: 'scm', label: '공급사(SCM)', emoji: '🏭' },
 ]
 
-export default function FaqClient({ shopFaqs, memberFaqs }: Props) {
-  const [activeTab, setActiveTab] = useState<'shop' | 'member'>('shop')
+export default function FaqClient({ shopFaqs, memberFaqs, scmFaqs }: Props) {
+  const [activeTab, setActiveTab] = useState<TabKey>('all')
   const [search, setSearch] = useState('')
 
-  const allFaqs = activeTab === 'shop' ? shopFaqs : memberFaqs
+  // 탭별 데이터 매핑
+  const tabData: Record<TabKey, FaqItem[]> = {
+    all: [...shopFaqs, ...memberFaqs, ...scmFaqs],
+    shop: shopFaqs,
+    member: memberFaqs,
+    scm: scmFaqs,
+  }
+
+  const allFaqs = tabData[activeTab]
 
   // 카테고리 목록 추출 (순서 유지)
   const categories = Array.from(new Set(allFaqs.map((f) => f.category)))
@@ -46,6 +59,11 @@ export default function FaqClient({ shopFaqs, memberFaqs }: Props) {
     acc[cat] = filtered.filter((f) => f.category === cat)
     return acc
   }, {})
+
+  const handleTabChange = (key: TabKey) => {
+    setActiveTab(key)
+    setSearch('')
+  }
 
   return (
     <div className="pb-16 pt-12 lg:pb-28 lg:pt-16">
@@ -86,20 +104,33 @@ export default function FaqClient({ shopFaqs, memberFaqs }: Props) {
         </div>
 
         {/* ── 탭 ── */}
-        <div className="mb-8 flex gap-2 border-b border-neutral-200 dark:border-neutral-700">
-          {TABS.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => { setActiveTab(tab.key as 'shop' | 'member'); setSearch('') }}
-              className={`px-6 py-3 text-sm font-semibold transition-colors ${
-                activeTab === tab.key
-                  ? 'border-b-2 border-primary-600 text-primary-600'
-                  : 'text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <div className="mb-8 flex flex-wrap gap-1 border-b border-neutral-200 dark:border-neutral-700">
+          {TABS.map((tab) => {
+            const count = tabData[tab.key].length
+            return (
+              <button
+                key={tab.key}
+                onClick={() => handleTabChange(tab.key)}
+                className={`flex items-center gap-1.5 px-5 py-3 text-sm font-semibold transition-all ${
+                  activeTab === tab.key
+                    ? 'border-b-2 border-primary-600 text-primary-600'
+                    : 'text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200'
+                }`}
+              >
+                <span>{tab.emoji}</span>
+                <span>{tab.label}</span>
+                <span
+                  className={`rounded-full px-2 py-0.5 text-xs ${
+                    activeTab === tab.key
+                      ? 'bg-primary-100 text-primary-700'
+                      : 'bg-neutral-100 text-neutral-500 dark:bg-neutral-700 dark:text-neutral-400'
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+            )
+          })}
         </div>
 
         {/* ── 검색 결과 없음 ── */}
@@ -134,7 +165,6 @@ export default function FaqClient({ shopFaqs, memberFaqs }: Props) {
                       {({ open }) => (
                         <div className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm transition hover:shadow dark:border-neutral-700 dark:bg-neutral-800">
                           <DisclosureButton className="flex w-full items-start gap-4 px-6 py-5 text-left focus:outline-none">
-                            {/* Q 아이콘 */}
                             <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary-100 text-xs font-bold text-primary-700 dark:bg-primary-900/40 dark:text-primary-300">
                               Q
                             </span>
@@ -150,7 +180,6 @@ export default function FaqClient({ shopFaqs, memberFaqs }: Props) {
 
                           <DisclosurePanel>
                             <div className="flex gap-4 border-t border-neutral-100 px-6 py-5 dark:border-neutral-700">
-                              {/* A 아이콘 */}
                               <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-xs font-bold text-neutral-500 dark:bg-neutral-700 dark:text-neutral-300">
                                 A
                               </span>

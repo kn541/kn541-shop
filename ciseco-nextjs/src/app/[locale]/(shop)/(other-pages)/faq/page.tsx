@@ -23,11 +23,12 @@ async function fetchFaqs(target: string) {
 }
 
 export default async function FaqPage() {
-  // faq_target: 001=쓼핑맰, 002=회원, 003=SCM
-  const [shopFaqs, memberFaqs] = await Promise.all([
+  // faq_target: 001=쓼핑몰, 002=회원, 003=SCM
+  const [shopFaqs, memberFaqs, scmFaqs] = await Promise.all([
     fetchFaqs('001'),
     fetchFaqs('002'),
+    fetchFaqs('003'),
   ])
 
-  return <FaqClient shopFaqs={shopFaqs} memberFaqs={memberFaqs} />
+  return <FaqClient shopFaqs={shopFaqs} memberFaqs={memberFaqs} scmFaqs={scmFaqs} />
 }
