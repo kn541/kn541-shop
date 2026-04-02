@@ -26,7 +26,8 @@ export default function CategoryNavClient({ categories }: { categories: Category
   }
 
   return (
-    <nav className="hidden lg:flex items-center gap-0.5 overflow-x-auto scrollbar-hide">
+    // overflow-visible 필수 — 드롭다운이 nav 영역 밖(아래)으로 나와야 함
+    <nav className="hidden lg:flex items-center gap-0.5 overflow-visible">
       {categories.map(cat => (
         <div
           key={cat.id}
@@ -39,31 +40,35 @@ export default function CategoryNavClient({ categories }: { categories: Category
             href={`/products?category=${encodeURIComponent(cat.category_code)}`}
             className={`
               block whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium transition-colors
-              ${openId === cat.id
-                ? 'bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-white'
-                : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white'}
+              ${
+                openId === cat.id
+                  ? 'bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-white'
+                  : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white'
+              }
             `}
           >
             {cat.category_name}
           </Link>
 
-          {/* 2단 드롭다운 */}
+          {/* 2단 드롭다운 — z-[100]으로 헤더(z-50) 위에 표시 */}
           {cat.children && cat.children.length > 0 && openId === cat.id && (
             <div
-              className="absolute left-0 top-full z-50 pt-1"
+              className="absolute left-0 top-full z-[100] pt-2"
               onMouseEnter={() => enter(cat.id)}
               onMouseLeave={leave}
             >
-              <div className="min-w-[160px] overflow-hidden rounded-xl border border-neutral-200 bg-white py-1.5 shadow-lg dark:border-neutral-700 dark:bg-neutral-900">
-                {cat.children.map(sub => (
-                  <Link
-                    key={sub.id}
-                    href={`/products?category=${encodeURIComponent(sub.category_code)}`}
-                    className="block px-4 py-2 text-sm text-neutral-600 transition-colors hover:bg-neutral-50 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white"
-                  >
-                    {sub.category_name}
-                  </Link>
-                ))}
+              <div className="min-w-[160px] overflow-hidden rounded-xl border border-neutral-200 bg-white py-1.5 shadow-xl dark:border-neutral-700 dark:bg-neutral-900">
+                {cat.children
+                  .filter(sub => sub.is_active !== false)
+                  .map(sub => (
+                    <Link
+                      key={sub.id}
+                      href={`/products?category=${encodeURIComponent(sub.category_code)}`}
+                      className="block px-4 py-2 text-sm text-neutral-600 transition-colors hover:bg-neutral-50 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white"
+                    >
+                      {sub.category_name}
+                    </Link>
+                  ))}
               </div>
             </div>
           )}

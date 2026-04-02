@@ -12,7 +12,8 @@ import CategoryNav from './CategoryNav'
 
 export default function Header() {
   return (
-    <header className="sticky top-0 z-40 w-full bg-white shadow-sm dark:bg-neutral-900">
+    // z-50 으로 올려서 드롭다운(z-[100])이 항상 위에 오도록
+    <header className="sticky top-0 z-50 w-full bg-white shadow-sm dark:bg-neutral-900">
       {/* 1행: 로고 + 우측 버튼들 */}
       <div className="container mx-auto flex h-14 items-center justify-between px-4">
         <Logo />
@@ -27,9 +28,9 @@ export default function Header() {
         </div>
       </div>
 
-      {/* 2행: 카테고리 네비 */}
+      {/* 2행: 카테고리 네비 — overflow-visible 필수 (드롭다운이 아래로 나와야 함) */}
       <div className="border-t border-neutral-100 dark:border-neutral-800">
-        <div className="container mx-auto px-4 py-1">
+        <div className="container mx-auto px-4 py-1 overflow-visible">
           <CategoryNav />
         </div>
       </div>
