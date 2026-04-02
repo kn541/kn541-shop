@@ -1,11 +1,12 @@
 'use client'
 // KN541 쇼핑몰 — 입점문의 페이지
-// API: POST /vendor-inquiry (인증 불필요)
-// 배포 트리거: 2026-04-02
+// API: POST /vendor-inquiry (인증 불필요, 로그인 없이 사용 가능)
+// 어드민: /admin/vendor-inquiries 에서 확인
 
 import { useState } from 'react'
 import Link from 'next/link'
 
+// Railway 백엔드 API URL (Vercel 환경변수에서 가져옴)
 const BASE = process.env.NEXT_PUBLIC_API_URL
 
 interface FormState {
@@ -66,19 +67,40 @@ export default function VendorInquiryPage() {
     }
     setError('')
     setSubmitting(true)
+
+    // API URL 미설정 시 안내
+    if (!BASE) {
+      setError('API 서버 주소가 설정되지 않았습니다. 관리자에게 문의해 주세요.')
+      setSubmitting(false)
+      return
+    }
+
     try {
       const res = await fetch(`${BASE}/vendor-inquiry`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       })
+
+      // HTTP 오류 처리
+      if (!res.ok) {
+        let detail = '제출 중 오류가 발생했습니다.'
+        try {
+          const json = await res.json()
+          detail = json.detail ?? detail
+        } catch {}
+        setError(detail)
+        return
+      }
+
       const json = await res.json()
       if (json.status === 'success') {
         setSubmitted(true)
       } else {
         setError(json.detail ?? '제출 중 오류가 발생했습니다.')
       }
-    } catch {
+    } catch (err) {
+      // CORS 또는 네트워크 오류
       setError('서버 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.')
     } finally {
       setSubmitting(false)
@@ -136,7 +158,7 @@ export default function VendorInquiryPage() {
             담당자 정보
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="담당자 이름 *" required>
+            <Field label="담당자 이름 *">
               <input
                 type="text" required
                 value={form.contact_name}
@@ -145,7 +167,7 @@ export default function VendorInquiryPage() {
                 className={inputClass}
               />
             </Field>
-            <Field label="연락처 *" required>
+            <Field label="연락처 *">
               <input
                 type="tel" required
                 value={form.contact_phone}
@@ -154,7 +176,7 @@ export default function VendorInquiryPage() {
                 className={inputClass}
               />
             </Field>
-            <Field label="이메일 *" required className="sm:col-span-2">
+            <Field label="이메일 *" className="sm:col-span-2">
               <input
                 type="email" required
                 value={form.contact_email}
@@ -172,7 +194,7 @@ export default function VendorInquiryPage() {
             회사 / 브랜드 정보
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="회사명 *" required>
+            <Field label="회사명 *">
               <input
                 type="text" required
                 value={form.company_name}
@@ -181,7 +203,7 @@ export default function VendorInquiryPage() {
                 className={inputClass}
               />
             </Field>
-            <Field label="사업자등록번호 *" required>
+            <Field label="사업자등록번호 *">
               <input
                 type="text" required
                 value={form.business_number}
@@ -190,7 +212,7 @@ export default function VendorInquiryPage() {
                 className={inputClass}
               />
             </Field>
-            <Field label="브랜드명 *" required>
+            <Field label="브랜드명 *">
               <input
                 type="text" required
                 value={form.brand_name}
@@ -208,7 +230,7 @@ export default function VendorInquiryPage() {
                 className={inputClass}
               />
             </Field>
-            <Field label="회사 소개 *" required className="sm:col-span-2">
+            <Field label="회사 소개 *" className="sm:col-span-2">
               <textarea
                 required rows={3}
                 value={form.company_intro}
@@ -226,7 +248,7 @@ export default function VendorInquiryPage() {
             상품 정보
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="주요 카테고리 *" required>
+            <Field label="주요 카테고리 *">
               <select
                 required
                 value={form.main_category}
@@ -237,7 +259,7 @@ export default function VendorInquiryPage() {
                 {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </Field>
-            <Field label="판매 유형 *" required>
+            <Field label="판매 유형 *">
               <select
                 required
                 value={form.sales_type}
@@ -248,7 +270,7 @@ export default function VendorInquiryPage() {
                 {SALES_TYPES.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </Field>
-            <Field label="판매 채널 *" required>
+            <Field label="판매 채널 *">
               <select
                 required
                 value={form.channel_type}
@@ -268,7 +290,7 @@ export default function VendorInquiryPage() {
                 className={inputClass}
               />
             </Field>
-            <Field label="취급 상품 소개 *" required className="sm:col-span-2">
+            <Field label="취급 상품 소개 *" className="sm:col-span-2">
               <textarea
                 required rows={4}
                 value={form.product_intro}
@@ -322,9 +344,14 @@ export default function VendorInquiryPage() {
 
         {/* 에러 메시지 */}
         {error && (
-          <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
-            {error}
-          </p>
+          <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
+            <p className="font-medium">{error}</p>
+            {error.includes('서버 연결') && (
+              <p className="mt-1 text-xs text-red-500">
+                계속 문제가 발생하면 이메일로 문의해 주세요.
+              </p>
+            )}
+          </div>
         )}
 
         {/* 제출 버튼 */}
@@ -349,7 +376,7 @@ const textareaClass =
 
 // ── 필드 래퍼 ────────────────────────────────────────────────────────────────
 function Field({
-  label, required, children, className = '',
+  label, children, className = '',
 }: {
   label: string
   required?: boolean
