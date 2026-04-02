@@ -1,7 +1,7 @@
 // KN541 상품목록 페이지
 // 구조: 상단 카테고리 탭 → 4열 상품 그리드 → 페이지네이션
-// 데이터: 목업(getProducts), 카테고리: 백엔드 API
-// 좌측 사이드바 필터 없음
+// - 검색창/좌측 사이드바 필터 없음
+// - 목업 데이터 사용 (getProducts)
 
 import { Divider } from '@/components/Divider'
 import ProductCard from '@/components/ProductCard'
@@ -15,25 +15,27 @@ import {
   PaginationPage,
   PaginationPrevious,
 } from '@/shared/Pagination/Pagination'
+import { Suspense } from 'react'
 import CategoryTabsClient from './CategoryTabsClient'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: '상품목록 | KN541',
-  description: 'KN541 쇼핑몰 전체 상품 목록',
 }
 
-export default async function ProductsPage({
-  searchParams,
-}: {
+// Next.js 16: searchParams는 Promise
+// CategoryTabsClient는 useSearchParams 사용 → Suspense로 감싸야 함
+interface PageProps {
   searchParams: Promise<{ category?: string }>
-}) {
+}
+
+export default async function ProductsPage({ searchParams }: PageProps) {
   const { category } = await searchParams
 
-  // 목업 상품 데이터
+  // 목업 상품
   const products = await getProducts()
 
-  // 카테고리 탭용 — API에서 1단 카테고리
+  // 카테고리 탭
   let categories: { id: string; category_code: string; category_name: string }[] = []
   try {
     const all = await getCategories()
@@ -41,29 +43,42 @@ export default async function ProductsPage({
       .filter((c) => c.depth === 1 && c.is_active)
       .sort((a, b) => a.sort_order - b.sort_order)
   } catch {
-    // API 실패 시 빈 배열 — 탭 없이 전체 상품만 표시
+    // API 실패 시 빈 배열
   }
 
   return (
     <div className="container py-16 lg:py-24">
-      {/* 페이지 제목 */}
+      {/* 제목 */}
       <h1 className="mb-10 text-2xl font-semibold text-neutral-900 dark:text-neutral-100 sm:text-3xl">
         전체 상품
       </h1>
 
-      {/* 상단 카테고리 탭 */}
+      {/* 상단 카테고리 탭 — useSearchParams 사용하므로 Suspense 필수 */}
       {categories.length > 0 && (
         <div className="mb-8">
-          <CategoryTabsClient
-            categories={categories}
-            activeCategory={category ?? null}
-          />
+          <Suspense fallback={
+            <div className="flex flex-wrap gap-2">
+              {['전체', ...categories.map(c => c.category_name)].map((name) => (
+                <span
+                  key={name}
+                  className="rounded-full border border-neutral-200 px-4 py-1.5 text-sm text-neutral-400"
+                >
+                  {name}
+                </span>
+              ))}
+            </div>
+          }>
+            <CategoryTabsClient
+              categories={categories}
+              activeCategory={category ?? null}
+            />
+          </Suspense>
         </div>
       )}
 
       <Divider className="mb-8" />
 
-      {/* 정렬 — 우측 정렬 드롭다운만 */}
+      {/* 정렬 — 우측만 */}
       <div className="mb-8 flex justify-end">
         <FilterSortByMenuListBox />
       </div>
