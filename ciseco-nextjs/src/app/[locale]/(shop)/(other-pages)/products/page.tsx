@@ -1,7 +1,7 @@
 // KN541 상품목록 페이지
 // - 상단 카테고리 탭 (API) + 4열 그리드 (목업) + 페이지네이션
 // - 검색창 / 좌측 사이드바 없음
-// - searchParams를 서버에서 await하지 않음 → CategoryTabsClient가 클라이언트에서 직접 읽음
+// - dynamic = 'force-dynamic': 외부 API + useSearchParams 충돌 방지
 
 import { Suspense } from 'react'
 import { Divider } from '@/components/Divider'
@@ -18,6 +18,9 @@ import {
 } from '@/shared/Pagination/Pagination'
 import CategoryTabsClient from './CategoryTabsClient'
 import type { Metadata } from 'next'
+
+// 외부 API 호출 + useSearchParams(클라이언트) 혼용 → 반드시 dynamic 필요
+export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: '상품목록 | KN541',
