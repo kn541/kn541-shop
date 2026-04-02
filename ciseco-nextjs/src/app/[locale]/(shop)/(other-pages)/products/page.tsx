@@ -1,8 +1,8 @@
 // KN541 상품목록 페이지
-// 서버: 목업 상품만 가져옴 (외부 API 없음)
-// 카테고리 탭 + 필터는 클라이언트 컴포넌트(ProductsPageClient)가 담당
+// 서버: 목업 상품만 가져옴 (외부 API 없음 → static-to-dynamic 충돌 없음)
+// 카테고리 / 필터 / 정렬은 클라이언트(ProductsPageClient)가 담당
 
-import { getProducts } from '@/data/data'
+import { getProducts, TProductItem } from '@/data/data'
 import ProductsPageClient from './ProductsPageClient'
 import type { Metadata } from 'next'
 
@@ -12,6 +12,6 @@ export const metadata: Metadata = {
 }
 
 export default async function ProductsPage() {
-  const products = await getProducts()
+  const products: TProductItem[] = await getProducts()
   return <ProductsPageClient products={products} />
 }

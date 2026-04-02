@@ -1,12 +1,14 @@
 'use client'
-// KN541 상품목록 — 클라이언트 컴포넌트
-// 카테고리 탭(API fetch), 정렬, 상품 그리드, 페이지네이션 담당
+// KN541 상품목록 — 완전 클라이언트 컴포넌트
+// 서버에서 외부 API 호출 없음 → static-to-dynamic 충돌 해결
+// 카테고리는 클라이언트에서 fetch
 
 import { useEffect, useState } from 'react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import ProductCard from '@/components/ProductCard'
 import { FilterSortByMenuListBox } from '@/components/FilterSortByMenu'
 import { Divider } from '@/components/Divider'
+import { TProductItem } from '@/data/data'
 import {
   Pagination,
   PaginationList,
@@ -24,14 +26,9 @@ interface Category {
   is_active: boolean
 }
 
-interface Product {
-  id: string
-  [key: string]: unknown
-}
-
 const BASE = process.env.NEXT_PUBLIC_API_URL
 
-export default function ProductsPageClient({ products }: { products: Product[] }) {
+export default function ProductsPageClient({ products }: { products: TProductItem[] }) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -39,8 +36,8 @@ export default function ProductsPageClient({ products }: { products: Product[] }
 
   const [categories, setCategories] = useState<Category[]>([])
 
-  // 카테고리 클라이언트에서 fetch
   useEffect(() => {
+    if (!BASE) return
     fetch(`${BASE}/categories`)
       .then((r) => r.json())
       .then((data) => {
@@ -67,7 +64,7 @@ export default function ProductsPageClient({ products }: { products: Product[] }
         전체 상품
       </h1>
 
-      {/* 카테고리 탭 */}
+      {/* 카테고리 탭 — 클라이언트에서 로드된 후 노출 */}
       {categories.length > 0 && (
         <div className="mb-8 flex flex-wrap gap-2">
           <button
@@ -109,7 +106,7 @@ export default function ProductsPageClient({ products }: { products: Product[] }
       {products.length > 0 ? (
         <div className="grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 xl:gap-x-8">
           {products.map((product) => (
-            <ProductCard data={product as any} key={product.id} />
+            <ProductCard data={product} key={product.id} />
           ))}
         </div>
       ) : (
