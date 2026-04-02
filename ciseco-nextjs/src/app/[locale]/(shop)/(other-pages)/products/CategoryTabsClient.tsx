@@ -1,6 +1,6 @@
 'use client'
-// KN541 상품목록 — 카테고리 탭 클라이언트 컴포넌트
-// 서버에서 카테고리 데이터 수신 → URL 쿼리스트링으로 필터링
+// KN541 상품목록 — 카테고리 탭 (클라이언트)
+// useSearchParams()로 현재 활성 카테고리 읽기 → 반드시 Suspense 안에서 사용
 
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 
@@ -12,13 +12,13 @@ interface Category {
 
 interface Props {
   categories: Category[]
-  activeCategory: string | null
 }
 
-export default function CategoryTabsClient({ categories, activeCategory }: Props) {
+export default function CategoryTabsClient({ categories }: Props) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const activeCategory = searchParams.get('category')
 
   const handleClick = (code: string | null) => {
     const params = new URLSearchParams(searchParams.toString())
