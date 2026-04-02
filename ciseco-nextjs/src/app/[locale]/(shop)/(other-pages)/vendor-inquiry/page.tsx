@@ -1,6 +1,7 @@
 'use client'
 // KN541 쇼핑몰 — 입점문의 페이지
 // API: POST /vendor-inquiry (인증 불필요)
+// 배포 트리거: 2026-04-02
 
 import { useState } from 'react'
 import Link from 'next/link'
