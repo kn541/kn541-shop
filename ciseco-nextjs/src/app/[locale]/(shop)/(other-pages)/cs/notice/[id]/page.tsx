@@ -6,7 +6,7 @@ import { Divider } from '@/components/Divider'
 import { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { MegaphoneIcon, ArrowLeftIcon, EyeIcon, PinIcon } from 'lucide-react'
+import { ArrowLeftIcon, EyeIcon } from '@heroicons/react/24/outline'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL || 'https://kn541-production.up.railway.app'
 
@@ -66,11 +66,12 @@ export default async function NoticeDetailPage({
 
         {/* 헤더 */}
         <header className="mb-8">
-          {/* 핀 배지 */}
+          {/* 핀 뱃지 */}
           {notice.is_pinned && (
-            <div className="mb-3 flex items-center gap-1.5">
-              <PinIcon className="h-3.5 w-3.5 rotate-45 text-blue-500" />
-              <span className="text-xs font-medium text-blue-600 dark:text-blue-400">공지</span>
+            <div className="mb-3">
+              <span className="rounded bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
+                공지
+              </span>
             </div>
           )}
 
@@ -82,7 +83,7 @@ export default async function NoticeDetailPage({
             <span>{formatDate(notice.created_at)}</span>
             <span className="flex items-center gap-1">
               <EyeIcon className="h-3.5 w-3.5" />
-              {notice.view_count?.toLocaleString() || 0}
+              {(notice.view_count || 0).toLocaleString()}
             </span>
           </div>
 

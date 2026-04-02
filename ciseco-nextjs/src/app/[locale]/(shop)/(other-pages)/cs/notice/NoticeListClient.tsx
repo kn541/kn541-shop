@@ -4,7 +4,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { MegaphoneIcon, PinIcon } from 'lucide-react'
+import { MegaphoneIcon } from '@heroicons/react/24/outline'
 
 interface NoticeItem {
   id: string
@@ -138,26 +138,21 @@ function NoticeRow({
         pinned ? 'bg-blue-50/50 dark:bg-blue-950/20' : '',
       ].join(' ')}
     >
-      {/* 핀 아이콘 or 조회수 */}
-      <div className="flex w-10 shrink-0 items-center justify-center">
+      {/* 핀 뱃지 or 조회수 */}
+      <div className="flex w-12 shrink-0 items-center justify-center">
         {pinned ? (
-          <PinIcon className="h-4 w-4 rotate-45 text-blue-500" />
+          <span className="rounded bg-blue-100 px-1.5 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
+            공지
+          </span>
         ) : (
           <span className="text-xs text-neutral-400">{notice.view_count}</span>
         )}
       </div>
 
       {/* 제목 */}
-      <div className="flex min-w-0 flex-1 items-center gap-2">
-        {pinned && (
-          <span className="shrink-0 rounded bg-blue-100 px-1.5 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
-            공지
-          </span>
-        )}
-        <span className="truncate text-sm font-medium text-neutral-800 dark:text-neutral-200">
-          {notice.title}
-        </span>
-      </div>
+      <span className="flex-1 truncate text-sm font-medium text-neutral-800 dark:text-neutral-200">
+        {notice.title}
+      </span>
 
       {/* 날짜 */}
       <span className="shrink-0 text-xs text-neutral-400">{formatDate(notice.created_at)}</span>
