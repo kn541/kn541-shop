@@ -1,12 +1,11 @@
 import { defineRouting } from 'next-intl/routing'
 
 export const routing = defineRouting({
-  // 지원 언어 목록
   locales: ['ko', 'en'],
-  // 기본 언어 = 한국어
   defaultLocale: 'ko',
-  // 기본 언어는 URL에 prefix 없음 (/ = 한국어, /en/ = 영어)
-  localePrefix: 'as-needed',
+  // always: 모든 URL에 locale prefix 포함 (/ko/products, /en/products)
+  // as-needed는 Vercel static cache와 충돌 → always로 변경
+  localePrefix: 'always',
 })
 
 export type AppLocale = (typeof routing.locales)[number]
