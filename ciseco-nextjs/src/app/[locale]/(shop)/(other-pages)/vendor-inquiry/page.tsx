@@ -1,9 +1,8 @@
 'use client'
 // KN541 쇼핑몰 — 입점문의 페이지
 // API: POST /vendor-inquiry (인증 불필요)
-// 배포 트리거: 2026-04-02
 
-import { useState } from 'react'
+import { useState, type FormEvent, type ReactNode } from 'react'
 import Link from 'next/link'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL
@@ -58,7 +57,7 @@ export default function VendorInquiryPage() {
   const set = (key: keyof FormState, value: string | boolean) =>
     setForm(f => ({ ...f, [key]: value }))
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     if (!form.privacy_agreed) {
       setError('개인정보 수집 및 이용에 동의해 주세요.')
@@ -85,7 +84,6 @@ export default function VendorInquiryPage() {
     }
   }
 
-  // 제출 완료 화면
   if (submitted) {
     return (
       <div className="container py-24 lg:py-32">
@@ -117,7 +115,6 @@ export default function VendorInquiryPage() {
 
   return (
     <div className="container py-16 lg:py-24">
-      {/* 상단 헤더 */}
       <div className="mx-auto max-w-2xl text-center mb-12">
         <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100 sm:text-4xl">
           입점문의
@@ -129,8 +126,6 @@ export default function VendorInquiryPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="mx-auto max-w-2xl space-y-8">
-
-        {/* 섹션 1: 담당자 정보 */}
         <section className="rounded-2xl border border-neutral-200 p-6 dark:border-neutral-700">
           <h2 className="mb-5 text-lg font-semibold text-neutral-800 dark:text-neutral-200">
             담당자 정보
@@ -166,7 +161,6 @@ export default function VendorInquiryPage() {
           </div>
         </section>
 
-        {/* 섹션 2: 회사/브랜드 정보 */}
         <section className="rounded-2xl border border-neutral-200 p-6 dark:border-neutral-700">
           <h2 className="mb-5 text-lg font-semibold text-neutral-800 dark:text-neutral-200">
             회사 / 브랜드 정보
@@ -220,7 +214,6 @@ export default function VendorInquiryPage() {
           </div>
         </section>
 
-        {/* 섹션 3: 상품 정보 */}
         <section className="rounded-2xl border border-neutral-200 p-6 dark:border-neutral-700">
           <h2 className="mb-5 text-lg font-semibold text-neutral-800 dark:text-neutral-200">
             상품 정보
@@ -280,7 +273,6 @@ export default function VendorInquiryPage() {
           </div>
         </section>
 
-        {/* 섹션 4: 기타 */}
         <section className="rounded-2xl border border-neutral-200 p-6 dark:border-neutral-700">
           <h2 className="mb-5 text-lg font-semibold text-neutral-800 dark:text-neutral-200">
             기타
@@ -297,7 +289,6 @@ export default function VendorInquiryPage() {
           </Field>
         </section>
 
-        {/* 개인정보 동의 */}
         <div className="rounded-2xl border border-neutral-200 p-6 dark:border-neutral-700">
           <h2 className="mb-3 text-sm font-semibold text-neutral-800 dark:text-neutral-200">
             개인정보 수집 및 이용 동의
@@ -320,14 +311,12 @@ export default function VendorInquiryPage() {
           </label>
         </div>
 
-        {/* 에러 메시지 */}
         {error && (
           <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
             {error}
           </p>
         )}
 
-        {/* 제출 버튼 */}
         <button
           type="submit"
           disabled={submitting}
@@ -340,20 +329,21 @@ export default function VendorInquiryPage() {
   )
 }
 
-// ── 스타일 상수 ──────────────────────────────────────────────────────────────
 const inputClass =
   'w-full rounded-xl border border-neutral-300 bg-white px-4 py-2.5 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder:text-neutral-500'
 
 const textareaClass =
   'w-full rounded-xl border border-neutral-300 bg-white px-4 py-2.5 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder:text-neutral-500 resize-none'
 
-// ── 필드 래퍼 ────────────────────────────────────────────────────────────────
 function Field({
-  label, required, children, className = '',
+  label,
+  required: _required,
+  children,
+  className = '',
 }: {
   label: string
   required?: boolean
-  children: React.ReactNode
+  children: ReactNode
   className?: string
 }) {
   return (

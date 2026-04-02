@@ -61,6 +61,9 @@ const Footer: React.FC = () => {
               <Link
                 className="text-neutral-600 hover:text-black dark:text-neutral-300 dark:hover:text-white"
                 href={item.href}
+                {...(item.href.startsWith('http')
+                  ? { target: '_blank', rel: 'noopener noreferrer' }
+                  : {})}
               >
                 {item.label}
               </Link>
