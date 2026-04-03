@@ -5,8 +5,6 @@
 // API: GET /auth/me (Bearer JWT)
 
 import { useEffect, useState, useRef } from 'react'
-import { Link } from '@/components/Link'
-import { useLink } from 'next/dist/client/link'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL
 
@@ -15,7 +13,6 @@ interface UserInfo {
   user_id: string
 }
 
-// 알림 아이콘
 function BellIcon() {
   return (
     <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -25,7 +22,6 @@ function BellIcon() {
   )
 }
 
-// 주문/배송 아이콘
 function PackageIcon() {
   return (
     <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -35,7 +31,6 @@ function PackageIcon() {
   )
 }
 
-// 마이페이지 아이콘
 function UserIcon() {
   return (
     <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -48,17 +43,13 @@ function UserIcon() {
 export default function HeaderUserActions() {
   const [user, setUser] = useState<UserInfo | null>(null)
   const [loading, setLoading] = useState(true)
-  // 알림 드롭다운 (미작업 — 아이콘만 표시)
   const [notifOpen, setNotifOpen] = useState(false)
   const notifRef = useRef<HTMLDivElement>(null)
 
-  // 로그인 상태 확인
   useEffect(() => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
     if (!token || !BASE) { setLoading(false); return }
-    fetch(`${BASE}/auth/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    fetch(`${BASE}/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.ok ? r.json() : null)
       .then(json => {
         if (json?.data) {
@@ -69,7 +60,6 @@ export default function HeaderUserActions() {
       .finally(() => setLoading(false))
   }, [])
 
-  // 외부 클릭 시 알림 닫기
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) setNotifOpen(false)
@@ -85,7 +75,6 @@ export default function HeaderUserActions() {
   }
 
   if (loading) {
-    // 스켈레톤 — 레이아웃 shift 방지
     return <div className="flex items-center gap-2 h-9 w-36 animate-pulse rounded-full bg-neutral-100 dark:bg-neutral-800" />
   }
 
@@ -93,17 +82,13 @@ export default function HeaderUserActions() {
   if (!user) {
     return (
       <div className="flex items-center gap-1 text-sm font-medium">
-        <a
-          href="/ko/login"
-          className="rounded-full px-3 py-1.5 text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-white transition-colors"
-        >
+        <a href="/ko/login"
+          className="rounded-full px-3 py-1.5 text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-white transition-colors">
           로그인
         </a>
         <span className="text-neutral-200 dark:text-neutral-700">|</span>
-        <a
-          href="/ko/signup"
-          className="rounded-full px-3 py-1.5 bg-neutral-900 text-white hover:bg-neutral-700 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100 transition-colors"
-        >
+        <a href="/ko/signup"
+          className="rounded-full px-3 py-1.5 bg-neutral-900 text-white hover:bg-neutral-700 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100 transition-colors">
           회원가입
         </a>
       </div>
@@ -114,25 +99,18 @@ export default function HeaderUserActions() {
   return (
     <div className="flex items-center gap-0.5">
 
-      {/* 회원명 */}
-      <a
-        href="/ko/mypage"
-        className="hidden sm:flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-semibold text-neutral-800 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors whitespace-nowrap"
-      >
+      {/* 회원명+님 */}
+      <a href="/ko/mypage"
+        className="hidden sm:flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-semibold text-neutral-800 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors whitespace-nowrap">
         <span>{user.name}</span>
         <span className="text-neutral-500 font-normal">님</span>
       </a>
 
       {/* 알림 */}
       <div ref={notifRef} className="relative">
-        <button
-          type="button"
-          onClick={() => setNotifOpen(v => !v)}
-          aria-label="알림"
-          className="relative -m-1 flex items-center justify-center rounded-full p-2.5 text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
-        >
+        <button type="button" onClick={() => setNotifOpen(v => !v)} aria-label="알림"
+          className="relative -m-1 flex items-center justify-center rounded-full p-2.5 text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
           <BellIcon />
-          {/* 미읽음 뱃지 */}
           <span className="absolute top-2 right-1.5 flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
@@ -147,31 +125,20 @@ export default function HeaderUserActions() {
       </div>
 
       {/* 주문/배송 */}
-      <a
-        href="/ko/mypage/orders"
-        aria-label="주문/배송"
-        title="주문/배송"
-        className="-m-1 flex items-center justify-center rounded-full p-2.5 text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
-      >
+      <a href="/ko/mypage/orders" aria-label="주문/배송" title="주문/배송"
+        className="-m-1 flex items-center justify-center rounded-full p-2.5 text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
         <PackageIcon />
       </a>
 
       {/* 마이페이지 */}
-      <a
-        href="/ko/mypage"
-        aria-label="마이페이지"
-        title="마이페이지"
-        className="-m-1 flex items-center justify-center rounded-full p-2.5 text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
-      >
+      <a href="/ko/mypage" aria-label="마이페이지" title="마이페이지"
+        className="-m-1 flex items-center justify-center rounded-full p-2.5 text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
         <UserIcon />
       </a>
 
-      {/* 로그아웃 (작은 텍스트 버튼) */}
-      <button
-        type="button"
-        onClick={handleLogout}
-        className="ml-1 hidden sm:inline-flex items-center rounded-full px-2.5 py-1 text-xs text-neutral-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-      >
+      {/* 로그아웃 */}
+      <button type="button" onClick={handleLogout}
+        className="ml-1 hidden sm:inline-flex items-center rounded-full px-2.5 py-1 text-xs text-neutral-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
         로그아웃
       </button>
     </div>
