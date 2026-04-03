@@ -5,7 +5,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
   let locale = await requestLocale
 
   // 지원하지 않는 locale이면 기본값(ko)으로
-  if (!locale || !routing.locales.includes(locale as 'ko' | 'en')) {
+  if (!locale || !routing.locales.includes(locale as 'ko' | 'en' | 'zh')) {
     locale = routing.defaultLocale
   }
 
