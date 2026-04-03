@@ -1,6 +1,6 @@
 'use client'
 // KN541 쇼핑몰 — 로그인 페이지
-// 로고: Supabase Storage white_logo.png (가로 400px, 비율 유지)
+// 로고: Supabase Storage white_logo.png (가로 200px, 비율 유지)
 
 import { useState, useTransition } from 'react'
 import Image from 'next/image'
@@ -80,9 +80,9 @@ export default function LoginPage() {
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-[360px]">
 
-        {/* ── 회사 로고 (가로 400px 기준, 비율 유지) ── */}
+        {/* 로고 */}
         <div className="flex justify-center mb-8">
-          <a href="/" className="block">
+          <a href="/ko" className="block">
             <Image
               src={LOGO_URL}
               alt="KN541"
@@ -95,7 +95,7 @@ export default function LoginPage() {
           </a>
         </div>
 
-        {/* ── 카드 ─────────────────────────────────── */}
+        {/* 카드 */}
         <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-sm border border-neutral-100 dark:border-neutral-800 px-8 py-8">
 
           <h1 className="text-[22px] font-bold text-neutral-900 dark:text-white mb-6 text-center tracking-tight">
@@ -133,12 +133,13 @@ export default function LoginPage() {
             </button>
 
             <div className="text-right mt-0.5">
-              <a href="/forgot-password" className="text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors">
+              <a href="/ko/forgot-password" className="text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors">
                 비밀번호 찾기
               </a>
             </div>
           </form>
 
+          {/* 구분선 */}
           <div className="relative my-5">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-neutral-100 dark:border-neutral-800" />
@@ -150,6 +151,7 @@ export default function LoginPage() {
             </div>
           </div>
 
+          {/* 소셜 로그인 */}
           <div className="flex items-center justify-center gap-3">
             <button
               type="button"
@@ -180,9 +182,10 @@ export default function LoginPage() {
           </div>
         </div>
 
+        {/* ✅ 회원가입 링크 — /ko/signup (locale prefix 적용) */}
         <p className="text-center text-sm text-neutral-500 dark:text-neutral-400 mt-6">
           아직 계정이 없으신가요?{' '}
-          <a href="/signup" className="font-semibold text-neutral-900 dark:text-white hover:underline">
+          <a href="/ko/signup" className="font-semibold text-neutral-900 dark:text-white hover:underline">
             회원가입
           </a>
         </p>
