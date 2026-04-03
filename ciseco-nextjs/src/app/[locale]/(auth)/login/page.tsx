@@ -1,106 +1,207 @@
-import facebookSvg from '@/images/socials/facebook-2.svg'
-import googleSvg from '@/images/socials/google.svg'
-import twitterSvg from '@/images/socials/twitter.svg'
-import ButtonPrimary from '@/shared/Button/ButtonPrimary'
-import { Field, FieldGroup, Fieldset, Label } from '@/shared/fieldset'
-import { Input } from '@/shared/input'
-import { Link } from '@/shared/link'
-import { Metadata } from 'next'
-import { getTranslations } from 'next-intl/server'
-import Form from 'next/form'
+'use client'
+// KN541 쇼핑몰 — 로그인 페이지
+// 레이아웃: 정사각 로고 → 아이디/패스워드/로그인 → 구분선 → 카카오·네이버·구글 가로배열 → 회원가입
+
+import { useState, useTransition } from 'react'
 import Image from 'next/image'
+import { useRouter } from '@/i18n/navigation'
 
-const loginSocials = [
-  { nameKey: 'continueWithFacebook' as const, href: '#', icon: facebookSvg },
-  { nameKey: 'continueWithTwitter' as const, href: '#', icon: twitterSvg },
-  { nameKey: 'continueWithGoogle' as const, href: '#', icon: googleSvg },
-]
+const BASE = process.env.NEXT_PUBLIC_API_URL
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ locale: string }>
-}): Promise<Metadata> {
-  const { locale } = await params
-  const t = await getTranslations({ locale, namespace: 'Auth' })
-  return {
-    title: t('metaLoginTitle'),
-    description: t('metaLoginDescription'),
-  }
+/* ── 카카오 아이콘 ─────────────────────────────── */
+function KakaoIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 3C6.477 3 2 6.59 2 11.01c0 2.832 1.695 5.317 4.265 6.82l-1.08 3.962a.25.25 0 0 0 .373.277L9.97 19.76A11.6 11.6 0 0 0 12 19.02c5.523 0 10-3.59 10-8.01S17.523 3 12 3z" />
+    </svg>
+  )
 }
 
-const PageLogin = async () => {
-  const t = await getTranslations('Auth')
+/* ── 네이버 아이콘 ─────────────────────────────── */
+function NaverIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M16.273 12.845 7.376 0H0v24h7.727V11.155L16.624 24H24V0h-7.727z" />
+    </svg>
+  )
+}
 
-  const handleSubmit = async (formData: FormData) => {
-    'use server'
-    const formObject = Object.fromEntries(formData.entries())
-    console.log(formObject)
+/* ── 구글 아이콘 ──────────────────────────────── */
+function GoogleIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 48 48">
+      <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+      <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+      <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+      <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+    </svg>
+  )
+}
+
+export default function LoginPage() {
+  const router = useRouter()
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [isPending, startTransition] = useTransition()
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    if (!username.trim() || !password.trim()) {
+      setError('아이디와 비밀번호를 입력해주세요.')
+      return
+    }
+    startTransition(async () => {
+      try {
+        const res = await fetch(`${BASE}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password }),
+        })
+        const json = await res.json()
+        if (!res.ok) {
+          setError(json?.detail ?? '로그인에 실패했습니다.')
+          return
+        }
+        const { access_token, refresh_token } = json?.data ?? {}
+        if (access_token) {
+          localStorage.setItem('access_token', access_token)
+          if (refresh_token) localStorage.setItem('refresh_token', refresh_token)
+          router.push('/')
+        } else {
+          setError('로그인 정보를 받아오지 못했습니다.')
+        }
+      } catch {
+        setError('서버 연결에 실패했습니다.')
+      }
+    })
   }
 
   return (
-    <div>
-      <div className="container mb-24 lg:mb-32">
-        <h1 className="my-20 flex items-center justify-center text-3xl leading-[115%] font-semibold text-neutral-900 md:text-5xl md:leading-[115%] dark:text-neutral-100">
-          {t('loginTitle')}
-        </h1>
-        <div className="mx-auto flex max-w-md flex-col gap-y-6">
-          <div className="grid gap-3">
-            {loginSocials.map((item, index) => {
-              const label = t(item.nameKey)
-              return (
-                <a
-                  key={index}
-                  href={item.href}
-                  className="flex w-full rounded-lg bg-primary-50 px-4 py-3 transition-transform hover:-translate-y-0.5 sm:px-6 dark:bg-neutral-800"
-                >
-                  <Image className="size-5 shrink-0 object-cover" src={item.icon} alt={label} sizes="40px" />
-                  <h3 className="grow text-center text-sm font-medium text-neutral-700 sm:text-sm dark:text-neutral-300">
-                    {label}
-                  </h3>
-                </a>
-              )
-            })}
-          </div>
-          <div className="relative text-center">
-            <span className="relative z-10 inline-block bg-white px-4 text-sm font-medium dark:bg-neutral-900 dark:text-neutral-400">
-              {t('orDivider')}
-            </span>
-            <div className="absolute top-1/2 left-0 w-full -translate-y-1/2 transform border border-neutral-100 dark:border-neutral-800"></div>
-          </div>
-          <Form action={handleSubmit}>
-            <Fieldset>
-              <FieldGroup className="sm:space-y-6">
-                <Field>
-                  <Label>{t('email')}</Label>
-                  <Input type="email" name="email" placeholder={t('emailPlaceholder')} />
-                </Field>
-                <Field>
-                  <Label className="flex items-center justify-between gap-2">
-                    <span>{t('password')}</span>
-                    <Link className="text-sm font-normal text-primary-600" href="/forgot-password">
-                      {t('forgotPassword')}
-                    </Link>
-                  </Label>
-                  <Input type="password" name="password" />
-                </Field>
-                <ButtonPrimary className="mt-2 w-full" type="submit">
-                  {t('loginBtn')}
-                </ButtonPrimary>
-              </FieldGroup>
-            </Fieldset>
-          </Form>
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-[360px]">
 
-          <span className="block text-center text-sm text-neutral-700 dark:text-neutral-300">
-            {t('noAccount')}{` `}
-            <Link className="text-primary-600 underline" href="/signup">
-              {t('createAccount')}
-            </Link>
-          </span>
+        {/* ── 정사각 로고 ──────────────────────────── */}
+        <div className="flex justify-center mb-8">
+          <a href="/" className="block">
+            <div className="w-20 h-20 rounded-2xl overflow-hidden shadow-md bg-white dark:bg-neutral-900 flex items-center justify-center border border-neutral-100 dark:border-neutral-800">
+              <Image
+                src="/kn541-logo.png"
+                alt="KN541"
+                width={80}
+                height={80}
+                className="w-full h-full object-contain p-2"
+                priority
+              />
+            </div>
+          </a>
         </div>
+
+        {/* ── 카드 ─────────────────────────────────── */}
+        <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-sm border border-neutral-100 dark:border-neutral-800 px-8 py-8">
+
+          <h1 className="text-[22px] font-bold text-neutral-900 dark:text-white mb-6 text-center tracking-tight">
+            로그인
+          </h1>
+
+          {/* ── 로그인 폼 ─────────────────────────── */}
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <input
+              type="text"
+              value={username}
+              onChange={e => setUsername(e.target.value)}
+              placeholder="아이디 또는 이메일"
+              autoComplete="username"
+              className="w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 px-4 py-3 text-sm text-neutral-900 dark:text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+            />
+            <input
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="비밀번호"
+              autoComplete="current-password"
+              className="w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 px-4 py-3 text-sm text-neutral-900 dark:text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+            />
+
+            {error && (
+              <p className="text-xs text-red-500 text-center pt-0.5">{error}</p>
+            )}
+
+            <button
+              type="submit"
+              disabled={isPending}
+              className="w-full rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 font-semibold py-3 text-sm hover:bg-neutral-700 dark:hover:bg-neutral-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-1"
+            >
+              {isPending ? '로그인 중...' : '로그인'}
+            </button>
+
+            <div className="text-right mt-0.5">
+              <a href="/forgot-password" className="text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors">
+                비밀번호 찾기
+              </a>
+            </div>
+          </form>
+
+          {/* ── 구분선 ───────────────────────────── */}
+          <div className="relative my-5">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-neutral-100 dark:border-neutral-800" />
+            </div>
+            <div className="relative flex justify-center">
+              <span className="bg-white dark:bg-neutral-900 px-3 text-[11px] text-neutral-400 font-medium tracking-wide">
+                간편 로그인
+              </span>
+            </div>
+          </div>
+
+          {/* ── 소셜 로그인 — 정사각 아이콘 가로배열 ── */}
+          <div className="flex items-center justify-center gap-3">
+
+            {/* 카카오 */}
+            <button
+              type="button"
+              onClick={() => alert('카카오 로그인 연동 예정')}
+              title="카카오톡으로 로그인"
+              className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm transition-all hover:scale-105 active:scale-95"
+              style={{ backgroundColor: '#FEE500', color: '#3C1E1E' }}
+            >
+              <KakaoIcon />
+            </button>
+
+            {/* 네이버 */}
+            <button
+              type="button"
+              onClick={() => alert('네이버 로그인 연동 예정')}
+              title="네이버로 로그인"
+              className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm transition-all hover:scale-105 active:scale-95"
+              style={{ backgroundColor: '#03C75A', color: '#ffffff' }}
+            >
+              <NaverIcon />
+            </button>
+
+            {/* 구글 */}
+            <button
+              type="button"
+              onClick={() => alert('구글 로그인 연동 예정')}
+              title="구글로 로그인"
+              className="w-14 h-14 rounded-2xl flex items-center justify-center bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 shadow-sm transition-all hover:scale-105 active:scale-95"
+            >
+              <GoogleIcon />
+            </button>
+
+          </div>
+        </div>
+
+        {/* ── 회원가입 링크 ──────────────────────── */}
+        <p className="text-center text-sm text-neutral-500 dark:text-neutral-400 mt-6">
+          아직 계정이 없으신가요?{' '}
+          <a href="/signup" className="font-semibold text-neutral-900 dark:text-white hover:underline">
+            회원가입
+          </a>
+        </p>
+
       </div>
     </div>
   )
 }
-
-export default PageLogin
