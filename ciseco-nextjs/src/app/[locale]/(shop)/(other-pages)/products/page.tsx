@@ -1,10 +1,13 @@
 // KN541 상품목록 페이지
-// 서버에서 현재 카테고리 + 상위/하위 카테고리 조회 → 클라이언트에 전달
+// fix: category_code에 #; 특수문자 → id(UUID)를 URL 파라미터로 사용
+// 브레드크럼: 홈 > 상위카테고리 > 현재카테고리
+// 하위카테고리: 현재 카테고리의 직속 자식 버튼
 
 import { Suspense } from 'react'
-import { getProducts, TProductItem } from '@/data/data'
 import ProductsPageClient from './ProductsPageClient'
 import type { Metadata } from 'next'
+
+const BASE = process.env.NEXT_PUBLIC_API_URL
 
 export const metadata: Metadata = {
   title: '상품목록 | KN541',
@@ -22,7 +25,6 @@ export interface CategoryInfo {
 }
 
 async function fetchAllCategories(): Promise<CategoryInfo[]> {
-  const BASE = process.env.NEXT_PUBLIC_API_URL
   if (!BASE) return []
   try {
     const res = await fetch(`${BASE}/categories`, { next: { revalidate: 300 } })
@@ -34,23 +36,53 @@ async function fetchAllCategories(): Promise<CategoryInfo[]> {
   }
 }
 
+async function fetchProducts(categoryId?: string) {
+  if (!BASE) return []
+  try {
+    const qs = new URLSearchParams({ size: '40', product_status: 'ACTIVE' })
+    if (categoryId) qs.set('category_id', categoryId)
+    const res = await fetch(`${BASE}/products?${qs}`, { next: { revalidate: 60 } })
+    if (!res.ok) return []
+    const data = await res.json()
+    const items = data?.data?.items ?? []
+    return items.map((p: any) => ({
+      id: String(p.id),
+      title: p.product_name,
+      handle: p.product_code,
+      price: p.sale_price,
+      createdAt: p.created_at,
+      vendor: '',
+      featuredImage: p.thumbnail_url
+        ? { src: p.thumbnail_url, width: 600, height: 600, alt: p.product_name }
+        : { src: '/placeholder-product.jpg', width: 600, height: 600, alt: p.product_name },
+      images: [],
+      reviewNumber: 0,
+      rating: 0,
+      status: p.product_status === 'SOLDOUT' ? 'Sold Out' : p.is_new ? 'New in' : 'In Stock',
+      options: [],
+      selectedOptions: [],
+    }))
+  } catch {
+    return []
+  }
+}
+
 export default async function ProductsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string }>
+  searchParams: Promise<{ cid?: string }>
 }) {
-  const { category: categoryCode } = await searchParams
+  // cid = category id (UUID) — # ; 특수문자 없이 안전
+  const { cid } = await searchParams
   const allCategories = await fetchAllCategories()
-  const products: TProductItem[] = await getProducts(
-    categoryCode ? { category: categoryCode } : undefined
-  )
+  const products = await fetchProducts(cid)
 
-  // 현재 카테고리 찾기
-  const currentCategory = categoryCode
-    ? allCategories.find((c) => c.category_code === categoryCode) ?? null
+  // 현재 카테고리
+  const currentCategory = cid
+    ? allCategories.find((c) => c.id === cid) ?? null
     : null
 
-  // 상위 카테고리 체인 (브레드크럼용)
+  // 브레드크럼 (최상위 → 현재)
   const breadcrumbs: CategoryInfo[] = []
   if (currentCategory) {
     let cur: CategoryInfo | undefined = currentCategory
@@ -62,7 +94,7 @@ export default async function ProductsPage({
     }
   }
 
-  // 하위 카테고리 — 현재 카테고리의 직속 자식
+  // 하위 카테고리
   const childCategories = currentCategory
     ? allCategories
         .filter((c) => c.parent_id === currentCategory.id && c.is_active)

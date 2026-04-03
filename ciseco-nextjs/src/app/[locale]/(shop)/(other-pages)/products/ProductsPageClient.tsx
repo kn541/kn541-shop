@@ -1,11 +1,11 @@
 'use client'
-// KN541 상품목록 — 카테고리 브레드크럼 + 하위카테고리 버튼
+// KN541 상품목록 — 브레드크럼(홈>...>현재) + 하위카테고리 버튼
+// fix: category id(UUID)를 ?cid= 파라미터로 사용 (category_code의 # ; 특수문자 회피)
 
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import ProductCard from '@/components/ProductCard'
 import { FilterSortByMenuListBox } from '@/components/FilterSortByMenu'
 import { Divider } from '@/components/Divider'
-import { TProductItem } from '@/data/data'
 import type { CategoryInfo } from './page'
 import {
   Pagination,
@@ -15,8 +15,22 @@ import {
   PaginationPrevious,
 } from '@/shared/Pagination/Pagination'
 
+interface ProductItem {
+  id: string
+  title?: string
+  handle?: string
+  price?: number
+  featuredImage?: { src: string; width: number; height: number; alt: string }
+  images?: any[]
+  reviewNumber?: number
+  rating?: number
+  status?: string
+  options?: any[]
+  selectedOptions?: any[]
+}
+
 interface Props {
-  products: TProductItem[]
+  products: ProductItem[]
   currentCategory: CategoryInfo | null
   breadcrumbs: CategoryInfo[]
   childCategories: CategoryInfo[]
@@ -31,26 +45,32 @@ export default function ProductsPageClient({
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const activeCid = searchParams.get('cid')
 
-  const goCategory = (code: string | null) => {
-    const params = new URLSearchParams(searchParams.toString())
-    if (code) params.set('category', code)
-    else params.delete('category')
-    router.push(`${pathname}?${params.toString()}`)
+  // id(UUID)로 카테고리 이동
+  const goCategory = (id: string | null) => {
+    const params = new URLSearchParams()
+    if (id) params.set('cid', id)
+    router.push(`${pathname}${params.toString() ? `?${params}` : ''}`)
   }
 
   const pageTitle = currentCategory?.category_name ?? '전체 상품'
 
+  // 부모 카테고리 id (브레드크럼에서 한 단계 위)
+  const parentCid = breadcrumbs.length >= 2
+    ? breadcrumbs[breadcrumbs.length - 2].id
+    : null
+
   return (
     <div className="container py-10 lg:py-16">
 
-      {/* ── 브레드크럼 네비게이션 ─────────────────────────────── */}
-      <nav className="mb-4 flex items-center gap-1.5 text-sm text-neutral-500 dark:text-neutral-400">
+      {/* ── 브레드크럼 ── */}
+      <nav className="mb-4 flex items-center flex-wrap gap-1.5 text-sm text-neutral-500 dark:text-neutral-400">
         <button
           onClick={() => goCategory(null)}
           className="hover:text-neutral-900 dark:hover:text-white transition-colors"
         >
-          전체
+          홈
         </button>
         {breadcrumbs.map((crumb, idx) => (
           <span key={crumb.id} className="flex items-center gap-1.5">
@@ -63,7 +83,7 @@ export default function ProductsPageClient({
               </span>
             ) : (
               <button
-                onClick={() => goCategory(crumb.category_code)}
+                onClick={() => goCategory(crumb.id)}
                 className="hover:text-neutral-900 dark:hover:text-white transition-colors"
               >
                 {crumb.category_name}
@@ -73,51 +93,42 @@ export default function ProductsPageClient({
         ))}
       </nav>
 
-      {/* ── 페이지 타이틀 ──────────────────────────────────────── */}
+      {/* ── 페이지 타이틀 ── */}
       <h1 className="mb-6 text-2xl font-bold text-neutral-900 dark:text-neutral-100 sm:text-3xl">
         {pageTitle}
       </h1>
 
-      {/* ── 하위 카테고리 버튼 ─────────────────────────────────── */}
+      {/* ── 하위 카테고리 버튼 ── */}
       {childCategories.length > 0 && (
-        <div className="mb-8">
-          <div className="flex flex-wrap gap-2">
-            {/* 현재 카테고리가 있으면 '전체' 버튼(상위로 올라가기) 표시 */}
-            {currentCategory && (
-              <button
-                onClick={() =>
-                  goCategory(
-                    breadcrumbs.length >= 2
-                      ? breadcrumbs[breadcrumbs.length - 2].category_code
-                      : null
-                  )
-                }
-                className="rounded-full border border-neutral-200 px-4 py-1.5 text-sm font-medium text-neutral-600 hover:border-neutral-900 hover:text-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:hover:border-white dark:hover:text-white transition-colors"
-              >
-                ← 전체 보기
-              </button>
-            )}
-            {childCategories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => goCategory(cat.category_code)}
-                className={[
-                  'rounded-full px-4 py-1.5 text-sm font-medium transition-colors',
-                  searchParams.get('category') === cat.category_code
-                    ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900'
-                    : 'border border-neutral-200 text-neutral-600 hover:border-neutral-900 hover:text-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:hover:border-white dark:hover:text-white',
-                ].join(' ')}
-              >
-                {cat.category_name}
-              </button>
-            ))}
-          </div>
+        <div className="mb-8 flex flex-wrap gap-2">
+          {/* 현재 카테고리가 선택된 상태면 '전체' 버튼으로 상위로 올라가기 */}
+          {currentCategory && (
+            <button
+              onClick={() => goCategory(parentCid)}
+              className="rounded-full border border-neutral-200 px-4 py-1.5 text-sm font-medium text-neutral-600 hover:border-neutral-900 hover:text-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:hover:border-white dark:hover:text-white transition-colors"
+            >
+              ← 전체
+            </button>
+          )}
+          {childCategories.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => goCategory(cat.id)}
+              className={[
+                'rounded-full px-4 py-1.5 text-sm font-medium transition-colors',
+                activeCid === cat.id
+                  ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900'
+                  : 'border border-neutral-200 text-neutral-600 hover:border-neutral-900 hover:text-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:hover:border-white dark:hover:text-white',
+              ].join(' ')}
+            >
+              {cat.category_name}
+            </button>
+          ))}
         </div>
       )}
 
       <Divider className="mb-8" />
 
-      {/* 우측 정렬 */}
       <div className="mb-8 flex justify-end">
         <FilterSortByMenuListBox />
       </div>
@@ -126,7 +137,7 @@ export default function ProductsPageClient({
       {products.length > 0 ? (
         <div className="grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 xl:gap-x-8">
           {products.map((product) => (
-            <ProductCard data={product} key={product.id} />
+            <ProductCard data={product as any} key={product.id} />
           ))}
         </div>
       ) : (
@@ -135,7 +146,6 @@ export default function ProductsPageClient({
         </div>
       )}
 
-      {/* 페이지네이션 */}
       <div className="mt-16 flex justify-center lg:mt-20">
         <Pagination className="mx-auto">
           <PaginationPrevious href="?page=1" />
