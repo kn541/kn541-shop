@@ -1,8 +1,6 @@
 'use client'
 // KN541 쇼핑몰 — 헤더 우측 유저 액션 영역
-// - 비로그인: [로그인 | 회원가입]
-// - 로그인: [홍길동님] [알림] [주문/배송] [마이페이지]
-// API: GET /auth/me (Bearer JWT)
+// fix: hydration mismatch 방지 — isMounted 패턴으로 SSR/CSR 불일치 해소
 
 import { useEffect, useState, useRef } from 'react'
 
@@ -41,13 +39,20 @@ function UserIcon() {
 }
 
 export default function HeaderUserActions() {
+  // ✅ isMounted: SSR에서는 null 렌더링 → 클라이언트 마운트 후 실제 상태 렌더링
+  const [isMounted, setIsMounted] = useState(false)
   const [user, setUser] = useState<UserInfo | null>(null)
   const [loading, setLoading] = useState(true)
   const [notifOpen, setNotifOpen] = useState(false)
   const notifRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
+    setIsMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (!isMounted) return
+    const token = localStorage.getItem('access_token')
     if (!token || !BASE) { setLoading(false); return }
     fetch(`${BASE}/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.ok ? r.json() : null)
@@ -58,7 +63,7 @@ export default function HeaderUserActions() {
       })
       .catch(() => {})
       .finally(() => setLoading(false))
-  }, [])
+  }, [isMounted])
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -72,6 +77,11 @@ export default function HeaderUserActions() {
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
     window.location.href = '/ko/login'
+  }
+
+  // ✅ 마운트 전에는 아무것도 렌더링하지 않음 (SSR hydration 불일치 방지)
+  if (!isMounted) {
+    return <div className="h-9 w-36" />
   }
 
   if (loading) {
