@@ -1,6 +1,6 @@
 'use client'
 // KN541 상품목록 — 브레드크럼(홈>...>현재) + 하위카테고리 버튼
-// fix: category id(UUID)를 ?cid= 파라미터로 사용 (category_code의 # ; 특수문자 회피)
+// fix: cid(UUID) 파라미터 사용, /ko/ prefix 포함 링크
 
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import ProductCard from '@/components/ProductCard'
@@ -47,16 +47,18 @@ export default function ProductsPageClient({
   const searchParams = useSearchParams()
   const activeCid = searchParams.get('cid')
 
-  // id(UUID)로 카테고리 이동
+  // cid(UUID)로 카테고리 이동
   const goCategory = (id: string | null) => {
-    const params = new URLSearchParams()
-    if (id) params.set('cid', id)
-    router.push(`${pathname}${params.toString() ? `?${params}` : ''}`)
+    if (id) {
+      router.push(`${pathname}?cid=${id}`)
+    } else {
+      router.push(pathname)
+    }
   }
 
   const pageTitle = currentCategory?.category_name ?? '전체 상품'
 
-  // 부모 카테고리 id (브레드크럼에서 한 단계 위)
+  // 브레드크럼에서 한 단계 위 카테고리 id
   const parentCid = breadcrumbs.length >= 2
     ? breadcrumbs[breadcrumbs.length - 2].id
     : null
@@ -64,14 +66,34 @@ export default function ProductsPageClient({
   return (
     <div className="container py-10 lg:py-16">
 
-      {/* ── 브레드크럼 ── */}
+      {/* ── 브레드크럼 네비게이션 ── */}
       <nav className="mb-4 flex items-center flex-wrap gap-1.5 text-sm text-neutral-500 dark:text-neutral-400">
+        {/* 홈 */}
         <button
-          onClick={() => goCategory(null)}
+          onClick={() => router.push(pathname.replace(/\/products.*/, ''))}
           className="hover:text-neutral-900 dark:hover:text-white transition-colors"
         >
           홈
         </button>
+
+        {/* 전체 상품목록 */}
+        <span className="flex items-center gap-1.5">
+          <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+          {breadcrumbs.length === 0 ? (
+            <span className="font-semibold text-neutral-900 dark:text-white">전체 상품</span>
+          ) : (
+            <button
+              onClick={() => goCategory(null)}
+              className="hover:text-neutral-900 dark:hover:text-white transition-colors"
+            >
+              전체 상품
+            </button>
+          )}
+        </span>
+
+        {/* 카테고리 체인 */}
         {breadcrumbs.map((crumb, idx) => (
           <span key={crumb.id} className="flex items-center gap-1.5">
             <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -101,11 +123,11 @@ export default function ProductsPageClient({
       {/* ── 하위 카테고리 버튼 ── */}
       {childCategories.length > 0 && (
         <div className="mb-8 flex flex-wrap gap-2">
-          {/* 현재 카테고리가 선택된 상태면 '전체' 버튼으로 상위로 올라가기 */}
+          {/* 현재 카테고리가 있으면 상위로 가는 전체 버튼 */}
           {currentCategory && (
             <button
               onClick={() => goCategory(parentCid)}
-              className="rounded-full border border-neutral-200 px-4 py-1.5 text-sm font-medium text-neutral-600 hover:border-neutral-900 hover:text-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:hover:border-white dark:hover:text-white transition-colors"
+              className="rounded-full border border-neutral-300 px-4 py-1.5 text-sm font-medium text-neutral-600 hover:border-neutral-900 hover:text-neutral-900 dark:border-neutral-600 dark:text-neutral-400 dark:hover:border-white dark:hover:text-white transition-colors"
             >
               ← 전체
             </button>
@@ -129,6 +151,7 @@ export default function ProductsPageClient({
 
       <Divider className="mb-8" />
 
+      {/* 정렬 */}
       <div className="mb-8 flex justify-end">
         <FilterSortByMenuListBox />
       </div>
@@ -146,6 +169,7 @@ export default function ProductsPageClient({
         </div>
       )}
 
+      {/* 페이지네이션 */}
       <div className="mt-16 flex justify-center lg:mt-20">
         <Pagination className="mx-auto">
           <PaginationPrevious href="?page=1" />

@@ -1,6 +1,6 @@
 'use client'
 // KN541 쇼핑몰 — 카테고리 네비 클라이언트 컴포넌트
-// hover 인터랙션 전담 (서버에서 받은 데이터를 props로 수신)
+// fix: /ko/products?cid={id(UUID)} 방식으로 변경 (category_code 특수문자 문제 해소)
 
 import { useRef, useState } from 'react'
 import Link from 'next/link'
@@ -27,7 +27,6 @@ export default function CategoryNavClient({ categories }: { categories: Category
   }
 
   return (
-    // overflow-visible 필수 — auto/hidden이면 드롭다운이 잘림
     <nav className="hidden lg:flex items-center gap-0.5 overflow-visible">
       {categories.map(cat => (
         <div
@@ -36,9 +35,9 @@ export default function CategoryNavClient({ categories }: { categories: Category
           onMouseEnter={() => enter(cat.id)}
           onMouseLeave={leave}
         >
-          {/* 1단 카테고리 탭 */}
+          {/* 1단 카테고리 — cid=UUID 사용, /ko/ prefix 포함 */}
           <Link
-            href={`/products?category=${encodeURIComponent(cat.category_code)}`}
+            href={`/ko/products?cid=${cat.id}`}
             className={[
               'block whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
               openId === cat.id
@@ -49,7 +48,7 @@ export default function CategoryNavClient({ categories }: { categories: Category
             {cat.category_name}
           </Link>
 
-          {/* 2단 드롭다운 — z-[100]으로 헤더(z-50) 위에 표시 */}
+          {/* 2단 드롭다운 */}
           {cat.children && cat.children.length > 0 && openId === cat.id && (
             <div
               className="absolute left-0 top-full z-[100] pt-2"
@@ -62,7 +61,7 @@ export default function CategoryNavClient({ categories }: { categories: Category
                   .map(sub => (
                     <li key={sub.id}>
                       <Link
-                        href={`/products?category=${encodeURIComponent(sub.category_code)}`}
+                        href={`/ko/products?cid=${sub.id}`}
                         className="block px-4 py-2 text-sm text-neutral-600 transition-colors hover:bg-neutral-50 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white"
                       >
                         {sub.category_name}
