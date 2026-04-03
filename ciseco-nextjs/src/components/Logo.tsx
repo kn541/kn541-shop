@@ -1,9 +1,11 @@
 // KN541 쇼핑몰 — 로고 컴포넌트
-// public/kn541-logo.png 이미지 사용 (Cursor에서 실제 PNG로 교체 필요)
+// Supabase Storage brands/white_logo.png 사용
 
 import { Link } from '@/components/Link'
 import Image from 'next/image'
 import React from 'react'
+
+const LOGO_URL = 'https://qxmcbdqmmiyrrhenufaj.supabase.co/storage/v1/object/public/brands/white_logo.png'
 
 export interface LogoProps {
   className?: string
@@ -13,11 +15,12 @@ const Logo: React.FC<LogoProps> = ({ className = 'shrink-0' }) => {
   return (
     <Link href="/" className={`flex items-center ${className}`}>
       <Image
-        src="/kn541-logo.png"
+        src={LOGO_URL}
         alt="KN541"
-        width={120}
-        height={40}
-        className="h-9 w-auto object-contain"
+        width={400}
+        height={133}
+        style={{ height: '36px', width: 'auto' }}
+        className="object-contain"
         priority
       />
     </Link>
