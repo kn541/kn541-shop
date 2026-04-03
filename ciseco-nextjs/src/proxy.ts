@@ -1,10 +1,14 @@
 import createMiddleware from 'next-intl/middleware'
 import { routing } from './i18n/routing'
 
-/** next-intl 로케일 감지·리다이렉트 (Next.js 16 — proxy.ts가 미들웨어 역할) */
+/**
+ * KN541 쇼핑몰 — next-intl 로케일 미들웨어 (Next.js 16: proxy.ts 사용)
+ * - 기본 언어: ko (한국어) — URL prefix 없음
+ * - /en/* → 영어
+ * - middleware.ts 와 proxy.ts 동시 존재 불가 → proxy.ts만 사용
+ */
 export default createMiddleware(routing)
 
 export const config = {
-  // 언어 미들웨어 적용 경로 (_next, api, 정적 파일 등 제외)
-  matcher: ['/((?!_next|_vercel|api|.*\\..*).*)'],
+  matcher: ['/((?!_next|_vercel|api|.*\..*).*)'],
 }
