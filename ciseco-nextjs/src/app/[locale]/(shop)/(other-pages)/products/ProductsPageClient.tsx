@@ -1,6 +1,6 @@
 'use client'
-// KN541 상품목록 — 브레드크럼(홈>...>현재) + 하위카테고리 버튼
-// fix: cid(UUID) 파라미터 사용, /ko/ prefix 포함 링크
+// KN541 상품목록 — 브레드크럼(홈>카테고리>...) + 하위카테고리 버튼
+// 홈 = 전체상품이므로 "전체 상품" 텍스트 제거
 
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import ProductCard from '@/components/ProductCard'
@@ -36,6 +36,14 @@ interface Props {
   childCategories: CategoryInfo[]
 }
 
+function ChevronIcon() {
+  return (
+    <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+    </svg>
+  )
+}
+
 export default function ProductsPageClient({
   products,
   currentCategory,
@@ -47,7 +55,6 @@ export default function ProductsPageClient({
   const searchParams = useSearchParams()
   const activeCid = searchParams.get('cid')
 
-  // cid(UUID)로 카테고리 이동
   const goCategory = (id: string | null) => {
     if (id) {
       router.push(`${pathname}?cid=${id}`)
@@ -55,6 +62,9 @@ export default function ProductsPageClient({
       router.push(pathname)
     }
   }
+
+  // 홈(=전체 상품) URL
+  const homeUrl = pathname.replace(/\/products.*/, '')
 
   const pageTitle = currentCategory?.category_name ?? '전체 상품'
 
@@ -66,39 +76,20 @@ export default function ProductsPageClient({
   return (
     <div className="container py-10 lg:py-16">
 
-      {/* ── 브레드크럼 네비게이션 ── */}
+      {/* ── 브레드크럼: 홈 > 카테고리 > 하위카테고리 ── */}
       <nav className="mb-4 flex items-center flex-wrap gap-1.5 text-sm text-neutral-500 dark:text-neutral-400">
-        {/* 홈 */}
+        {/* 홈 (= 전체 상품) */}
         <button
-          onClick={() => router.push(pathname.replace(/\/products.*/, ''))}
+          onClick={() => router.push(homeUrl)}
           className="hover:text-neutral-900 dark:hover:text-white transition-colors"
         >
           홈
         </button>
 
-        {/* 전체 상품목록 */}
-        <span className="flex items-center gap-1.5">
-          <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-          </svg>
-          {breadcrumbs.length === 0 ? (
-            <span className="font-semibold text-neutral-900 dark:text-white">전체 상품</span>
-          ) : (
-            <button
-              onClick={() => goCategory(null)}
-              className="hover:text-neutral-900 dark:hover:text-white transition-colors"
-            >
-              전체 상품
-            </button>
-          )}
-        </span>
-
         {/* 카테고리 체인 */}
         {breadcrumbs.map((crumb, idx) => (
           <span key={crumb.id} className="flex items-center gap-1.5">
-            <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-            </svg>
+            <ChevronIcon />
             {idx === breadcrumbs.length - 1 ? (
               <span className="font-semibold text-neutral-900 dark:text-white">
                 {crumb.category_name}
@@ -123,7 +114,7 @@ export default function ProductsPageClient({
       {/* ── 하위 카테고리 버튼 ── */}
       {childCategories.length > 0 && (
         <div className="mb-8 flex flex-wrap gap-2">
-          {/* 현재 카테고리가 있으면 상위로 가는 전체 버튼 */}
+          {/* 현재 카테고리 선택 중이면 상위로 가는 ← 전체 버튼 */}
           {currentCategory && (
             <button
               onClick={() => goCategory(parentCid)}
@@ -151,7 +142,6 @@ export default function ProductsPageClient({
 
       <Divider className="mb-8" />
 
-      {/* 정렬 */}
       <div className="mb-8 flex justify-end">
         <FilterSortByMenuListBox />
       </div>
@@ -169,7 +159,6 @@ export default function ProductsPageClient({
         </div>
       )}
 
-      {/* 페이지네이션 */}
       <div className="mt-16 flex justify-center lg:mt-20">
         <Pagination className="mx-auto">
           <PaginationPrevious href="?page=1" />
