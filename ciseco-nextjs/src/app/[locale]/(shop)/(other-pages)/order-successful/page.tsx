@@ -1,152 +1,116 @@
-import { Divider } from '@/components/Divider'
-import Heading from '@/components/Heading/Heading'
-import Prices from '@/components/Prices'
-import { getOrders } from '@/data/data'
-import { Metadata } from 'next'
-import Image from 'next/image'
+'use client'
+
+import ButtonPrimary from '@/shared/Button/ButtonPrimary'
 import { Link } from '@/shared/link'
-import { notFound } from 'next/navigation'
+import { CheckCircleIcon, HomeIcon, ShoppingBagIcon } from '@heroicons/react/24/outline'
+import Image from 'next/image'
+import { useEffect, useState } from 'react'
 
-export const metadata: Metadata = {
-  title: 'Order Successful',
-  description: 'Your order has been successfully placed.',
-}
+const ORDER_NUMBER = `KN-${Date.now().toString().slice(-8)}`
 
-export default async function Page() {
-  // for demo purposes, you need to use the getOrder(number) function to get the order by number, example: getOrder(123456789)
-  const order = (await getOrders())[0]
+const DEMO_ITEMS = [
+  { id: '1', name: '레더 토트백', qty: 1, price: 85000, image: 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=200&h=200&fit=crop' },
+  { id: '2', name: '캐주얼 레더 잠퍼', qty: 2, price: 120000, image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=200&h=200&fit=crop' },
+]
+const subtotal = DEMO_ITEMS.reduce((s, i) => s + i.price * i.qty, 0)
+const shipping = 0
+const total = subtotal + shipping
 
-  if (!order) {
-    return notFound()
-  }
-  const products = order.products
+export default function OrderSuccessfulPage() {
+  const [show, setShow] = useState(false)
+  useEffect(() => { setTimeout(() => setShow(true), 100) }, [])
 
   return (
-    <>
-      <main className="container">
-        <div className="mx-auto max-w-2xl py-16 sm:py-24 lg:max-w-3xl">
-          <div>
-            <p className="text-xs font-medium uppercase">Thanks for ordering</p>
-            <Heading className="mt-4">Payment successful!</Heading>
+    <main className="container py-16 lg:py-24">
+      <div className="mx-auto max-w-2xl">
 
-            <p className="mt-2.5 max-w-2xl text-neutral-500">
-              We appreciate your order, we’re currently processing it. So hang tight and we’ll send you confirmation
-              very soon!
-            </p>
+        {/* 성공 애니메이션 */}
+        <div className={`text-center transition-all duration-700 ${ show ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0' }`}>
+          <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+            <CheckCircleIcon className="h-14 w-14 text-green-500" />
+          </div>
+          <p className="text-sm font-semibold uppercase tracking-widest text-green-600">결제 완료</p>
+          <h1 className="mt-3 text-3xl font-bold text-neutral-900 dark:text-neutral-100 lg:text-4xl">
+            주문이 접수되었습니다!
+          </h1>
+          <p className="mt-3 text-neutral-500 dark:text-neutral-400">
+            주문을 접수했습니다. 결제 확인 이메일을 발송해 드리겠습니다.
+          </p>
+        </div>
 
-            <dl className="mt-16 text-sm">
-              <dt className="text-neutral-500">Tracking number</dt>
-              <dd>
-                <Link className="mt-2 text-lg font-medium" href="/orders/123456789">
-                  #{order.number}
-                  <span aria-hidden="true"> &rarr;</span>
-                </Link>
-              </dd>
-            </dl>
+        {/* 주문번호 */}
+        <div className={`mt-8 rounded-3xl border border-green-200 bg-green-50 p-5 text-center transition-all duration-700 delay-150 ${ show ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0' } dark:border-green-800 dark:bg-green-900/20`}>
+          <p className="text-sm text-neutral-500">주문번호</p>
+          <p className="mt-1 text-2xl font-bold tracking-wider text-green-700 dark:text-green-400">{ORDER_NUMBER}</p>
+          <p className="mt-1 text-xs text-neutral-400">하단에 주문 내역을 확인하실 수 있습니다</p>
+        </div>
 
-            <ul
-              role="list"
-              className="mt-6 divide-y divide-neutral-200 border-t border-neutral-200 text-sm text-neutral-500 dark:divide-neutral-700 dark:border-neutral-700 dark:text-neutral-300"
-            >
-              {products.map((product) => (
-                <li key={product.id} className="flex gap-x-2.5 py-6 sm:gap-x-6">
-                  <div className="relative aspect-3/4 w-24 flex-none">
-                    {product.featuredImage && (
-                      <Image
-                        alt={product.featuredImage.alt}
-                        src={product.featuredImage}
-                        fill
-                        sizes="200px"
-                        className="rounded-md bg-neutral-100 object-cover"
-                      />
-                    )}
+        {/* 주문 상품 목록 */}
+        <div className={`mt-8 transition-all duration-700 delay-200 ${ show ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0' }`}>
+          <h2 className="mb-4 font-semibold text-neutral-900 dark:text-neutral-100">주문 상품</h2>
+          <div className="divide-y divide-neutral-200 rounded-3xl border border-neutral-200 dark:divide-neutral-700 dark:border-neutral-700">
+            {DEMO_ITEMS.map((item, idx) => (
+              <div key={item.id} className={`flex gap-4 p-4 ${ idx === 0 ? 'rounded-t-3xl' : '' } ${ idx === DEMO_ITEMS.length - 1 ? 'rounded-b-3xl' : '' }`}>
+                <div className="relative h-16 w-14 shrink-0 overflow-hidden rounded-xl bg-neutral-100">
+                  <Image src={item.image} alt={item.name} fill className="object-cover" sizes="60px" />
+                </div>
+                <div className="flex flex-1 items-center justify-between">
+                  <div>
+                    <p className="font-medium text-neutral-900 dark:text-neutral-100">{item.name}</p>
+                    <p className="text-sm text-neutral-400">×{item.qty}</p>
                   </div>
-                  <div className="flex flex-auto flex-col gap-y-1.5">
-                    <h3 className="text-base font-medium text-neutral-900 dark:text-neutral-100">
-                      <Link href={'/products/' + product.handle}>{product.title}</Link>
-                    </h3>
-                    <div className="flex items-center gap-x-2 text-neutral-500 dark:text-neutral-300">
-                      <p className="text-sm text-neutral-500 dark:text-neutral-300">{product.color}</p>
-                      {product.size ? <p className="text-sm text-neutral-300">/</p> : null}
-                      {product.size ? (
-                        <p className="text-sm text-neutral-500 dark:text-neutral-300">{product.size}</p>
-                      ) : null}
-                    </div>
-                    <Prices price={product.price} className="flex justify-start sm:hidden" />
-
-                    <p className="mt-auto text-sm text-neutral-500 dark:text-neutral-300">Qty {product.quantity}</p>
-                  </div>
-
-                  <Prices price={product.price} className="hidden sm:block" />
-                </li>
-              ))}
-            </ul>
-
-            <dl className="space-y-6 border-t border-neutral-200 pt-6 text-sm font-medium text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
-              <div className="flex justify-between">
-                <dt className="uppercase">Subtotal</dt>
-                <dd className="text-neutral-900 dark:text-neutral-100">${order.cost.subtotal.toFixed(2)}</dd>
+                  <p className="font-semibold text-neutral-900 dark:text-neutral-100">
+                    {(item.price * item.qty).toLocaleString()}원
+                  </p>
+                </div>
               </div>
-
-              <div className="flex justify-between">
-                <dt className="uppercase">Shipping</dt>
-                <dd className="text-neutral-900 dark:text-neutral-100">${order.cost.shipping.toFixed(2)}</dd>
-              </div>
-
-              <div className="flex justify-between">
-                <dt className="uppercase">Taxes</dt>
-                <dd className="text-neutral-900 dark:text-neutral-100">${order.cost.tax.toFixed(2)}</dd>
-              </div>
-
-              <div className="flex items-center justify-between border-t border-neutral-200 pt-6 text-neutral-900 dark:border-neutral-700 dark:text-neutral-100">
-                <dt className="text-base uppercase">Total</dt>
-                <dd className="text-base">${order.cost.total.toFixed(2)}</dd>
-              </div>
-            </dl>
-
-            <dl className="mt-12 grid grid-cols-2 gap-x-4 text-sm text-neutral-600 sm:mt-16 dark:text-neutral-300">
-              <div>
-                <dt className="font-medium text-neutral-900 uppercase">Shipping Address</dt>
-                <dd className="mt-2">
-                  <address className="uppercase not-italic">
-                    <span className="block">Kristin Watson</span>
-                    <span className="block">7363 Cynthia Pass</span>
-                    <span className="block">Toronto, ON N3Y 4H8</span>
-                  </address>
-                </dd>
-              </div>
-              <div>
-                <dt className="font-medium uppercase">Payment Information</dt>
-                <dd className="mt-2 space-y-2 sm:flex sm:space-y-0 sm:gap-x-4">
-                  <div className="flex-none">
-                    <svg width={36} height={24} viewBox="0 0 36 24" aria-hidden="true" className="h-6 w-auto">
-                      <rect rx={4} fill="#224DBA" width={36} height={24} />
-                      <path
-                        d="M10.925 15.673H8.874l-1.538-6c-.073-.276-.228-.52-.456-.635A6.575 6.575 0 005 8.403v-.231h3.304c.456 0 .798.347.855.75l.798 4.328 2.05-5.078h1.994l-3.076 7.5zm4.216 0h-1.937L14.8 8.172h1.937l-1.595 7.5zm4.101-5.422c.057-.404.399-.635.798-.635a3.54 3.54 0 011.88.346l.342-1.615A4.808 4.808 0 0020.496 8c-1.88 0-3.248 1.039-3.248 2.481 0 1.097.969 1.673 1.653 2.02.74.346 1.025.577.968.923 0 .519-.57.75-1.139.75a4.795 4.795 0 01-1.994-.462l-.342 1.616a5.48 5.48 0 002.108.404c2.108.057 3.418-.981 3.418-2.539 0-1.962-2.678-2.077-2.678-2.942zm9.457 5.422L27.16 8.172h-1.652a.858.858 0 00-.798.577l-2.848 6.924h1.994l.398-1.096h2.45l.228 1.096h1.766zm-2.905-5.482l.57 2.827h-1.596l1.026-2.827z"
-                        fill="#fff"
-                      />
-                    </svg>
-                    <p className="sr-only">Visa</p>
-                  </div>
-                  <div className="flex-auto uppercase">
-                    <p className="">Ending with 4242</p>
-                    <p>Expires 12 / 21</p>
-                  </div>
-                </dd>
-              </div>
-            </dl>
-
-            <div className="mt-16 border-t border-neutral-200 py-6 text-right dark:border-neutral-700">
-              <Link href="/collections/all" className="text-sm font-medium uppercase">
-                Continue Shopping
-                <span aria-hidden="true"> &rarr;</span>
-              </Link>
-            </div>
+            ))}
           </div>
         </div>
 
-        <Divider />
-      </main>
-    </>
+        {/* 결제 요약 */}
+        <div className={`mt-6 space-y-3 text-sm transition-all duration-700 delay-300 ${ show ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0' }`}>
+          <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
+            <span>상품금액</span><span>{subtotal.toLocaleString()}원</span>
+          </div>
+          <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
+            <span>배송비</span><span className="text-green-600 font-medium">무료</span>
+          </div>
+          <div className="flex justify-between border-t border-neutral-200 pt-3 text-base font-bold text-neutral-900 dark:border-neutral-700 dark:text-neutral-100">
+            <span>실결제금액</span><span className="text-primary-600">{total.toLocaleString()}원</span>
+          </div>
+        </div>
+
+        {/* 배송정보 */}
+        <div className={`mt-6 rounded-2xl bg-neutral-50 p-5 text-sm transition-all duration-700 delay-[400ms] ${ show ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0' } dark:bg-neutral-800`}>
+          <p className="mb-2 font-semibold text-neutral-800 dark:text-neutral-200">배송 안내</p>
+          <div className="space-y-1 text-neutral-500 dark:text-neutral-400">
+            <p>• 결제 확인 후 영업일 기준 2~3일 내 출고 예정입니다.</p>
+            <p>• 출고 시 등록하신 이메일로 송장번호를 안내드리겠습니다.</p>
+            <p>• 배송 문의: 고객센터 1588-0000</p>
+          </div>
+        </div>
+
+        {/* 버튼 */}
+        <div className={`mt-8 flex flex-col gap-3 sm:flex-row transition-all duration-700 delay-500 ${ show ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0' }`}>
+          <ButtonPrimary href="/ko" className="flex-1">
+            <HomeIcon className="mr-2 h-5 w-5" />
+            홈으로 가기
+          </ButtonPrimary>
+          <Link
+            href="/ko/products"
+            className="flex flex-1 items-center justify-center gap-2 rounded-full border border-neutral-300 px-6 py-3 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-800"
+          >
+            <ShoppingBagIcon className="h-5 w-5" />
+            켜핑 계속하기
+          </Link>
+        </div>
+
+        {/* 감사 메시지 */}
+        <p className={`mt-10 text-center text-sm text-neutral-400 transition-all duration-700 delay-[600ms] ${ show ? 'opacity-100' : 'opacity-0' }`}>
+          KN541을 이용해 주셔서 감사합니다 🙏
+        </p>
+      </div>
+    </main>
   )
 }
