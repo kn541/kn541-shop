@@ -2,8 +2,7 @@
  * KN541 쇼핑몰 데이터 레이어
  * - NEXT_PUBLIC_API_URL 설정 시 실제 KN541 API 호출
  * - 미설정 또는 API 오류 시 더미데이터로 자동 폴백
- * - API 클라이언트: src/lib/api/ (products.ts, categories.ts)
- * - 어댑터: src/lib/adapters.ts
+ * fix: getProductByHandle — product_code(handle)로 목록 검색 후 id로 단건 조회
  */
 
 import collectionImage1 from '@/images/collections/1.png'
@@ -271,10 +270,6 @@ export function getCart(_id: string) {
   }
 }
 
-/**
- * 컬렉션(카테고리) 목록 조회
- * API 성공 → 실제 KN541 카테고리 / 실패 → 더미 폴백
- */
 export async function getCollections() {
   try {
     const categories = await getRootCategories()
@@ -284,7 +279,7 @@ export async function getCollections() {
       return [...apiCollections, ...dummy.slice(7)]
     }
   } catch {
-    // API 미연결 시 조용히 폴백
+    // 폴백
   }
   return getDummyCollections()
 }
@@ -323,10 +318,6 @@ export async function getCollectionByHandle(handle: string) {
   return dummy.find((c) => c.handle === handle) ?? dummy[0]
 }
 
-/**
- * 상품 목록 조회
- * API 성공 → 실제 KN541 상품 / 실패 → 더미 폴백
- */
 export async function getProducts(params?: {
   category?: string
   page?: number
@@ -350,14 +341,28 @@ export async function getProducts(params?: {
   return getDummyProducts()
 }
 
+/**
+ * handle(product_code)로 상품 조회
+ * fix: 목록 API에서 product_code 매칭 → id로 단건 조회
+ *      숫자 ID인 경우 직접 단건 조회도 시도
+ */
 export async function getProductByHandle(handle: string) {
   handle = handle.toLowerCase()
   try {
-    const product = await getProductById(handle)
-    if (product) return adaptProduct(product)
+    // 1) product_code(handle)로 목록에서 찾아서 실제 id 획득
+    const result = await apiGetProducts({ size: 100, product_status: 'ACTIVE' })
+    const found = result.items.find(
+      (p) => p.product_code?.toLowerCase() === handle || String(p.id) === handle
+    )
+    if (found) {
+      // 2) id로 단건 상세 조회 (description, detail_images 등 포함)
+      const detail = await getProductById(String(found.id))
+      return adaptProduct(detail)
+    }
   } catch {
     // 폴백
   }
+  // 더미 폴백
   const products = getDummyProducts()
   return products.find((p) => p.handle === handle) ?? products[0]
 }
