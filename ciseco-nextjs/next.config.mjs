@@ -4,8 +4,6 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts')
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // localePrefix: 'always' 설정으로 모든 페이지가 /ko/ prefix 필요
-  // prefix 없는 URL 접근 시 /ko/ 로 redirect (Vercel static cache 충돌 우회)
   async redirects() {
     const pages = [
       'products',
@@ -33,13 +31,11 @@ const nextConfig = {
 
     const redirects = []
     for (const page of pages) {
-      // 정확한 경로
       redirects.push({
         source: `/${page}`,
         destination: `/ko/${page}`,
         permanent: false,
       })
-      // 하위 경로
       redirects.push({
         source: `/${page}/:path*`,
         destination: `/ko/${page}/:path*`,
@@ -63,6 +59,13 @@ const nextConfig = {
         hostname: 'images.unsplash.com',
         port: '',
         pathname: '/**',
+      },
+      {
+        // Supabase Storage — KN541 프로젝트
+        protocol: 'https',
+        hostname: 'qxmcbdqmmiyrrhenufaj.supabase.co',
+        port: '',
+        pathname: '/storage/v1/object/public/**',
       },
     ],
   },

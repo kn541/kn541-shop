@@ -1,14 +1,14 @@
 'use client'
 // KN541 쇼핑몰 — 로그인 페이지
-// 레이아웃: 정사각 로고 → 아이디/패스워드/로그인 → 구분선 → 카카오·네이버·구글 가로배열 → 회원가입
+// 로고: Supabase Storage white_logo.png (가로 400px, 비율 유지)
 
 import { useState, useTransition } from 'react'
 import Image from 'next/image'
 import { useRouter } from '@/i18n/navigation'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL
+const LOGO_URL = 'https://qxmcbdqmmiyrrhenufaj.supabase.co/storage/v1/object/public/brands/white_logo.png'
 
-/* ── 카카오 아이콘 ─────────────────────────────── */
 function KakaoIcon() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
@@ -17,7 +17,6 @@ function KakaoIcon() {
   )
 }
 
-/* ── 네이버 아이콘 ─────────────────────────────── */
 function NaverIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
@@ -26,7 +25,6 @@ function NaverIcon() {
   )
 }
 
-/* ── 구글 아이콘 ──────────────────────────────── */
 function GoogleIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 48 48">
@@ -82,19 +80,18 @@ export default function LoginPage() {
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-[360px]">
 
-        {/* ── 정사각 로고 ──────────────────────────── */}
+        {/* ── 회사 로고 (가로 400px 기준, 비율 유지) ── */}
         <div className="flex justify-center mb-8">
           <a href="/" className="block">
-            <div className="w-20 h-20 rounded-2xl overflow-hidden shadow-md bg-white dark:bg-neutral-900 flex items-center justify-center border border-neutral-100 dark:border-neutral-800">
-              <Image
-                src="/kn541-logo.png"
-                alt="KN541"
-                width={80}
-                height={80}
-                className="w-full h-full object-contain p-2"
-                priority
-              />
-            </div>
+            <Image
+              src={LOGO_URL}
+              alt="KN541"
+              width={400}
+              height={133}
+              style={{ width: '200px', height: 'auto' }}
+              className="object-contain"
+              priority
+            />
           </a>
         </div>
 
@@ -105,7 +102,6 @@ export default function LoginPage() {
             로그인
           </h1>
 
-          {/* ── 로그인 폼 ─────────────────────────── */}
           <form onSubmit={handleSubmit} className="space-y-3">
             <input
               type="text"
@@ -143,7 +139,6 @@ export default function LoginPage() {
             </div>
           </form>
 
-          {/* ── 구분선 ───────────────────────────── */}
           <div className="relative my-5">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-neutral-100 dark:border-neutral-800" />
@@ -155,10 +150,7 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* ── 소셜 로그인 — 정사각 아이콘 가로배열 ── */}
           <div className="flex items-center justify-center gap-3">
-
-            {/* 카카오 */}
             <button
               type="button"
               onClick={() => alert('카카오 로그인 연동 예정')}
@@ -168,8 +160,6 @@ export default function LoginPage() {
             >
               <KakaoIcon />
             </button>
-
-            {/* 네이버 */}
             <button
               type="button"
               onClick={() => alert('네이버 로그인 연동 예정')}
@@ -179,8 +169,6 @@ export default function LoginPage() {
             >
               <NaverIcon />
             </button>
-
-            {/* 구글 */}
             <button
               type="button"
               onClick={() => alert('구글 로그인 연동 예정')}
@@ -189,11 +177,9 @@ export default function LoginPage() {
             >
               <GoogleIcon />
             </button>
-
           </div>
         </div>
 
-        {/* ── 회원가입 링크 ──────────────────────── */}
         <p className="text-center text-sm text-neutral-500 dark:text-neutral-400 mt-6">
           아직 계정이 없으신가요?{' '}
           <a href="/signup" className="font-semibold text-neutral-900 dark:text-white hover:underline">

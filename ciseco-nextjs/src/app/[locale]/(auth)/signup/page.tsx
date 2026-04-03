@@ -1,18 +1,18 @@
 'use client'
 // KN541 쇼핑몰 — 회원가입 페이지
-// 창업회원: 아지트 선택(필수) + 계좌정보(선택) 추가
-// API: POST /auth/register + POST /auth/check-duplicate
+// 로고: Supabase Storage white_logo.png (가로 400px, 비율 유지)
+// 창업회원: 아지트 선택(필수) + 계좌정보(선택)
 
 import { useState, useTransition, useCallback, useRef } from 'react'
 import Image from 'next/image'
 import { useRouter } from '@/i18n/navigation'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL
+const LOGO_URL = 'https://qxmcbdqmmiyrrhenufaj.supabase.co/storage/v1/object/public/brands/white_logo.png'
 
 type MemberType = 'normal' | 'startup'
 type DupState = 'idle' | 'checking' | 'ok' | 'dup' | 'error'
 
-// ── 아지트 목록 (기존 사이트 agitr 목록 기준) ──────────────
 const AGIT_LIST = [
   { value: '001', label: '본사' },
   { value: '002', label: '알레카서울' },
@@ -53,7 +53,6 @@ export default function SignupPage() {
   const [isPending, startTransition] = useTransition()
   const [globalError, setGlobalError] = useState('')
 
-  // ── 공통 폼 ───────────────────────────────────────────────
   const [name, setName] = useState('')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -64,14 +63,12 @@ export default function SignupPage() {
   const [agreeTerms, setAgreeTerms] = useState(false)
   const [agreePrivacy, setAgreePrivacy] = useState(false)
 
-  // ── 창업회원 전용 ─────────────────────────────────────────
-  const [agitCode, setAgitCode] = useState('')          // 아지트 선택 (필수)
+  const [agitCode, setAgitCode] = useState('')
   const [bankCode, setBankCode] = useState('')
   const [bankName, setBankName] = useState('')
   const [accountNo, setAccountNo] = useState('')
   const [accountHolder, setAccountHolder] = useState('')
 
-  // ── 중복 체크 ─────────────────────────────────────────────
   const [usernameDup, setUsernameDup] = useState<DupState>('idle')
   const [emailDup, setEmailDup] = useState<DupState>('idle')
   const [phoneDup, setPhoneDup] = useState<DupState>('idle')
@@ -179,42 +176,42 @@ export default function SignupPage() {
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex items-start justify-center px-4 py-12">
       <div className="w-full max-w-[420px]">
 
-        {/* 로고 */}
+        {/* ── 회사 로고 (가로 400px 기준, 비율 유지) ── */}
         <div className="flex justify-center mb-8">
           <a href="/" className="block">
-            <div className="w-20 h-20 rounded-2xl overflow-hidden shadow-md bg-white dark:bg-neutral-900 flex items-center justify-center border border-neutral-100 dark:border-neutral-800">
-              <Image src="/kn541-logo.png" alt="KN541" width={80} height={80} className="w-full h-full object-contain p-2" priority />
-            </div>
+            <Image
+              src={LOGO_URL}
+              alt="KN541"
+              width={400}
+              height={133}
+              style={{ width: '240px', height: 'auto' }}
+              className="object-contain"
+              priority
+            />
           </a>
         </div>
 
         {/* 회원유형 탭 */}
         <div className="flex rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 p-1 mb-6 gap-1">
-          <button
-            type="button"
-            onClick={() => setMemberType('normal')}
+          <button type="button" onClick={() => setMemberType('normal')}
             className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
               memberType === 'normal'
                 ? 'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white shadow-sm'
                 : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'
-            }`}
-          >
+            }`}>
             🛒 일반 회원
           </button>
-          <button
-            type="button"
-            onClick={() => setMemberType('startup')}
+          <button type="button" onClick={() => setMemberType('startup')}
             className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
               memberType === 'startup'
                 ? 'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white shadow-sm'
                 : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'
-            }`}
-          >
+            }`}>
             ⭐ 창업 회원
           </button>
         </div>
 
-        {/* 창업회원 홍보 배너 */}
+        {/* 창업회원 홍보 */}
         {memberType === 'startup' && (
           <div className="mb-5 rounded-2xl border border-amber-200 dark:border-amber-800 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/40 p-5">
             <div className="flex items-center gap-2 mb-3">
@@ -222,22 +219,10 @@ export default function SignupPage() {
               <h2 className="text-base font-bold text-amber-800 dark:text-amber-300">KN541 창업회원 혜택</h2>
             </div>
             <ul className="space-y-2 text-sm text-amber-900 dark:text-amber-200">
-              <li className="flex items-start gap-2">
-                <span className="text-amber-500 mt-0.5 shrink-0">✓</span>
-                <span><strong>구매 이익금 캐시백</strong> — 모든 구매 상품 마진을 배당으로 돌려드립니다</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-amber-500 mt-0.5 shrink-0">✓</span>
-                <span><strong>다단계 수당</strong> — 추천 네트워크를 통한 추가 수익 기회</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-amber-500 mt-0.5 shrink-0">✓</span>
-                <span><strong>전용 상품 혜택</strong> — 창업회원 전용 특가 및 우선 구매권</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-amber-500 mt-0.5 shrink-0">✓</span>
-                <span><strong>아지트몰 입점</strong> — 나만의 쇼핑몰 운영 지원</span>
-              </li>
+              <li className="flex items-start gap-2"><span className="text-amber-500 mt-0.5 shrink-0">✓</span><span><strong>구매 이익금 캐시백</strong> — 모든 구매 상품 마진을 배당으로 돌려드립니다</span></li>
+              <li className="flex items-start gap-2"><span className="text-amber-500 mt-0.5 shrink-0">✓</span><span><strong>다단계 수당</strong> — 추천 네트워크를 통한 추가 수익 기회</span></li>
+              <li className="flex items-start gap-2"><span className="text-amber-500 mt-0.5 shrink-0">✓</span><span><strong>전용 상품 혜택</strong> — 창업회원 전용 특가 및 우선 구매권</span></li>
+              <li className="flex items-start gap-2"><span className="text-amber-500 mt-0.5 shrink-0">✓</span><span><strong>아지트몰 입점</strong> — 나만의 쇼핑몰 운영 지원</span></li>
             </ul>
           </div>
         )}
@@ -246,29 +231,23 @@ export default function SignupPage() {
         {memberType === 'normal' && (
           <div className="mb-5 rounded-2xl border border-blue-100 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/30 px-5 py-4">
             <p className="text-sm text-blue-700 dark:text-blue-300">
-              <strong>구매 목적</strong>으로 이용하실 분은 일반회원으로 가입하세요.
-              언제든지 창업회원으로 전환 가능합니다.
+              <strong>구매 목적</strong>으로 이용하실 분은 일반회원으로 가입하세요. 언제든지 창업회원으로 전환 가능합니다.
             </p>
           </div>
         )}
 
         {/* 카드 */}
         <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-sm border border-neutral-100 dark:border-neutral-800 px-8 py-8">
-
           <h1 className="text-[20px] font-bold text-neutral-900 dark:text-white mb-6 text-center">
             {memberType === 'startup' ? '창업 회원 가입' : '일반 회원 가입'}
           </h1>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-
-            {/* 이름 */}
             <div>
               <label className={labelCls}>이름 <span className="text-red-400">*</span></label>
-              <input type="text" value={name} onChange={e => setName(e.target.value)}
-                placeholder="실명을 입력해주세요" className={inputCls} />
+              <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="실명을 입력해주세요" className={inputCls} />
             </div>
 
-            {/* 아이디 */}
             <div>
               <label className={labelCls}>아이디</label>
               <div className="flex items-center gap-2">
@@ -280,27 +259,20 @@ export default function SignupPage() {
               <DupMsg state={usernameDup} okMsg="사용 가능한 아이디입니다." dupMsg="이미 사용 중인 아이디입니다." />
             </div>
 
-            {/* 비밀번호 */}
             <div>
               <label className={labelCls}>비밀번호 <span className="text-red-400">*</span></label>
-              <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-                placeholder="8자 이상 입력해주세요" className={inputCls} />
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="8자 이상 입력해주세요" className={inputCls} />
             </div>
 
-            {/* 비밀번호 확인 */}
             <div>
               <label className={labelCls}>비밀번호 확인 <span className="text-red-400">*</span></label>
               <div className="flex items-center gap-2">
-                <input type="password" value={passwordConfirm} onChange={e => setPasswordConfirm(e.target.value)}
-                  placeholder="비밀번호를 다시 입력해주세요" className={inputCls} />
+                <input type="password" value={passwordConfirm} onChange={e => setPasswordConfirm(e.target.value)} placeholder="비밀번호를 다시 입력해주세요" className={inputCls} />
                 {passwordConfirm && (passwordMatch ? <CheckIcon /> : <XIcon />)}
               </div>
-              {passwordConfirm && !passwordMatch && (
-                <p className="text-xs text-red-500 mt-1">비밀번호가 일치하지 않습니다.</p>
-              )}
+              {passwordConfirm && !passwordMatch && <p className="text-xs text-red-500 mt-1">비밀번호가 일치하지 않습니다.</p>}
             </div>
 
-            {/* 이메일 */}
             <div>
               <label className={labelCls}>이메일</label>
               <div className="flex items-center gap-2">
@@ -312,7 +284,6 @@ export default function SignupPage() {
               <DupMsg state={emailDup} okMsg="사용 가능한 이메일입니다." dupMsg="이미 등록된 이메일입니다." />
             </div>
 
-            {/* 휴대폰 */}
             <div>
               <label className={labelCls}>휴대폰</label>
               <div className="flex items-center gap-2">
@@ -324,160 +295,92 @@ export default function SignupPage() {
               <DupMsg state={phoneDup} okMsg="사용 가능한 번호입니다." dupMsg="이미 등록된 번호입니다." />
             </div>
 
-            {/* 추천인 코드 */}
             <div>
               <label className={labelCls}>추천인 코드 <span className="text-neutral-400 font-normal">(선택)</span></label>
-              <input type="text" value={recommenderCode} onChange={e => setRecommenderCode(e.target.value)}
-                placeholder="추천인 아이디 또는 회원번호" className={inputCls} />
+              <input type="text" value={recommenderCode} onChange={e => setRecommenderCode(e.target.value)} placeholder="추천인 아이디 또는 회원번호" className={inputCls} />
             </div>
 
-            {/* ── 창업회원 전용 섹션 ──────────────────────── */}
+            {/* 창업회원 전용 */}
             {memberType === 'startup' && (
               <>
-                {/* 아지트 선택 (필수) */}
-                <div className="border-t border-amber-100 dark:border-amber-900/40 pt-4 mt-2">
-                  <p className="text-xs font-bold text-amber-600 dark:text-amber-400 mb-3 uppercase tracking-wide">
-                    ⭐ 창업회원 추가 정보
-                  </p>
-
+                <div className="border-t border-amber-100 dark:border-amber-900/40 pt-4">
+                  <p className="text-xs font-bold text-amber-600 dark:text-amber-400 mb-3 uppercase tracking-wide">⭐ 창업회원 추가 정보</p>
                   <div>
-                    <label className={labelCls}>
-                      소속 아지트 <span className="text-red-400">*</span>
-                      <span className="text-neutral-400 font-normal normal-case ml-1">(필수 선택)</span>
-                    </label>
-                    <select
-                      value={agitCode}
-                      onChange={e => setAgitCode(e.target.value)}
-                      className={`${inputCls} ${!agitCode ? 'text-neutral-400' : ''}`}
-                    >
+                    <label className={labelCls}>소속 아지트 <span className="text-red-400">*</span> <span className="text-neutral-400 font-normal normal-case ml-1">(필수 선택)</span></label>
+                    <select value={agitCode} onChange={e => setAgitCode(e.target.value)}
+                      className={`${inputCls} ${!agitCode ? 'text-neutral-400' : ''}`}>
                       <option value="">아지트를 선택해주세요</option>
                       {AGIT_LIST.map(agit => (
-                        <option key={agit.value} value={agit.value}>
-                          {agit.label}
-                        </option>
+                        <option key={agit.value} value={agit.value}>{agit.label}</option>
                       ))}
                     </select>
-                    {!agitCode && (
-                      <p className="text-xs text-amber-500 dark:text-amber-400 mt-1.5">
-                        📍 창업회원은 소속 아지트 선택이 필수입니다.
-                      </p>
-                    )}
-                    {agitCode && (
-                      <p className="text-xs text-green-500 mt-1.5">
-                        ✓ {AGIT_LIST.find(a => a.value === agitCode)?.label} 아지트를 선택했습니다.
-                      </p>
-                    )}
+                    {!agitCode && <p className="text-xs text-amber-500 dark:text-amber-400 mt-1.5">📍 창업회원은 소속 아지트 선택이 필수입니다.</p>}
+                    {agitCode && <p className="text-xs text-green-500 mt-1.5">✓ {AGIT_LIST.find(a => a.value === agitCode)?.label} 아지트를 선택했습니다.</p>}
                   </div>
                 </div>
 
-                {/* 정산 계좌 (선택) */}
                 <div className="border-t border-neutral-100 dark:border-neutral-800 pt-4">
-                  <p className="text-xs font-bold text-neutral-500 dark:text-neutral-400 mb-3 uppercase tracking-wide">
-                    정산 계좌 정보 <span className="text-neutral-400 font-normal normal-case">(선택 — 마이페이지에서도 등록 가능)</span>
-                  </p>
-
+                  <p className="text-xs font-bold text-neutral-500 dark:text-neutral-400 mb-3 uppercase tracking-wide">정산 계좌 정보 <span className="text-neutral-400 font-normal normal-case">(선택)</span></p>
                   <div className="space-y-3">
                     <div>
                       <label className={labelCls}>은행명</label>
-                      <select
-                        value={bankCode}
-                        onChange={e => {
-                          setBankCode(e.target.value)
-                          setBankName(e.target.options[e.target.selectedIndex].text)
-                        }}
-                        className={inputCls}
-                      >
+                      <select value={bankCode} onChange={e => { setBankCode(e.target.value); setBankName(e.target.options[e.target.selectedIndex].text) }} className={inputCls}>
                         <option value="">은행 선택</option>
-                        <option value="004">국민은행</option>
-                        <option value="088">신한은행</option>
-                        <option value="020">우리은행</option>
-                        <option value="081">하나은행</option>
-                        <option value="003">기업은행</option>
-                        <option value="011">농협은행</option>
-                        <option value="023">SC제일은행</option>
-                        <option value="090">카카오뱅크</option>
-                        <option value="089">케이뱅크</option>
-                        <option value="092">토스뱅크</option>
-                        <option value="032">부산은행</option>
-                        <option value="034">광주은행</option>
-                        <option value="031">대구은행</option>
-                        <option value="039">경남은행</option>
-                        <option value="037">전북은행</option>
-                        <option value="035">제주은행</option>
-                        <option value="007">수협은행</option>
-                        <option value="071">우체국</option>
+                        <option value="004">국민은행</option><option value="088">신한은행</option>
+                        <option value="020">우리은행</option><option value="081">하나은행</option>
+                        <option value="003">기업은행</option><option value="011">농협은행</option>
+                        <option value="023">SC제일은행</option><option value="090">카카오뱅크</option>
+                        <option value="089">케이뱅크</option><option value="092">토스뱅크</option>
+                        <option value="032">부산은행</option><option value="034">광주은행</option>
+                        <option value="031">대구은행</option><option value="039">경남은행</option>
+                        <option value="037">전북은행</option><option value="035">제주은행</option>
+                        <option value="007">수협은행</option><option value="071">우체국</option>
                       </select>
                     </div>
-
                     <div>
                       <label className={labelCls}>계좌번호</label>
-                      <input type="text" value={accountNo} onChange={e => setAccountNo(e.target.value)}
-                        placeholder="- 없이 숫자만 입력" className={inputCls} />
+                      <input type="text" value={accountNo} onChange={e => setAccountNo(e.target.value)} placeholder="- 없이 숫자만 입력" className={inputCls} />
                     </div>
-
                     <div>
                       <label className={labelCls}>예금주명</label>
-                      <input type="text" value={accountHolder} onChange={e => setAccountHolder(e.target.value)}
-                        placeholder="예금주 실명" className={inputCls} />
+                      <input type="text" value={accountHolder} onChange={e => setAccountHolder(e.target.value)} placeholder="예금주 실명" className={inputCls} />
                     </div>
                   </div>
                 </div>
               </>
             )}
 
-            {/* 약관 동의 */}
+            {/* 약관 */}
             <div className="border-t border-neutral-100 dark:border-neutral-800 pt-4 space-y-2.5">
               <label className="flex items-start gap-3 cursor-pointer">
-                <input type="checkbox" checked={agreeTerms} onChange={e => setAgreeTerms(e.target.checked)}
-                  className="mt-0.5 accent-neutral-900" />
-                <span className="text-sm text-neutral-700 dark:text-neutral-300">
-                  <strong>(필수)</strong> 이용약관에 동의합니다.{' '}
-                  <a href="/terms" className="text-primary-600 underline text-xs">약관 보기</a>
-                </span>
+                <input type="checkbox" checked={agreeTerms} onChange={e => setAgreeTerms(e.target.checked)} className="mt-0.5 accent-neutral-900" />
+                <span className="text-sm text-neutral-700 dark:text-neutral-300"><strong>(필수)</strong> 이용약관에 동의합니다. <a href="/terms" className="text-primary-600 underline text-xs">약관 보기</a></span>
               </label>
               <label className="flex items-start gap-3 cursor-pointer">
-                <input type="checkbox" checked={agreePrivacy} onChange={e => setAgreePrivacy(e.target.checked)}
-                  className="mt-0.5 accent-neutral-900" />
-                <span className="text-sm text-neutral-700 dark:text-neutral-300">
-                  <strong>(필수)</strong> 개인정보 수집·이용에 동의합니다.{' '}
-                  <a href="/privacy" className="text-primary-600 underline text-xs">약관 보기</a>
-                </span>
+                <input type="checkbox" checked={agreePrivacy} onChange={e => setAgreePrivacy(e.target.checked)} className="mt-0.5 accent-neutral-900" />
+                <span className="text-sm text-neutral-700 dark:text-neutral-300"><strong>(필수)</strong> 개인정보 수집·이용에 동의합니다. <a href="/privacy" className="text-primary-600 underline text-xs">약관 보기</a></span>
               </label>
             </div>
 
-            {/* 에러 메시지 */}
             {globalError && (
-              <p className="text-xs text-red-500 text-center bg-red-50 dark:bg-red-950/30 rounded-xl py-2.5 px-3">
-                {globalError}
-              </p>
+              <p className="text-xs text-red-500 text-center bg-red-50 dark:bg-red-950/30 rounded-xl py-2.5 px-3">{globalError}</p>
             )}
 
-            {/* 가입 버튼 */}
-            <button
-              type="submit"
-              disabled={isPending}
+            <button type="submit" disabled={isPending}
               className={`w-full rounded-xl font-semibold py-3 text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-1 ${
                 memberType === 'startup'
                   ? 'bg-amber-500 hover:bg-amber-400 text-white'
                   : 'bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 hover:bg-neutral-700 dark:hover:bg-neutral-100'
-              }`}
-            >
-              {isPending
-                ? '처리 중...'
-                : memberType === 'startup' ? '⭐ 창업회원 가입' : '🛒 일반회원 가입'
-              }
+              }`}>
+              {isPending ? '처리 중...' : memberType === 'startup' ? '⭐ 창업회원 가입' : '🛒 일반회원 가입'}
             </button>
           </form>
         </div>
 
-        {/* 하단 링크 */}
         <p className="text-center text-sm text-neutral-500 dark:text-neutral-400 mt-6">
           이미 계정이 있으신가요?{' '}
-          <a href="/login" className="font-semibold text-neutral-900 dark:text-white hover:underline">
-            로그인
-          </a>
+          <a href="/login" className="font-semibold text-neutral-900 dark:text-white hover:underline">로그인</a>
         </p>
-
       </div>
     </div>
   )
