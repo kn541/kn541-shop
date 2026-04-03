@@ -1,6 +1,6 @@
 'use client'
 // KN541 쇼핑몰 — 언어 선택 (국기 아이콘 + 드롭다운 레이어)
-// 한국 🇰🇷 / 미국 🇺🇸 국기 클릭 시 레이어 팝오버
+// 한국 🇰🇷 / 미국 🇺🇸 / 중국 🇨🇳 국기 클릭 시 레이어 팝오버
 
 import { usePathname, useRouter } from '@/i18n/navigation'
 import { useLocale } from 'next-intl'
@@ -9,7 +9,10 @@ import { useTransition, useState, useRef, useEffect } from 'react'
 const LANGS = [
   { code: 'ko', label: '한국어', flag: '🇰🇷', name: '한국' },
   { code: 'en', label: 'English', flag: '🇺🇸', name: 'USA' },
+  { code: 'zh', label: '中文',    flag: '🇨🇳', name: '中国' },
 ] as const
+
+type LangCode = (typeof LANGS)[number]['code']
 
 export default function LangSwitcher({ className }: { className?: string }) {
   const locale = useLocale()
@@ -32,7 +35,7 @@ export default function LangSwitcher({ className }: { className?: string }) {
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  const switchLang = (code: 'ko' | 'en') => {
+  const switchLang = (code: LangCode) => {
     setOpen(false)
     startTransition(() => {
       router.replace(pathname, { locale: code })
