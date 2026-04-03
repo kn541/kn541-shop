@@ -1,20 +1,14 @@
 import { Divider } from '@/components/Divider'
-import NcInputNumber from '@/components/NcInputNumber'
 import Prices from '@/components/Prices'
-import ProductColorOptions from '@/components/ProductForm/ProductColorOptions'
-import ProductForm from '@/components/ProductForm/ProductForm'
-import ProductSizeOptions from '@/components/ProductForm/ProductSizeOptions'
 import SectionSliderProductCard from '@/components/SectionSliderProductCard'
 import { getProductDetailByHandle, getProductReviews, getProducts } from '@/data/data'
-import ButtonPrimary from '@/shared/Button/ButtonPrimary'
 import { StarIcon } from '@heroicons/react/24/solid'
-import { ShoppingBag03Icon } from '@hugeicons/core-free-icons'
-import { HugeiconsIcon } from '@hugeicons/react'
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import ProductReviews from '../ProductReviews'
 import ProductStatus from '../ProductStatus'
 import KoreanProductGallery from '../KoreanProductGallery'
+import ProductActions from './ProductActions'
 
 export async function generateMetadata({ params }: { params: Promise<{ handle: string }> }): Promise<Metadata> {
   const { handle } = await params
@@ -33,22 +27,23 @@ export default async function Page({ params }: { params: Promise<{ handle: strin
   if (!product.id) return notFound()
 
   const { title, status, featuredImage, rating, reviewNumber, options, price, selectedOptions, images, breadcrumbs } = product
-  const sizeSelected = selectedOptions?.find((o) => o.name === 'Size')?.value || ''
-  const colorSelected = selectedOptions?.find((o) => o.name === 'Color')?.value || ''
-  const allImages = [featuredImage, ...(images || [])].map((i) => i?.src).filter(Boolean) as string[]
+  const sizeSelected = selectedOptions?.find((o: any) => o.name === 'Size')?.value || ''
+  const colorSelected = selectedOptions?.find((o: any) => o.name === 'Color')?.value || ''
+  const allImages = [featuredImage, ...(images || [])].map((i: any) => i?.src).filter(Boolean) as string[]
   const brand = breadcrumbs?.[0]?.name || 'KN541'
+  const thumbImage = allImages[0] || ''
 
   return (
     <main className="container mt-5 lg:mt-8">
-      {/* ── 상단 2단 레이아웃 ──────────────────────────────── */}
+      {/* ── 상단 2단 레이아웃 */}
       <div className="flex flex-col gap-8 lg:flex-row lg:gap-10">
 
-        {/* ── 좌: 썸네일 + 메인이미지 ── */}
+        {/* 좌: 썸네일 + 메인이미지 */}
         <div className="w-full lg:w-[55%]">
           <KoreanProductGallery images={allImages} />
         </div>
 
-        {/* ── 우: sticky 상품 정보 ── */}
+        {/* 우: sticky 상품 정보 */}
         <div className="w-full lg:w-[45%]">
           <div className="sticky top-8 flex flex-col gap-6">
 
@@ -81,46 +76,20 @@ export default async function Page({ params }: { params: Promise<{ handle: strin
 
             <Divider />
 
-            {/* 옵션 + 수량 + 버튼 */}
-            <ProductForm product={product}>
-              <fieldset className="flex flex-col gap-6">
-                <ProductColorOptions options={options} defaultColor={colorSelected} />
-                <ProductSizeOptions options={options} defaultSize={sizeSelected} />
-
-                {/* 수량 */}
-                <div className="flex items-center gap-2">
-                  <span className="w-20 text-sm font-medium text-neutral-600">수량</span>
-                  <div className="flex items-center justify-center rounded-full bg-neutral-100 px-2 py-1.5">
-                    <NcInputNumber name="quantity" defaultValue={1} />
-                  </div>
-                </div>
-
-                {/* 버튼 */}
-                <div className="flex gap-3 pt-2">
-                  <ButtonPrimary className="flex-1" type="submit">
-                    <HugeiconsIcon
-                      icon={ShoppingBag03Icon}
-                      size={18}
-                      color="currentColor"
-                      strokeWidth={1.5}
-                      className="hidden sm:block"
-                    />
-                    <span className="sm:ml-2">장바구니</span>
-                  </ButtonPrimary>
-                  <ButtonPrimary
-                    className="flex-1 bg-neutral-900 hover:bg-neutral-800"
-                    type="button"
-                  >
-                    바로구매
-                  </ButtonPrimary>
-                </div>
-              </fieldset>
-            </ProductForm>
+            {/* ✅ 클라이언트 컴포넌트: 옵션 + 수량 + 장바구니/바로구매 */}
+            <ProductActions
+              options={options}
+              colorSelected={colorSelected}
+              sizeSelected={sizeSelected}
+              price={price || 0}
+              productName={title || ''}
+              productImage={thumbImage}
+            />
 
             <Divider />
 
             {/* 배송 안내 */}
-            <div className="flex flex-col gap-2 text-sm text-neutral-600">
+            <div className="flex flex-col gap-2 text-sm text-neutral-600 dark:text-neutral-400">
               <div className="flex gap-3">
                 <span className="w-20 shrink-0 font-medium">배송방법</span>
                 <span>일반배송</span>
@@ -135,10 +104,10 @@ export default async function Page({ params }: { params: Promise<{ handle: strin
         </div>
       </div>
 
-      {/* ── 하단: 상품상세 + 리뷰 ────────────────────────── */}
+      {/* ── 하단: 상품상세 + 리뷰 */}
       <div className="mt-16 flex flex-col gap-12 sm:mt-20">
 
-        {/* 탭 네비게이션 */}
+        {/* 탭 */}
         <div className="flex gap-8 border-b border-neutral-200">
           {['상품상세', '리뷰', '배송/교환/반품'].map((tab) => (
             <button
@@ -150,7 +119,7 @@ export default async function Page({ params }: { params: Promise<{ handle: strin
           ))}
         </div>
 
-        {/* 상품 상세 이미지 — 세로로 나열 (10x10 스타일) */}
+        {/* 상품 상세 이미지 세로 나열 */}
         <div className="flex flex-col items-center gap-0">
           {allImages.map((src, idx) => (
             // eslint-disable-next-line @next/next/no-img-element

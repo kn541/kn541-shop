@@ -44,7 +44,7 @@ export default function CheckoutPage() {
       return
     }
     setLoading(true)
-    await new Promise((r) => setTimeout(r, 1200)) // 결제 시뮬레이션
+    await new Promise((r) => setTimeout(r, 1200))
     router.push('/ko/order-successful')
   }
 
@@ -68,7 +68,7 @@ export default function CheckoutPage() {
         {/* 왼쪽: 배송정보 + 결제수단 */}
         <div className="flex-1 space-y-8">
 
-          {/* STEP 1: 배송정보 */}
+          {/* STEP 1 */}
           <section className="rounded-3xl border border-neutral-200 p-6 dark:border-neutral-700">
             <h2 className="mb-5 flex items-center gap-2 text-lg font-bold text-neutral-900 dark:text-neutral-100">
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-600 text-sm font-bold text-white">1</span>
@@ -91,10 +91,10 @@ export default function CheckoutPage() {
                 <label className="mb-1.5 block text-sm font-medium text-neutral-700 dark:text-neutral-300">주소 *</label>
                 <div className="flex gap-2">
                   <input className={`${input} w-32`} placeholder="우편번호" value={form.zipcode} onChange={(e) => setForm({...form, zipcode: e.target.value})} />
-                  <button className="rounded-xl border border-neutral-300 bg-neutral-50 px-4 text-sm font-medium hover:bg-neutral-100 dark:border-neutral-600 dark:bg-neutral-700 dark:hover:bg-neutral-600">주소검색</button>
+                  <button className="rounded-xl border border-neutral-300 bg-neutral-50 px-4 text-sm font-medium hover:bg-neutral-100 dark:border-neutral-600 dark:bg-neutral-700">주소검색</button>
                 </div>
                 <input className={`${input} mt-2`} placeholder="기본주소" value={form.addr1} onChange={(e) => setForm({...form, addr1: e.target.value})} />
-                <input className={`${input} mt-2`} placeholder="상세주소 (동/호수 등)" value={form.addr2} onChange={(e) => setForm({...form, addr2: e.target.value})} />
+                <input className={`${input} mt-2`} placeholder="상세주소" value={form.addr2} onChange={(e) => setForm({...form, addr2: e.target.value})} />
               </div>
               <div className="sm:col-span-2">
                 <label className="mb-1.5 block text-sm font-medium text-neutral-700 dark:text-neutral-300">배송 메모 (선택)</label>
@@ -109,7 +109,7 @@ export default function CheckoutPage() {
             </div>
           </section>
 
-          {/* STEP 2: 결제수단 */}
+          {/* STEP 2 */}
           <section className="rounded-3xl border border-neutral-200 p-6 dark:border-neutral-700">
             <h2 className="mb-5 flex items-center gap-2 text-lg font-bold text-neutral-900 dark:text-neutral-100">
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-600 text-sm font-bold text-white">2</span>
@@ -130,7 +130,6 @@ export default function CheckoutPage() {
                 </button>
               ))}
             </div>
-
             {payMethod === 'card' && (
               <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="sm:col-span-2">
@@ -149,22 +148,17 @@ export default function CheckoutPage() {
             )}
             {payMethod === 'transfer' && (
               <div className="mt-5 rounded-2xl bg-neutral-50 p-4 dark:bg-neutral-800">
-                <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">입금 계좌 안내</p>
-                <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">신한은행 110-000-000000 (주)주식회사</p>
-                <p className="mt-1 text-xs text-neutral-500">주문일로부터 3일 이내 미입금 시 자동 취소됩니다.</p>
+                <p className="text-sm font-semibold">입금 계좌</p>
+                <p className="mt-1 text-sm text-neutral-600">신한은행 110-000-000000 (주)최주식회사</p>
+                <p className="mt-1 text-xs text-neutral-400">주문일 3일 이내 미입금 시 자동 취소</p>
               </div>
             )}
           </section>
 
           {/* 동의 */}
           <div className="flex items-start gap-3 rounded-2xl border border-neutral-200 p-4 dark:border-neutral-700">
-            <input
-              type="checkbox"
-              id="agree"
-              checked={agreed}
-              onChange={(e) => setAgreed(e.target.checked)}
-              className="mt-0.5 h-4 w-4 cursor-pointer rounded border-neutral-300 text-primary-600"
-            />
+            <input type="checkbox" id="agree" checked={agreed} onChange={(e) => setAgreed(e.target.checked)}
+              className="mt-0.5 h-4 w-4 cursor-pointer rounded" />
             <label htmlFor="agree" className="cursor-pointer text-sm text-neutral-600 dark:text-neutral-400">
               구매조건 및 개인정보 처리에 동의합니다. (필수)
             </label>
@@ -174,11 +168,10 @@ export default function CheckoutPage() {
         {/* 구분선 */}
         <div className="hidden border-l border-neutral-200 lg:block dark:border-neutral-700" />
 
-        {/* 오른쪽: 주문 요약 */}
+        {/* 주문 요약 */}
         <div className="w-full lg:w-80 xl:w-96">
           <div className="sticky top-8 rounded-3xl border border-neutral-200 bg-neutral-50 p-6 dark:border-neutral-700 dark:bg-neutral-800">
             <h3 className="mb-5 font-bold text-neutral-900 dark:text-neutral-100">주문 상품</h3>
-
             <div className="space-y-4">
               {DEMO_ITEMS.map((item) => (
                 <div key={item.id} className="flex gap-3">
@@ -187,44 +180,27 @@ export default function CheckoutPage() {
                   </div>
                   <div className="flex flex-1 items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{item.name}</p>
+                      <p className="text-sm font-medium">{item.name}</p>
                       <p className="text-xs text-neutral-400">×{item.qty}</p>
                     </div>
-                    <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                      {(item.price * item.qty).toLocaleString()}원
-                    </p>
+                    <p className="text-sm font-semibold">{(item.price * item.qty).toLocaleString()}원</p>
                   </div>
                 </div>
               ))}
             </div>
-
             <div className="my-5 border-t border-neutral-200 dark:border-neutral-700" />
-
             <div className="space-y-2.5 text-sm text-neutral-600 dark:text-neutral-400">
-              <div className="flex justify-between">
-                <span>상품금액</span>
-                <span>{subtotal.toLocaleString()}원</span>
-              </div>
-              <div className="flex justify-between">
-                <span>배송비</span>
-                <span className={shipping === 0 ? 'text-green-600 font-medium' : ''}>
-                  {shipping === 0 ? '무료' : `${shipping.toLocaleString()}원`}
-                </span>
+              <div className="flex justify-between"><span>상품금액</span><span>{subtotal.toLocaleString()}원</span></div>
+              <div className="flex justify-between"><span>배송비</span>
+                <span className={shipping === 0 ? 'text-green-600 font-medium' : ''}>{shipping === 0 ? '무료' : `${shipping.toLocaleString()}원`}</span>
               </div>
             </div>
-
             <div className="my-4 border-t border-neutral-200 dark:border-neutral-700" />
-
             <div className="flex items-center justify-between">
-              <span className="font-bold text-neutral-900 dark:text-neutral-100">총 결제금액</span>
+              <span className="font-bold">총 결제금액</span>
               <span className="text-xl font-bold text-primary-600">{total.toLocaleString()}원</span>
             </div>
-
-            <ButtonPrimary
-              className="mt-6 w-full"
-              onClick={handlePay}
-              disabled={loading}
-            >
+            <ButtonPrimary className="mt-6 w-full" onClick={handlePay} disabled={loading}>
               {loading ? (
                 <span className="flex items-center gap-2">
                   <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
@@ -240,10 +216,9 @@ export default function CheckoutPage() {
                 </span>
               )}
             </ButtonPrimary>
-
             <div className="mt-4 flex items-center justify-center gap-1.5 text-xs text-neutral-400">
               <LockClosedIcon className="h-3.5 w-3.5" />
-              <span>SSL 암호화로 안전하게 보호됩니다</span>
+              <span>SSL 암호화 보호</span>
             </div>
           </div>
         </div>
