@@ -1,8 +1,6 @@
 'use client'
 // KN541 쇼핑몰 — 회원가입 페이지
-// 상단 탭: 일반회원 / 창업회원 선택
-// 공통 필드: 이름, 아이디, 비밀번호, 이메일, 휴대폰, 추천인코드
-// 창업회원 추가: 홍보 배너 + 계좌 정보
+// 창업회원: 아지트 선택(필수) + 계좌정보(선택) 추가
 // API: POST /auth/register + POST /auth/check-duplicate
 
 import { useState, useTransition, useCallback, useRef } from 'react'
@@ -11,13 +9,26 @@ import { useRouter } from '@/i18n/navigation'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL
 
-// ── 탭 타입 ──────────────────────────────────────────────
 type MemberType = 'normal' | 'startup'
-
-// ── 중복체크 상태 ──────────────────────────────────────────
 type DupState = 'idle' | 'checking' | 'ok' | 'dup' | 'error'
 
-// ── 아이콘 ──────────────────────────────────────────────
+// ── 아지트 목록 (기존 사이트 agitr 목록 기준) ──────────────
+const AGIT_LIST = [
+  { value: '001', label: '본사' },
+  { value: '002', label: '알레카서울' },
+  { value: '003', label: '아산청아' },
+  { value: '004', label: '울산태화강' },
+  { value: '005', label: '부산대박' },
+  { value: '006', label: '서초그린케어' },
+  { value: '007', label: '인천주안' },
+  { value: '008', label: '창원미라클' },
+  { value: '009', label: '대구' },
+  { value: '010', label: '서울진엔정' },
+  { value: '011', label: '광주이레' },
+  { value: '012', label: '부산아이비' },
+  { value: '013', label: '통영초이스' },
+]
+
 function CheckIcon() {
   return (
     <svg className="w-4 h-4 text-green-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -33,7 +44,6 @@ function XIcon() {
   )
 }
 
-// ── 공통 입력 스타일 ──────────────────────────────────────
 const inputCls = "w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 px-4 py-3 text-sm text-neutral-900 dark:text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
 const labelCls = "block text-xs font-semibold text-neutral-500 dark:text-neutral-400 mb-1.5 uppercase tracking-wide"
 
@@ -43,7 +53,7 @@ export default function SignupPage() {
   const [isPending, startTransition] = useTransition()
   const [globalError, setGlobalError] = useState('')
 
-  // ── 공통 폼 ─────────────────────────────────────────────
+  // ── 공통 폼 ───────────────────────────────────────────────
   const [name, setName] = useState('')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -54,7 +64,8 @@ export default function SignupPage() {
   const [agreeTerms, setAgreeTerms] = useState(false)
   const [agreePrivacy, setAgreePrivacy] = useState(false)
 
-  // ── 창업회원 추가 ─────────────────────────────────────────
+  // ── 창업회원 전용 ─────────────────────────────────────────
+  const [agitCode, setAgitCode] = useState('')          // 아지트 선택 (필수)
   const [bankCode, setBankCode] = useState('')
   const [bankName, setBankName] = useState('')
   const [accountNo, setAccountNo] = useState('')
@@ -85,10 +96,8 @@ export default function SignupPage() {
     }, 500)
   }, [])
 
-  // ── 비밀번호 확인 ─────────────────────────────────────────
   const passwordMatch = password && passwordConfirm && password === passwordConfirm
 
-  // ── 유효성 검사 ──────────────────────────────────────────
   const validate = () => {
     if (!name.trim()) return '이름을 입력해주세요.'
     if (!username.trim() && !email.trim() && !phone.trim()) return '아이디, 이메일, 휴대폰 중 하나는 필수입니다.'
@@ -98,11 +107,11 @@ export default function SignupPage() {
     if (usernameDup === 'dup') return '이미 사용 중인 아이디입니다.'
     if (emailDup === 'dup') return '이미 사용 중인 이메일입니다.'
     if (phoneDup === 'dup') return '이미 사용 중인 휴대폰 번호입니다.'
+    if (memberType === 'startup' && !agitCode) return '소속 아지트를 선택해주세요.'
     if (!agreeTerms || !agreePrivacy) return '필수 약관에 동의해주세요.'
     return ''
   }
 
-  // ── 제출 ──────────────────────────────────────────────────
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     const err = validate()
@@ -120,8 +129,11 @@ export default function SignupPage() {
         if (email.trim()) body.email = email.trim()
         if (phone.trim()) body.phone = phone.trim().replace(/-/g, '')
         if (recommenderCode.trim()) body.recommender_code = recommenderCode.trim()
-        if (memberType === 'startup' && bankCode && accountNo && accountHolder) {
-          body.bank_account = { bank_code: bankCode, bank_name: bankName, account_no: accountNo, account_holder: accountHolder }
+        if (memberType === 'startup') {
+          body.agit_code = agitCode
+          if (bankCode && accountNo && accountHolder) {
+            body.bank_account = { bank_code: bankCode, bank_name: bankName, account_no: accountNo, account_holder: accountHolder }
+          }
         }
 
         const res = await fetch(`${BASE}/auth/register`, {
@@ -150,7 +162,6 @@ export default function SignupPage() {
     })
   }
 
-  // ── DupIcon ───────────────────────────────────────────────
   const DupIcon = ({ state }: { state: DupState }) => {
     if (state === 'ok') return <CheckIcon />
     if (state === 'dup') return <XIcon />
@@ -168,7 +179,7 @@ export default function SignupPage() {
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex items-start justify-center px-4 py-12">
       <div className="w-full max-w-[420px]">
 
-        {/* ── 로고 ──────────────────────────────────────── */}
+        {/* 로고 */}
         <div className="flex justify-center mb-8">
           <a href="/" className="block">
             <div className="w-20 h-20 rounded-2xl overflow-hidden shadow-md bg-white dark:bg-neutral-900 flex items-center justify-center border border-neutral-100 dark:border-neutral-800">
@@ -177,7 +188,7 @@ export default function SignupPage() {
           </a>
         </div>
 
-        {/* ── 회원유형 탭 선택 ─────────────────────────── */}
+        {/* 회원유형 탭 */}
         <div className="flex rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 p-1 mb-6 gap-1">
           <button
             type="button"
@@ -203,9 +214,9 @@ export default function SignupPage() {
           </button>
         </div>
 
-        {/* ── 창업회원 홍보 배너 ───────────────────────── */}
+        {/* 창업회원 홍보 배너 */}
         {memberType === 'startup' && (
-          <div className="mb-5 rounded-2xl overflow-hidden border border-amber-200 dark:border-amber-800 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/40 p-5">
+          <div className="mb-5 rounded-2xl border border-amber-200 dark:border-amber-800 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/40 p-5">
             <div className="flex items-center gap-2 mb-3">
               <span className="text-2xl">⭐</span>
               <h2 className="text-base font-bold text-amber-800 dark:text-amber-300">KN541 창업회원 혜택</h2>
@@ -231,7 +242,7 @@ export default function SignupPage() {
           </div>
         )}
 
-        {/* ── 일반회원 안내 ────────────────────────────── */}
+        {/* 일반회원 안내 */}
         {memberType === 'normal' && (
           <div className="mb-5 rounded-2xl border border-blue-100 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/30 px-5 py-4">
             <p className="text-sm text-blue-700 dark:text-blue-300">
@@ -241,7 +252,7 @@ export default function SignupPage() {
           </div>
         )}
 
-        {/* ── 카드 ──────────────────────────────────────── */}
+        {/* 카드 */}
         <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-sm border border-neutral-100 dark:border-neutral-800 px-8 py-8">
 
           <h1 className="text-[20px] font-bold text-neutral-900 dark:text-white mb-6 text-center">
@@ -253,21 +264,17 @@ export default function SignupPage() {
             {/* 이름 */}
             <div>
               <label className={labelCls}>이름 <span className="text-red-400">*</span></label>
-              <input
-                type="text" value={name} onChange={e => setName(e.target.value)}
-                placeholder="실명을 입력해주세요" className={inputCls}
-              />
+              <input type="text" value={name} onChange={e => setName(e.target.value)}
+                placeholder="실명을 입력해주세요" className={inputCls} />
             </div>
 
             {/* 아이디 */}
             <div>
               <label className={labelCls}>아이디</label>
               <div className="flex items-center gap-2">
-                <input
-                  type="text" value={username}
+                <input type="text" value={username}
                   onChange={e => { setUsername(e.target.value); checkDuplicate('username', e.target.value, setUsernameDup) }}
-                  placeholder="영문, 숫자 조합 (4~20자)" className={inputCls}
-                />
+                  placeholder="영문, 숫자 조합 (4~20자)" className={inputCls} />
                 <DupIcon state={usernameDup} />
               </div>
               <DupMsg state={usernameDup} okMsg="사용 가능한 아이디입니다." dupMsg="이미 사용 중인 아이디입니다." />
@@ -276,20 +283,16 @@ export default function SignupPage() {
             {/* 비밀번호 */}
             <div>
               <label className={labelCls}>비밀번호 <span className="text-red-400">*</span></label>
-              <input
-                type="password" value={password} onChange={e => setPassword(e.target.value)}
-                placeholder="8자 이상 입력해주세요" className={inputCls}
-              />
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+                placeholder="8자 이상 입력해주세요" className={inputCls} />
             </div>
 
             {/* 비밀번호 확인 */}
             <div>
               <label className={labelCls}>비밀번호 확인 <span className="text-red-400">*</span></label>
               <div className="flex items-center gap-2">
-                <input
-                  type="password" value={passwordConfirm} onChange={e => setPasswordConfirm(e.target.value)}
-                  placeholder="비밀번호를 다시 입력해주세요" className={inputCls}
-                />
+                <input type="password" value={passwordConfirm} onChange={e => setPasswordConfirm(e.target.value)}
+                  placeholder="비밀번호를 다시 입력해주세요" className={inputCls} />
                 {passwordConfirm && (passwordMatch ? <CheckIcon /> : <XIcon />)}
               </div>
               {passwordConfirm && !passwordMatch && (
@@ -301,11 +304,9 @@ export default function SignupPage() {
             <div>
               <label className={labelCls}>이메일</label>
               <div className="flex items-center gap-2">
-                <input
-                  type="email" value={email}
+                <input type="email" value={email}
                   onChange={e => { setEmail(e.target.value); checkDuplicate('email', e.target.value, setEmailDup) }}
-                  placeholder="example@email.com" className={inputCls}
-                />
+                  placeholder="example@email.com" className={inputCls} />
                 <DupIcon state={emailDup} />
               </div>
               <DupMsg state={emailDup} okMsg="사용 가능한 이메일입니다." dupMsg="이미 등록된 이메일입니다." />
@@ -315,11 +316,9 @@ export default function SignupPage() {
             <div>
               <label className={labelCls}>휴대폰</label>
               <div className="flex items-center gap-2">
-                <input
-                  type="tel" value={phone}
+                <input type="tel" value={phone}
                   onChange={e => { setPhone(e.target.value); checkDuplicate('phone', e.target.value.replace(/-/g, ''), setPhoneDup) }}
-                  placeholder="010-0000-0000" className={inputCls}
-                />
+                  placeholder="010-0000-0000" className={inputCls} />
                 <DupIcon state={phoneDup} />
               </div>
               <DupMsg state={phoneDup} okMsg="사용 가능한 번호입니다." dupMsg="이미 등록된 번호입니다." />
@@ -328,88 +327,117 @@ export default function SignupPage() {
             {/* 추천인 코드 */}
             <div>
               <label className={labelCls}>추천인 코드 <span className="text-neutral-400 font-normal">(선택)</span></label>
-              <input
-                type="text" value={recommenderCode} onChange={e => setRecommenderCode(e.target.value)}
-                placeholder="추천인 아이디 또는 회원번호" className={inputCls}
-              />
+              <input type="text" value={recommenderCode} onChange={e => setRecommenderCode(e.target.value)}
+                placeholder="추천인 아이디 또는 회원번호" className={inputCls} />
             </div>
 
-            {/* ── 창업회원 전용: 계좌 정보 ──────────────── */}
+            {/* ── 창업회원 전용 섹션 ──────────────────────── */}
             {memberType === 'startup' && (
-              <div className="border-t border-neutral-100 dark:border-neutral-800 pt-4 mt-2">
-                <p className="text-xs font-bold text-amber-600 dark:text-amber-400 mb-3 uppercase tracking-wide">
-                  ⭐ 정산 계좌 정보 <span className="text-neutral-400 font-normal">(선택 — 나중에 마이페이지에서도 등록 가능)</span>
-                </p>
+              <>
+                {/* 아지트 선택 (필수) */}
+                <div className="border-t border-amber-100 dark:border-amber-900/40 pt-4 mt-2">
+                  <p className="text-xs font-bold text-amber-600 dark:text-amber-400 mb-3 uppercase tracking-wide">
+                    ⭐ 창업회원 추가 정보
+                  </p>
 
-                <div className="space-y-3">
                   <div>
-                    <label className={labelCls}>은행명</label>
+                    <label className={labelCls}>
+                      소속 아지트 <span className="text-red-400">*</span>
+                      <span className="text-neutral-400 font-normal normal-case ml-1">(필수 선택)</span>
+                    </label>
                     <select
-                      value={bankCode}
-                      onChange={e => {
-                        setBankCode(e.target.value)
-                        setBankName(e.target.options[e.target.selectedIndex].text)
-                      }}
-                      className={inputCls}
+                      value={agitCode}
+                      onChange={e => setAgitCode(e.target.value)}
+                      className={`${inputCls} ${!agitCode ? 'text-neutral-400' : ''}`}
                     >
-                      <option value="">은행 선택</option>
-                      <option value="004">국민은행</option>
-                      <option value="088">신한은행</option>
-                      <option value="020">우리은행</option>
-                      <option value="081">하나은행</option>
-                      <option value="003">기업은행</option>
-                      <option value="011">농협은행</option>
-                      <option value="023">SC제일은행</option>
-                      <option value="090">카카오뱅크</option>
-                      <option value="089">케이뱅크</option>
-                      <option value="092">토스뱅크</option>
-                      <option value="032">부산은행</option>
-                      <option value="034">광주은행</option>
-                      <option value="031">대구은행</option>
-                      <option value="039">경남은행</option>
-                      <option value="037">전북은행</option>
-                      <option value="035">제주은행</option>
-                      <option value="007">수협은행</option>
-                      <option value="071">우체국</option>
+                      <option value="">아지트를 선택해주세요</option>
+                      {AGIT_LIST.map(agit => (
+                        <option key={agit.value} value={agit.value}>
+                          {agit.label}
+                        </option>
+                      ))}
                     </select>
-                  </div>
-
-                  <div>
-                    <label className={labelCls}>계좌번호</label>
-                    <input
-                      type="text" value={accountNo} onChange={e => setAccountNo(e.target.value)}
-                      placeholder="- 없이 숫자만 입력" className={inputCls}
-                    />
-                  </div>
-
-                  <div>
-                    <label className={labelCls}>예금주명</label>
-                    <input
-                      type="text" value={accountHolder} onChange={e => setAccountHolder(e.target.value)}
-                      placeholder="예금주 실명" className={inputCls}
-                    />
+                    {!agitCode && (
+                      <p className="text-xs text-amber-500 dark:text-amber-400 mt-1.5">
+                        📍 창업회원은 소속 아지트 선택이 필수입니다.
+                      </p>
+                    )}
+                    {agitCode && (
+                      <p className="text-xs text-green-500 mt-1.5">
+                        ✓ {AGIT_LIST.find(a => a.value === agitCode)?.label} 아지트를 선택했습니다.
+                      </p>
+                    )}
                   </div>
                 </div>
-              </div>
+
+                {/* 정산 계좌 (선택) */}
+                <div className="border-t border-neutral-100 dark:border-neutral-800 pt-4">
+                  <p className="text-xs font-bold text-neutral-500 dark:text-neutral-400 mb-3 uppercase tracking-wide">
+                    정산 계좌 정보 <span className="text-neutral-400 font-normal normal-case">(선택 — 마이페이지에서도 등록 가능)</span>
+                  </p>
+
+                  <div className="space-y-3">
+                    <div>
+                      <label className={labelCls}>은행명</label>
+                      <select
+                        value={bankCode}
+                        onChange={e => {
+                          setBankCode(e.target.value)
+                          setBankName(e.target.options[e.target.selectedIndex].text)
+                        }}
+                        className={inputCls}
+                      >
+                        <option value="">은행 선택</option>
+                        <option value="004">국민은행</option>
+                        <option value="088">신한은행</option>
+                        <option value="020">우리은행</option>
+                        <option value="081">하나은행</option>
+                        <option value="003">기업은행</option>
+                        <option value="011">농협은행</option>
+                        <option value="023">SC제일은행</option>
+                        <option value="090">카카오뱅크</option>
+                        <option value="089">케이뱅크</option>
+                        <option value="092">토스뱅크</option>
+                        <option value="032">부산은행</option>
+                        <option value="034">광주은행</option>
+                        <option value="031">대구은행</option>
+                        <option value="039">경남은행</option>
+                        <option value="037">전북은행</option>
+                        <option value="035">제주은행</option>
+                        <option value="007">수협은행</option>
+                        <option value="071">우체국</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className={labelCls}>계좌번호</label>
+                      <input type="text" value={accountNo} onChange={e => setAccountNo(e.target.value)}
+                        placeholder="- 없이 숫자만 입력" className={inputCls} />
+                    </div>
+
+                    <div>
+                      <label className={labelCls}>예금주명</label>
+                      <input type="text" value={accountHolder} onChange={e => setAccountHolder(e.target.value)}
+                        placeholder="예금주 실명" className={inputCls} />
+                    </div>
+                  </div>
+                </div>
+              </>
             )}
 
-            {/* ── 약관 동의 ────────────────────────────── */}
+            {/* 약관 동의 */}
             <div className="border-t border-neutral-100 dark:border-neutral-800 pt-4 space-y-2.5">
               <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox" checked={agreeTerms} onChange={e => setAgreeTerms(e.target.checked)}
-                  className="mt-0.5 accent-neutral-900"
-                />
+                <input type="checkbox" checked={agreeTerms} onChange={e => setAgreeTerms(e.target.checked)}
+                  className="mt-0.5 accent-neutral-900" />
                 <span className="text-sm text-neutral-700 dark:text-neutral-300">
                   <strong>(필수)</strong> 이용약관에 동의합니다.{' '}
                   <a href="/terms" className="text-primary-600 underline text-xs">약관 보기</a>
                 </span>
               </label>
               <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox" checked={agreePrivacy} onChange={e => setAgreePrivacy(e.target.checked)}
-                  className="mt-0.5 accent-neutral-900"
-                />
+                <input type="checkbox" checked={agreePrivacy} onChange={e => setAgreePrivacy(e.target.checked)}
+                  className="mt-0.5 accent-neutral-900" />
                 <span className="text-sm text-neutral-700 dark:text-neutral-300">
                   <strong>(필수)</strong> 개인정보 수집·이용에 동의합니다.{' '}
                   <a href="/privacy" className="text-primary-600 underline text-xs">약관 보기</a>
@@ -419,7 +447,9 @@ export default function SignupPage() {
 
             {/* 에러 메시지 */}
             {globalError && (
-              <p className="text-xs text-red-500 text-center bg-red-50 dark:bg-red-950/30 rounded-xl py-2.5 px-3">{globalError}</p>
+              <p className="text-xs text-red-500 text-center bg-red-50 dark:bg-red-950/30 rounded-xl py-2.5 px-3">
+                {globalError}
+              </p>
             )}
 
             {/* 가입 버튼 */}
@@ -440,7 +470,7 @@ export default function SignupPage() {
           </form>
         </div>
 
-        {/* ── 하단 링크 ────────────────────────────────── */}
+        {/* 하단 링크 */}
         <p className="text-center text-sm text-neutral-500 dark:text-neutral-400 mt-6">
           이미 계정이 있으신가요?{' '}
           <a href="/login" className="font-semibold text-neutral-900 dark:text-white hover:underline">
