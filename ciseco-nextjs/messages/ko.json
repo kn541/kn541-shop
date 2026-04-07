@@ -62,10 +62,16 @@
     "title": "장바구니",
     "empty": "장바구니가 비었습니다",
     "total": "합계",
+    "subtotal": "소계",
     "checkout": "결제하기",
+    "viewCart": "장바구니 보기",
     "continueShopping": "쇼핑 계속하기",
+    "continueShoppingLink": "쇼핑 계속하기",
+    "or": "또는",
     "remove": "삭제",
-    "quantity": "수량"
+    "quantity": "수량",
+    "orderSummary": "주문 요약",
+    "shippingTaxNote": "배송비 및 세금은 결제 시 계산됩니다."
   },
   "Checkout": {
     "title": "결제",

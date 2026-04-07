@@ -62,10 +62,16 @@
     "title": "购物车",
     "empty": "购物车为空",
     "total": "合计",
+    "subtotal": "小计",
     "checkout": "去结算",
+    "viewCart": "查看购物车",
     "continueShopping": "继续购物",
+    "continueShoppingLink": "继续购物",
+    "or": "或",
     "remove": "删除",
-    "quantity": "数量"
+    "quantity": "数量",
+    "orderSummary": "订单摘要",
+    "shippingTaxNote": "运费和税费将在结算时计算。"
   },
   "Checkout": {
     "title": "结算",

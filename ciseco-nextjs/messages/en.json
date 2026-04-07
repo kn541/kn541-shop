@@ -59,13 +59,19 @@
     "outOfStock": "Out of stock"
   },
   "Cart": {
-    "title": "Cart",
+    "title": "Shopping Cart",
     "empty": "Your cart is empty",
     "total": "Total",
-    "checkout": "Checkout",
-    "continueShopping": "Continue shopping",
+    "subtotal": "Subtotal",
+    "checkout": "Check out",
+    "viewCart": "View cart",
+    "continueShopping": "Continue Shopping",
+    "continueShoppingLink": "Continue Shopping",
+    "or": "or",
     "remove": "Remove",
-    "quantity": "Quantity"
+    "quantity": "Quantity",
+    "orderSummary": "Order summary",
+    "shippingTaxNote": "Shipping and taxes calculated at checkout."
   },
   "Checkout": {
     "title": "Checkout",

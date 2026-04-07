@@ -3,6 +3,7 @@ import ButtonPrimary from '@/shared/Button/ButtonPrimary'
 import ButtonSecondary from '@/shared/Button/ButtonSecondary'
 import { ChevronDownIcon } from '@heroicons/react/20/solid'
 import clsx from 'clsx'
+import { getTranslations } from 'next-intl/server'
 import Image from 'next/image'
 import { Link } from './Link'
 import Prices from './Prices'
@@ -14,17 +15,17 @@ interface Props {
 
 const AsideSidebarCart = async ({ className = '' }: Props) => {
   const cart = await getCart('id://1')
+  const t = await getTranslations('Cart')
 
   return (
-    <Aside openFrom="right" type="cart" heading="Shopping Cart">
+    <Aside openFrom="right" type="cart" heading={t('title')}>
       <div className={clsx('flex h-full flex-col', className)}>
         {/* CONTENT */}
-
         <div className="hidden-scrollbar flex-1 overflow-x-hidden overflow-y-auto py-6">
           <div className="flow-root">
             <ul role="list" className="-my-6 divide-y divide-neutral-900/10 dark:divide-neutral-100/10">
               {cart.lines.map((product) => (
-                <CartProduct key={product.id} product={product} />
+                <CartProduct key={product.id} product={product} removeLabel={t('remove')} />
               ))}
             </ul>
           </div>
@@ -36,25 +37,25 @@ const AsideSidebarCart = async ({ className = '' }: Props) => {
           className="mt-auto grid shrink-0 gap-4 border-t border-neutral-900/10 py-6 dark:border-neutral-100/10"
         >
           <h2 id="summary-heading" className="sr-only">
-            Order summary
+            {t('orderSummary')}
           </h2>
           <div>
             <div className="flex justify-between text-base font-medium text-gray-900 dark:text-neutral-100">
-              <p className="font-medium">Subtotal</p>
+              <p className="font-medium">{t('subtotal')}</p>
               <p className="font-medium">${cart.cost.subtotal}</p>
             </div>
             <p className="mt-0.5 text-sm text-neutral-500 dark:text-neutral-400">
-              Shipping and taxes calculated at checkout.
+              {t('shippingTaxNote')}
             </p>
             <div className="mt-5 grid grid-cols-2 gap-2">
-              <ButtonSecondary href={'/cart'}>View cart</ButtonSecondary>
-              <ButtonPrimary href={'/checkout'}>Check out</ButtonPrimary>
+              <ButtonSecondary href={'/cart'}>{t('viewCart')}</ButtonSecondary>
+              <ButtonPrimary href={'/checkout'}>{t('checkout')}</ButtonPrimary>
             </div>
             <div className="mt-6 flex justify-center text-center text-sm text-neutral-500 dark:text-neutral-400">
               <p className="text-xs">
-                or{' '}
+                {t('or')}{' '}
                 <Link href={'/collections/all'} className="text-xs font-medium uppercase">
-                  Continue Shopping<span aria-hidden="true"> →</span>
+                  {t('continueShoppingLink')}<span aria-hidden="true"> →</span>
                 </Link>
               </p>
             </div>
@@ -65,7 +66,7 @@ const AsideSidebarCart = async ({ className = '' }: Props) => {
   )
 }
 
-const CartProduct = ({ product }: { product: TCardProduct }) => {
+const CartProduct = ({ product, removeLabel }: { product: TCardProduct; removeLabel: string }) => {
   const { name, price, image, size, color, quantity, handle } = product
 
   return (
@@ -116,7 +117,7 @@ const CartProduct = ({ product }: { product: TCardProduct }) => {
 
           <div className="flex">
             <button type="button" className="font-medium text-primary-600 dark:text-primary-500">
-              Remove
+              {removeLabel}
             </button>
           </div>
         </div>
