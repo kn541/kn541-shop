@@ -20,10 +20,10 @@ const PageTab = () => {
   const pathname = usePathname()
   const { user } = useAuth()
 
-  // 유료회원(006)만 내 쇼핑몰 탭 노출
+  // 유료회원(006)만 내 쇼핑몰 + 수당현황 탭 노출
   const visibleLinks = links.filter(item => {
     if (item.link === '/myshop' && user?.user_type !== '006') return false
-    if (item.link === '/commission' && !['006', '002'].includes(user?.user_type || '')) return false
+    if (item.link === '/commission' && user?.user_type !== '006') return false
     return true
   })
 
