@@ -1,10 +1,12 @@
 'use client'
 // KN541 쇼핑몰 — 로그인 페이지
-// 로고: Supabase Storage white_logo.png (가로 200px, 비율 유지)
+// 로그인 성공 시 redirect 파라미터 → 해당 경로 / 없으면 메인('/')으로 이동
 
 import { useState, useTransition } from 'react'
 import Image from 'next/image'
 import { useRouter } from '@/i18n/navigation'
+import { useSearchParams } from 'next/navigation'
+import { toast } from 'react-hot-toast'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL
 const LOGO_URL = 'https://qxmcbdqmmiyrrhenufaj.supabase.co/storage/v1/object/public/brands/white_logo.png'
@@ -38,10 +40,14 @@ function GoogleIcon() {
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isPending, startTransition] = useTransition()
+
+  // redirect 파라미터 추출 — 없으면 '/'(메인)으로
+  const redirectTo = searchParams.get('redirect') || '/'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -66,7 +72,8 @@ export default function LoginPage() {
         if (access_token) {
           localStorage.setItem('access_token', access_token)
           if (refresh_token) localStorage.setItem('refresh_token', refresh_token)
-          router.push('/')
+          // redirect 파라미터가 있으면 해당 경로로, 없으면 메인으로
+          router.push(redirectTo)
         } else {
           setError('로그인 정보를 받아오지 못했습니다.')
         }
@@ -155,7 +162,7 @@ export default function LoginPage() {
           <div className="flex items-center justify-center gap-3">
             <button
               type="button"
-              onClick={() => alert('카카오 로그인 연동 예정')}
+              onClick={() => toast('카카오 로그인은 준비 중입니다.')}
               title="카카오톡으로 로그인"
               className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm transition-all hover:scale-105 active:scale-95"
               style={{ backgroundColor: '#FEE500', color: '#3C1E1E' }}
@@ -164,7 +171,7 @@ export default function LoginPage() {
             </button>
             <button
               type="button"
-              onClick={() => alert('네이버 로그인 연동 예정')}
+              onClick={() => toast('네이버 로그인은 준비 중입니다.')}
               title="네이버로 로그인"
               className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm transition-all hover:scale-105 active:scale-95"
               style={{ backgroundColor: '#03C75A', color: '#ffffff' }}
@@ -173,7 +180,7 @@ export default function LoginPage() {
             </button>
             <button
               type="button"
-              onClick={() => alert('구글 로그인 연동 예정')}
+              onClick={() => toast('구글 로그인은 준비 중입니다.')}
               title="구글로 로그인"
               className="w-14 h-14 rounded-2xl flex items-center justify-center bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 shadow-sm transition-all hover:scale-105 active:scale-95"
             >
@@ -182,7 +189,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* ✅ 회원가입 링크 — /ko/signup (locale prefix 적용) */}
+        {/* 회원가입 링크 */}
         <p className="text-center text-sm text-neutral-500 dark:text-neutral-400 mt-6">
           아직 계정이 없으신가요?{' '}
           <a href="/ko/signup" className="font-semibold text-neutral-900 dark:text-white hover:underline">
