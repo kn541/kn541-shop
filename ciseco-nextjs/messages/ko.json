@@ -148,6 +148,8 @@
     "settings": "설정",
     "wishlists": "위시리스트",
     "ordersHistory": "주문 내역",
+    "myshop": "내 쇼핑몰",
+    "commission": "수당 현황",
     "changePassword": "비밀번호 변경",
     "billing": "결제 정보"
   },
