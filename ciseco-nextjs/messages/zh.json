@@ -148,6 +148,8 @@
     "settings": "设置",
     "wishlists": "收藏夹",
     "ordersHistory": "历史订单",
+    "myshop": "我的店铺",
+    "commission": "佣金明细",
     "changePassword": "修改密码",
     "billing": "支付信息"
   },
