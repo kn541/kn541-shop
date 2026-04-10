@@ -1,8 +1,8 @@
 'use client'
 // KN541 쇼핑몰 — 로그인 페이지
-// 로그인 성공 시 redirect 파라미터 → 해당 경로 / 없으면 메인('/')으로 이동
+// useSearchParams는 반드시 Suspense 안에서만 사용해야 함 (Next.js App Router 규칙)
 
-import { useState, useTransition } from 'react'
+import { Suspense, useState, useTransition } from 'react'
 import Image from 'next/image'
 import { useRouter } from '@/i18n/navigation'
 import { useSearchParams } from 'next/navigation'
@@ -38,7 +38,8 @@ function GoogleIcon() {
   )
 }
 
-export default function LoginPage() {
+// useSearchParams를 사용하는 실제 폼 컴포넌트 — Suspense 안에서만 렌더링
+function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [username, setUsername] = useState('')
@@ -72,7 +73,6 @@ export default function LoginPage() {
         if (access_token) {
           localStorage.setItem('access_token', access_token)
           if (refresh_token) localStorage.setItem('refresh_token', refresh_token)
-          // redirect 파라미터가 있으면 해당 경로로, 없으면 메인으로
           router.push(redirectTo)
         } else {
           setError('로그인 정보를 받아오지 못했습니다.')
@@ -83,6 +83,48 @@ export default function LoginPage() {
     })
   }
 
+  return (
+    <form onSubmit={handleSubmit} className="space-y-3">
+      <input
+        type="text"
+        value={username}
+        onChange={e => setUsername(e.target.value)}
+        placeholder="아이디 또는 이메일"
+        autoComplete="username"
+        className="w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 px-4 py-3 text-sm text-neutral-900 dark:text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+      />
+      <input
+        type="password"
+        value={password}
+        onChange={e => setPassword(e.target.value)}
+        placeholder="비밀번호"
+        autoComplete="current-password"
+        className="w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 px-4 py-3 text-sm text-neutral-900 dark:text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+      />
+
+      {error && (
+        <p className="text-xs text-red-500 text-center pt-0.5">{error}</p>
+      )}
+
+      <button
+        type="submit"
+        disabled={isPending}
+        className="w-full rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 font-semibold py-3 text-sm hover:bg-neutral-700 dark:hover:bg-neutral-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-1"
+      >
+        {isPending ? '로그인 중...' : '로그인'}
+      </button>
+
+      <div className="text-right mt-0.5">
+        <a href="/ko/forgot-password" className="text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors">
+          비밀번호 찾기
+        </a>
+      </div>
+    </form>
+  )
+}
+
+// 페이지 컴포넌트 — LoginForm을 Suspense로 감싸서 useSearchParams 오류 방지
+export default function LoginPage() {
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-[360px]">
@@ -109,42 +151,10 @@ export default function LoginPage() {
             로그인
           </h1>
 
-          <form onSubmit={handleSubmit} className="space-y-3">
-            <input
-              type="text"
-              value={username}
-              onChange={e => setUsername(e.target.value)}
-              placeholder="아이디 또는 이메일"
-              autoComplete="username"
-              className="w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 px-4 py-3 text-sm text-neutral-900 dark:text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-            />
-            <input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="비밀번호"
-              autoComplete="current-password"
-              className="w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 px-4 py-3 text-sm text-neutral-900 dark:text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-            />
-
-            {error && (
-              <p className="text-xs text-red-500 text-center pt-0.5">{error}</p>
-            )}
-
-            <button
-              type="submit"
-              disabled={isPending}
-              className="w-full rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 font-semibold py-3 text-sm hover:bg-neutral-700 dark:hover:bg-neutral-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-1"
-            >
-              {isPending ? '로그인 중...' : '로그인'}
-            </button>
-
-            <div className="text-right mt-0.5">
-              <a href="/ko/forgot-password" className="text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors">
-                비밀번호 찾기
-              </a>
-            </div>
-          </form>
+          {/* useSearchParams 사용 컴포넌트는 반드시 Suspense로 감싸야 함 */}
+          <Suspense fallback={<div className="h-40 flex items-center justify-center text-sm text-neutral-400">로딩 중...</div>}>
+            <LoginForm />
+          </Suspense>
 
           {/* 구분선 */}
           <div className="relative my-5">
