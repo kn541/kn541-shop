@@ -253,3 +253,54 @@
   font-size: 10px;
   margin-left: 6px;
 }
+
+/* ─────────────────────────────────────────────────────────────────
+   고령층 UX 기본 스타일 (KN541 마이페이지)
+   ───────────────────────────────────────────────────────────────── */
+
+:root {
+  --mp-font-size-base: 18px;
+  --mp-font-size-lg:   20px;
+  --mp-font-size-sm:   14px;
+  --mp-color-primary:  #7367F0;
+  --mp-color-success:  #28C76F;
+  --mp-color-danger:   #EA5455;
+  --mp-color-warning:  #FF9F43;
+  --mp-color-info:     #00CFE8;
+  --mp-color-bg:       #F8F7FA;
+  --mp-color-text:     #1E1E2F;
+  --mp-color-text-muted: #6E6B7B;
+  --mp-color-border:   #E9E9E9;
+  --mp-btn-height:     56px;
+  --mp-radius:         8px;
+  --mp-radius-lg:      12px;
+}
+
+/* 마이페이지 영역 기본 폰트 크기 */
+[data-mypage-root] {
+  font-size: var(--mp-font-size-base);
+  color: var(--mp-color-text);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+[data-mypage-root] button,
+[data-mypage-root] a,
+[data-mypage-root] input,
+[data-mypage-root] select,
+[data-mypage-root] textarea {
+  font-size: var(--mp-font-size-base);
+}
+
+/* 접근성: 포커스 표시 강화 */
+[data-mypage-root] *:focus-visible {
+  outline: 3px solid var(--mp-color-primary);
+  outline-offset: 2px;
+}
+
+/* 하단 탭바 미디어 제어 (태블릿 이상 숨김) */
+@media (min-width: 769px) {
+  .mp-bottom-tab-bar {
+    display: none !important;
+  }
+}
