@@ -1,9 +1,9 @@
 'use client'
 /**
- * useMypageHome — Step 5-H API 스왓
- * - ?mock=L1|L2-pending|L2|L3  개발용 Mock 스위치 (window.location.search 별슸)
+ * useMypageHome — Step 5-H API 스왑
+ * - ?mock=L1|L2-pending|L2|L3  개발용 Mock 스위치
  * - 그 외  GET /mypage/home 실 API 호출
- * - Mock fallback 금지: 에러는 error 상태로 노쉱
+ * - Mock fallback 금지: 에러는 error 상태로 노출
  */
 import { useEffect, useState } from 'react'
 import type { MypageHomeResponse } from './types'
@@ -22,7 +22,7 @@ export function useMypageHome() {
       setLoading(true)
       setError(null)
 
-      // URL ?mock= 파라미터 파싱 (window.location.search 직접 사용 — Suspense 필요 없음)
+      // URL ?mock= 파라미터 파싱 (window.location.search 직접 사용 — Suspense 불필요)
       const params = new URLSearchParams(
         typeof window !== 'undefined' ? window.location.search : ''
       )
@@ -39,16 +39,21 @@ export function useMypageHome() {
 
       // 실 API 호출
       try {
-        const raw = await mypageFetch<ReturnType<typeof import('./api')['adaptMypageHome']> extends MypageHomeResponse ? Parameters<typeof import('./api')['adaptMypageHome']>[0] : never>('/mypage/home')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const raw = await mypageFetch<any>('/mypage/home')
         if (!cancelled) {
-          setData(adaptMypageHome(raw as Parameters<typeof adaptMypageHome>[0]))
+          setData(adaptMypageHome(raw))
           setLoading(false)
         }
       } catch (e) {
         if (!cancelled) {
-          setError(e instanceof MypageApiError ? e : new MypageApiError(0, null, '알 수 없는 오류가 발생했습니다'))
+          setError(
+            e instanceof MypageApiError
+              ? e
+              : new MypageApiError(0, null, '알 수 없는 오류가 발생했습니다')
+          )
           setLoading(false)
-          // Mock fallback 절대 금지 — 에러를 실제로 노끌 것
+          // Mock fallback 절대 금지 — 에러를 실제로 노출할 것
         }
       }
     }
