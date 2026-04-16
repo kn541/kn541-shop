@@ -3,39 +3,157 @@
  * KN541 마이페이지 홈 화면
  * 라우트: /[locale]/mypage
  *
- * Phase 4: Mock 데이터 기반 구현
- * Phase 5: GET /mypage/home API 연동으로 교체 예정
- *
- * 시나리오 4종:
- *   L1         - 일반회원 (마이샵 X, 유료 X)
- *   L2-pending - 마이샵 신청 후 승인 대기 중
- *   L2         - 마이샵 승인 (내몰 운영 가능)
- *   L3         - 유료회원 (수당·조직도·출금 전체)
+ * Step 5-H: GET /mypage/home 실 API 연동 (useMypageHome 훅)
+ * - 에러 시 Mock fallback 금지 (에러 가시화)
+ * - ?mock=L1|L2-pending|L2|L3 개발용 스위치 유지
+ * - ScenarioSwitcher 프로덕션에서 숨김
  */
-import { useState } from 'react'
 import { useLocale } from 'next-intl'
+import Link from 'next/link'
 import BackHeader from '@/components/mypage/BackHeader'
 import BigCard from '@/components/mypage/BigCard'
 import LockedCard from '@/components/mypage/LockedCard'
 import SectionHeader from '@/components/mypage/SectionHeader'
 import UserGreeting from '@/components/mypage/UserGreeting'
-import {
-  MOCK_SCENARIOS,
-  SCENARIO_LABELS,
-  DEFAULT_SCENARIO,
-  type ScenarioKey,
-} from '@/lib/mypage/mocks'
+import { useMypageHome } from '@/lib/mypage/useMypageHome'
+import { SCENARIO_LABELS, type ScenarioKey } from '@/lib/mypage/mocks'
 
+// ── URL ?mock= 변경 버튼 (개발 전용) ─────────────────────────────────────
+function ScenarioSwitcher() {
+  if (typeof window === 'undefined') return null
+  const params = new URLSearchParams(window.location.search)
+  const current = (params.get('mock') ?? 'real') as ScenarioKey | 'real'
+
+  const keys: (ScenarioKey | 'real')[] = ['real', 'L1', 'L2-pending', 'L2', 'L3']
+  const labels: Record<string, string> = { real: '🔴 실 API', ...SCENARIO_LABELS }
+
+  const go = (key: string) => {
+    const url = new URL(window.location.href)
+    if (key === 'real') url.searchParams.delete('mock')
+    else url.searchParams.set('mock', key)
+    window.location.href = url.toString()
+  }
+
+  return (
+    <div style={{
+      margin: '16px',
+      padding: 16,
+      background: '#1E1E2F',
+      borderRadius: 'var(--mp-radius-lg)',
+      color: '#fff',
+    }}>
+      <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, opacity: 0.7 }}>
+        🔧 DEV 스위치 (NODE_ENV=development 전용)
+      </div>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        {keys.map((k) => (
+          <button
+            key={k}
+            onClick={() => go(k)}
+            style={{
+              padding: '8px 14px', borderRadius: 20, border: 'none',
+              cursor: 'pointer', fontSize: 13, fontWeight: 700,
+              background: current === k ? '#7367F0' : '#2D2D3F',
+              color:      current === k ? '#fff'    : '#A6A4B0',
+            }}
+          >
+            {labels[k]}
+          </button>
+        ))}
+      </div>
+      <div style={{ marginTop: 10, fontSize: 12, opacity: 0.5 }}>
+        현재: {labels[current]} {current === 'real' ? '(실제 로그인 데이터)' : '(Mock 데이터)'}
+      </div>
+    </div>
+  )
+}
+
+// ── 에러 UI ──────────────────────────────────────────────────────────────
+function ErrorView({ status, message, locale }: { status: number; message: string; locale: string }) {
+  if (status === 401) {
+    return (
+      <div style={{ padding: '48px 24px', textAlign: 'center' }}>
+        <div style={{ fontSize: 56, marginBottom: 16 }}>🔒</div>
+        <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>로그인이 필요해요</div>
+        <div style={{ fontSize: 16, color: 'var(--mp-color-text-muted)', marginBottom: 28 }}>
+          마이페이지를 이용하려면 먼저 로그인해 주세요.
+        </div>
+        <Link
+          href={`/${locale}/login?return=/mypage`}
+          style={{
+            display: 'inline-block',
+            background: 'var(--mp-color-primary)', color: '#fff',
+            borderRadius: 'var(--mp-radius)', padding: '14px 32px',
+            fontWeight: 700, fontSize: 17, textDecoration: 'none',
+          }}
+        >
+          로그인하기
+        </Link>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ padding: '48px 24px', textAlign: 'center' }}>
+      <div style={{ fontSize: 56, marginBottom: 16 }}>⚠️</div>
+      <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--mp-color-danger)', marginBottom: 8 }}>
+        잠시 후 다시 시도해주세요
+      </div>
+      <div style={{ fontSize: 14, color: 'var(--mp-color-text-muted)', marginBottom: 24 }}>
+        {message}
+      </div>
+      <button
+        onClick={() => window.location.reload()}
+        style={{
+          background: 'var(--mp-color-primary)', color: '#fff',
+          border: 'none', borderRadius: 'var(--mp-radius)',
+          padding: '14px 28px', fontSize: 16, fontWeight: 700, cursor: 'pointer',
+        }}
+      >
+        다시 시도
+      </button>
+    </div>
+  )
+}
+
+// ── 메인 컴포넌트 ─────────────────────────────────────────────────────────
 export default function MypageHomePage() {
   const locale = useLocale()
-  const [scenario, setScenario] = useState<ScenarioKey>(DEFAULT_SCENARIO)
-  const data = MOCK_SCENARIOS[scenario]
-  const { user, shop, paid } = data
+  const { data, loading, error } = useMypageHome()
 
   const href = (path: string) => `/${locale}${path}`
 
+  // 로딩
+  if (loading) {
+    return (
+      <>
+        <BackHeader title='마이페이지' />
+        <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--mp-color-text-muted)' }}>
+          불러오는 중…
+        </div>
+      </>
+    )
+  }
+
+  // 에러
+  if (error) {
+    return (
+      <>
+        <BackHeader title='마이페이지' />
+        <ErrorView status={error.status} message={error.message} locale={locale} />
+        {/* 개발 환경에서만 스위치 표시 */}
+        {process.env.NODE_ENV !== 'production' && <ScenarioSwitcher />}
+      </>
+    )
+  }
+
+  // 방어적 null 체크
+  if (!data) return null
+
+  const { user, shop, paid, summary } = data
+
   const isL2 = user.member_level === 'L2' || user.member_level === 'L3'
-  const isL3 = user.member_level === 'L3'
+  const isL3 = user.member_level === 'L3' && paid.is_active
   const shopPending = shop.status === 'PENDING'
 
   const shopSubtitle = shopPending
@@ -55,7 +173,11 @@ export default function MypageHomePage() {
         title='마이페이지'
         rightAction={
           <button
-            onClick={() => { /* Phase 5에서 로그아웃 연동 */ }}
+            onClick={() => {
+              localStorage.removeItem('access_token')
+              localStorage.removeItem('refresh_token')
+              window.location.href = `/${locale}/login`
+            }}
             style={{
               border: 'none', background: 'transparent',
               fontSize: 14, color: 'var(--mp-color-text-muted)',
@@ -76,7 +198,7 @@ export default function MypageHomePage() {
         <BigCard
           icon='🛒' label='주문 내역'
           href={href('/mypage/orders')}
-          badge={data.summary.orders_pending > 0 ? data.summary.orders_pending : undefined}
+          badge={summary.orders_pending > 0 ? summary.orders_pending : undefined}
         />
         <BigCard icon='📦' label='배송 조회' href={href('/mypage/orders')} />
         <BigCard icon='🔄' label='반품·교환' href={href('/mypage/orders')} />
@@ -89,12 +211,12 @@ export default function MypageHomePage() {
         <BigCard
           icon='💰' label='적립금'
           href={href('/mypage/points')}
-          badge={data.summary.points > 0 ? `${data.summary.points.toLocaleString('ko-KR')}원` : undefined}
+          badge={summary.points > 0 ? `${summary.points.toLocaleString('ko-KR')}원` : undefined}
         />
         <BigCard
           icon='🏷️' label='쿠폰함'
           href={href('/mypage/coupons')}
-          badge={data.summary.coupons > 0 ? data.summary.coupons : undefined}
+          badge={summary.coupons > 0 ? summary.coupons : undefined}
         />
       </div>
 
@@ -209,8 +331,7 @@ export default function MypageHomePage() {
           margin: '24px 16px 16px',
           background: 'linear-gradient(135deg, #7367F0 0%, #9E95F5 100%)',
           borderRadius: 'var(--mp-radius-lg)',
-          padding: '20px',
-          color: '#fff',
+          padding: '20px', color: '#fff',
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         }}>
           <div>
@@ -223,8 +344,7 @@ export default function MypageHomePage() {
               background: '#fff', color: '#7367F0',
               borderRadius: 'var(--mp-radius)', padding: '12px 18px',
               fontWeight: 700, fontSize: 15,
-              textDecoration: 'none', whiteSpace: 'nowrap',
-              display: 'block',
+              textDecoration: 'none', whiteSpace: 'nowrap', display: 'block',
             }}
           >
             알아보기
@@ -232,54 +352,10 @@ export default function MypageHomePage() {
         </div>
       )}
 
-      {/* ──── Step 4-3: 시나리오 스위치 (개발용) ──── */}
-      <ScenarioSwitcher current={scenario} onChange={setScenario} />
+      {/* 개발용 시나리오 스위치 — 프로덕션에서 숨김 */}
+      {process.env.NODE_ENV !== 'production' && <ScenarioSwitcher />}
 
       <div style={{ height: 32 }} />
     </>
-  )
-}
-
-// ── 시나리오 스위치 (개발 툴) ─────────────────────────────────────
-function ScenarioSwitcher({
-  current,
-  onChange,
-}: {
-  current: ScenarioKey
-  onChange: (s: ScenarioKey) => void
-}) {
-  const keys: ScenarioKey[] = ['L1', 'L2-pending', 'L2', 'L3']
-  return (
-    <div style={{
-      margin: '16px',
-      padding: 16,
-      background: '#1E1E2F',
-      borderRadius: 'var(--mp-radius-lg)',
-      color: '#fff',
-    }}>
-      <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, opacity: 0.7 }}>
-        🔧 DEV 시나리오 스위치 (Phase 5 API 연동 후 제거)
-      </div>
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        {keys.map((k) => (
-          <button
-            key={k}
-            onClick={() => onChange(k)}
-            style={{
-              padding: '8px 14px', borderRadius: 20, border: 'none',
-              cursor: 'pointer', fontSize: 13, fontWeight: 700,
-              background: current === k ? '#7367F0' : '#2D2D3F',
-              color:      current === k ? '#fff'    : '#A6A4B0',
-              transition: 'all 0.15s',
-            }}
-          >
-            {SCENARIO_LABELS[k]}
-          </button>
-        ))}
-      </div>
-      <div style={{ marginTop: 10, fontSize: 12, opacity: 0.5 }}>
-        현재: {SCENARIO_LABELS[current]}
-      </div>
-    </div>
   )
 }

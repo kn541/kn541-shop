@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 'use client'
 // KN541 쇼핑몰 — 마이페이지 > 수당 현황
 // API: GET /commissions?page=1&size=20
@@ -81,3 +82,6 @@ export default function CommissionPage() {
     </div>
   )
 }
+=======
+export {}
+>>>>>>> 40dcdd48e8553faffe82a8c352ba709fff1db211

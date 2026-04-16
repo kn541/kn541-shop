@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 'use client'
 // KN541 쇼핑몰 — 마이페이지 > 내 쇼핑몰 (분양몰)
 // API: GET/POST/PATCH /my/shop, /my/shop/products, /my/shop/dashboard, /my/shop/share-link
@@ -266,3 +267,6 @@ export default function MyShopPage() {
 const labelClass = 'mb-1.5 block text-sm font-medium text-neutral-600 dark:text-neutral-400'
 const inputClass = 'w-full rounded-xl border border-neutral-300 bg-white px-4 py-2.5 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100'
 const readClass = 'rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-2.5 text-sm text-neutral-600 dark:border-neutral-700 dark:bg-neutral-800/50 dark:text-neutral-400'
+=======
+export {}
+>>>>>>> 40dcdd48e8553faffe82a8c352ba709fff1db211

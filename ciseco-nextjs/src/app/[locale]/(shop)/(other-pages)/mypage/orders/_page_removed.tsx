@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 'use client'
 // KN541 쇼핑몰 — 마이페이지 > 주문 내역
 // API: GET /orders?member_id={id}&page=1&size=10
@@ -116,3 +117,6 @@ export default function OrdersPage() {
     </div>
   )
 }
+=======
+export {}
+>>>>>>> 40dcdd48e8553faffe82a8c352ba709fff1db211
