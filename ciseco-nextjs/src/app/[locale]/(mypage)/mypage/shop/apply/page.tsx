@@ -1,8 +1,80 @@
+'use client'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useLocale } from 'next-intl'
+import { toast } from 'react-hot-toast'
+import BackHeader from '@/components/mypage/BackHeader'
+import { useMypageHome } from '@/lib/mypage/useMypageHome'
+import type { ShopApplyFormState } from '@/lib/mypage/types'
+import StepProgress from './_steps/StepProgress'
+import Step1BasicInfo from './_steps/Step1BasicInfo'
+import Step2UrlCode from './_steps/Step2UrlCode'
+import Step3TemplatePick from './_steps/Step3TemplatePick'
+
 export default function ShopApplyPage() {
+  const locale = useLocale()
+  const router = useRouter()
+  const { data: home, loading } = useMypageHome()
+  const [step, setStep] = useState<1 | 2 | 3>(1)
+  const [submitting, setSubmitting] = useState(false)
+  const [form, setForm] = useState<ShopApplyFormState>({
+    shop_name: '',
+    shop_description: '',
+    shop_url_code: '',
+    template_code: 'CLASSIC',
+  })
+
+  // 상태 가드 — 로딩 전에는 자리만 표시
+  if (loading) return (
+    <div style={{ padding: 48, textAlign: 'center', color: 'var(--mp-color-text-muted)' }}>불러오는 중…</div>
+  )
+
+  const shopStatus = home?.shop?.status
+
+  // PENDING: 대기 페이지로
+  if (shopStatus === 'PENDING') {
+    router.replace(`/${locale}/mypage/shop/status`)
+    return null
+  }
+  // APPROVED: 이미 오픈 상태
+  if (shopStatus === 'APPROVED') {
+    router.replace(`/${locale}/mypage/shop`)
+    return null
+  }
+
+  const handleSubmit = async () => {
+    setSubmitting(true)
+    toast.loading('신청 중…', { id: 'apply' })
+    try {
+      // Phase 2-3 API 완성 후: await fetch(`${API_BASE}/mypage/shop/apply`, { ... })
+      await new Promise(r => setTimeout(r, 1_000))
+      toast.success('신청이 접수됐습니다. 승인을 기다려주세요.', { id: 'apply' })
+      router.replace(`/${locale}/mypage`)
+    } catch {
+      toast.error('신청 실패. 다시 시도해주세요.', { id: 'apply' })
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   return (
-    <div style={{ padding: 24 }}>
-      <h1 style={{ fontSize: 24, fontWeight: 700 }}>마이샵 신청</h1>
-      <p style={{ fontSize: 16, color: '#999', marginTop: 8 }}>Phase 5에서 구현됩니다.</p>
-    </div>
+    <>
+      <BackHeader title='마이샵 신청' />
+      <StepProgress current={step} />
+      <div style={{ padding: '0 16px 32px' }}>
+        {step === 1 && (
+          <Step1BasicInfo form={form} onChange={setForm} onNext={() => setStep(2)} />
+        )}
+        {step === 2 && (
+          <Step2UrlCode form={form} onChange={setForm}
+            onPrev={() => setStep(1)} onNext={() => setStep(3)} />
+        )}
+        {step === 3 && (
+          <Step3TemplatePick form={form} onChange={setForm}
+            onPrev={() => setStep(2)}
+            onSubmit={submitting ? () => {} : handleSubmit} />
+        )}
+      </div>
+    </>
   )
 }
