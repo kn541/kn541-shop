@@ -1,8 +1,9 @@
 // KN541 마이페이지 타입 정의
 // Phase 4: MypageHomeResponse
 // Phase 5: Order / Inquiry / Profile / Points / Coupon
+// Phase 6: Shop (L2 마이샵)
 
-// ──── Phase 4: 홈 ──────────────────────────────────────────────────
+// ──── Phase 4: 홈 ───────────────────────────────────────────────────────────
 
 export interface MypageHomeUser {
   name: string
@@ -33,7 +34,7 @@ export interface MypageHomeResponse {
   paid: MypageHomePaid
 }
 
-// ──── Phase 5-1: 주문 ───────────────────────────────────────────────
+// ──── Phase 5-1: 주문 ────────────────────────────────────────────────────────
 
 export type OrderStatus =
   | 'PAID' | 'PREPARING' | 'SHIPPING' | 'DELIVERED'
@@ -59,7 +60,7 @@ export interface OrderListResponse {
   status_counts: Record<OrderStatus | 'ALL', number>
 }
 
-// ──── Phase 5-2: 1:1 문의 ──────────────────────────────────────────
+// ──── Phase 5-2: 1:1 문의 ─────────────────────────────────────────────────
 
 export type InquiryStatus = 'WAITING' | 'ANSWERED'
 
@@ -80,7 +81,7 @@ export interface InquiryListResponse {
   status_counts: Record<InquiryStatus | 'ALL', number>
 }
 
-// ──── Phase 5-3: 내 정보 ─────────────────────────────────────────────
+// ──── Phase 5-3: 내 정보 ──────────────────────────────────────────────────
 
 export interface MypageProfile {
   user_id: string
@@ -95,7 +96,7 @@ export interface MypageProfile {
   address2: string | null
 }
 
-// ──── Phase 5-4: 적립금 / 쿠폰 ─────────────────────────────────────────
+// ──── Phase 5-4: 적립금 / 쿠폰 ───────────────────────────────────────────
 
 export type PointChangeType = 'EARN' | 'USE' | 'EXPIRE' | 'CANCEL'
 
@@ -132,4 +133,100 @@ export interface CouponItem {
 export interface CouponListResponse {
   items: CouponItem[]
   status_counts: Record<CouponStatus, number>
+}
+
+// ──── Phase 6: L2 마이샵 ─────────────────────────────────────────────────
+
+export type ShopTemplateCode = 'CLASSIC' | 'MODERN' | 'WARM' | 'COOL' | 'ELEGANT'
+
+export interface ShopTemplate {
+  template_code: ShopTemplateCode
+  template_name: string
+  description: string
+  primary_color: string
+  thumbnail_url: string | null
+  sort_order: number
+}
+
+export interface ShopApplyFormState {
+  shop_name: string
+  shop_description: string
+  shop_url_code: string
+  template_code: ShopTemplateCode
+}
+
+export interface ShopApplyResponse {
+  shop_id: string
+  status: 'PENDING'
+  status_label: string
+  shop_name: string
+  shop_url_code: string
+  applied_at: string
+}
+
+export interface UrlCheckResponse {
+  available: boolean
+  reason?: 'TAKEN' | 'INVALID_FORMAT' | 'TOO_SHORT' | 'TOO_LONG'
+}
+
+export interface MemberShopHome {
+  shop_id: string
+  shop_name: string
+  shop_url_code: string
+  full_url: string
+  template_code: string
+  status: 'APPROVED'
+  status_label: string
+  logo_url: string | null
+  this_month_visit_count: number
+  this_month_share_count: number
+  this_month_order_count: number
+  total_visit_count: number
+  total_share_count: number
+  total_product_count: number
+}
+
+export interface ShopProduct {
+  shop_product_id: string
+  product_id: string
+  product_name: string
+  product_price: number
+  product_thumbnail: string | null
+  sort_order: number
+  added_at: string
+}
+
+export interface AvailableProduct {
+  product_id: string
+  product_name: string
+  price: number
+  thumbnail: string | null
+  category_code: string | null
+  is_added: boolean
+}
+
+export interface ShopSalesRecentOrder {
+  order_no: string
+  ordered_at: string
+  main_item_name: string
+  item_count: number
+  amount: number
+}
+
+export interface ShopSalesTopProduct {
+  product_id: string
+  product_name: string
+  sold_count: number
+}
+
+export type ShopSalesPeriod = 'TODAY' | 'WEEK' | 'MONTH' | 'ALL'
+
+export interface ShopSalesStats {
+  period: ShopSalesPeriod
+  order_count: number
+  total_revenue: number
+  avg_order_value: number
+  daily_series: { date: string; revenue: number; orders: number }[]
+  recent_orders: ShopSalesRecentOrder[]
+  top_products: ShopSalesTopProduct[]
 }
