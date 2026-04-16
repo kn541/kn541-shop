@@ -34,7 +34,6 @@ export default function Step3TemplatePick({ form, onChange, onPrev, onSubmit }: 
                 cursor: 'pointer', textAlign: 'left', width: '100%',
               }}
             >
-              {/* 콌러 블록 프리뷰 (실 이미지 없으면 콌러 박스) */}
               <div style={{
                 width: 72, height: 72, flexShrink: 0, borderRadius: 8,
                 background: t.primary_color,
@@ -47,7 +46,6 @@ export default function Step3TemplatePick({ form, onChange, onPrev, onSubmit }: 
                 <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>{t.template_name}</div>
                 <div style={{ fontSize: 14, color: 'var(--mp-color-text-muted)' }}>{t.description}</div>
               </div>
-              {/* 선택 체크 */}
               <div style={{
                 width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
                 background: selected ? t.primary_color : '#E9E9E9',
@@ -62,12 +60,17 @@ export default function Step3TemplatePick({ form, onChange, onPrev, onSubmit }: 
       </div>
 
       <div style={{ display: 'flex', gap: 12 }}>
-        <BigButton variant='secondary' onClick={onPrev} style={{ flex: '0 0 80px' } as React.CSSProperties}>
-          ◄ 이전
-        </BigButton>
-        <BigButton fullWidth onClick={onSubmit}>
-          신청 완료 ✨
-        </BigButton>
+        {/* BigButton은 style prop 미지원 → div 래퍼로 너비 제어 */}
+        <div style={{ flex: '0 0 80px' }}>
+          <BigButton variant='secondary' onClick={onPrev}>
+            ◄ 이전
+          </BigButton>
+        </div>
+        <div style={{ flex: 1 }}>
+          <BigButton fullWidth onClick={onSubmit}>
+            신청 완료 ✨
+          </BigButton>
+        </div>
       </div>
     </div>
   )
