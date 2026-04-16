@@ -28,7 +28,6 @@ export default function Step2UrlCode({ form, onChange, onPrev, onNext }: Props) 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const handleChange = (raw: string) => {
-    // 한글 제거, 소문자 변환
     const cleaned = raw.replace(/[^a-z0-9_]/gi, '').toLowerCase()
     onChange({ ...form, shop_url_code: cleaned })
 
@@ -39,7 +38,6 @@ export default function Step2UrlCode({ form, onChange, onPrev, onNext }: Props) 
     setStatus('checking')
     if (timer.current) clearTimeout(timer.current)
     timer.current = setTimeout(() => {
-      // Mock 중복 체크 (Phase 2 API 완성 후 실 API로 교체)
       const result: UrlCheckResponse = mockCheckUrlCode(cleaned)
       if (result.available) {
         setStatus('ok'); setErrMsg('')
@@ -87,7 +85,6 @@ export default function Step2UrlCode({ form, onChange, onPrev, onNext }: Props) 
         />
       </div>
 
-      {/* 상태 메시지 */}
       <div style={{ marginBottom: 8, fontSize: 15, minHeight: 24 }}>
         {status === 'checking' && <span style={{ color: 'var(--mp-color-text-muted)' }}>확인 중…</span>}
         {status === 'ok'       && <span style={{ color: 'var(--mp-color-success)' }}>✅ 사용할 수 있어요!</span>}
@@ -99,7 +96,6 @@ export default function Step2UrlCode({ form, onChange, onPrev, onNext }: Props) 
         )}
       </div>
 
-      {/* 프리뷰 */}
       {form.shop_url_code && (
         <div style={{
           background: 'var(--mp-color-bg)',
@@ -113,12 +109,17 @@ export default function Step2UrlCode({ form, onChange, onPrev, onNext }: Props) 
       )}
 
       <div style={{ display: 'flex', gap: 12 }}>
-        <BigButton variant='secondary' onClick={onPrev} style={{ flex: '0 0 80px' } as React.CSSProperties}>
-          ◄ 이전
-        </BigButton>
-        <BigButton fullWidth onClick={onNext} disabled={status !== 'ok'}>
-          다음 ▶
-        </BigButton>
+        {/* BigButton은 style prop 미지원 → div로 감싸서 너비 제어 */}
+        <div style={{ flex: '0 0 80px' }}>
+          <BigButton variant='secondary' onClick={onPrev}>
+            ◄ 이전
+          </BigButton>
+        </div>
+        <div style={{ flex: 1 }}>
+          <BigButton fullWidth onClick={onNext} disabled={status !== 'ok'}>
+            다음 ▶
+          </BigButton>
+        </div>
       </div>
     </div>
   )
