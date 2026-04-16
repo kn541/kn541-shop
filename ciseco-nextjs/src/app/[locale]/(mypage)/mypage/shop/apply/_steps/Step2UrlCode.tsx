@@ -25,7 +25,7 @@ interface Props {
 export default function Step2UrlCode({ form, onChange, onPrev, onNext }: Props) {
   const [status, setStatus] = useState<CheckStatus>('idle')
   const [errMsg, setErrMsg] = useState('')
-  const timer = useRef<ReturnType<typeof setTimeout>>()
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const handleChange = (raw: string) => {
     // 한글 제거, 소문자 변환
@@ -37,9 +37,9 @@ export default function Step2UrlCode({ form, onChange, onPrev, onNext }: Props) 
     if (!URL_REGEX.test(cleaned)) { setStatus('error'); setErrMsg(REASON_MSG.INVALID_FORMAT); return }
 
     setStatus('checking')
-    clearTimeout(timer.current)
+    if (timer.current) clearTimeout(timer.current)
     timer.current = setTimeout(() => {
-      // Mock 중복 철크 (Phase 2 API 완성 후 실 API로 코드 스왓)
+      // Mock 중복 체크 (Phase 2 API 완성 후 실 API로 교체)
       const result: UrlCheckResponse = mockCheckUrlCode(cleaned)
       if (result.available) {
         setStatus('ok'); setErrMsg('')
@@ -50,7 +50,7 @@ export default function Step2UrlCode({ form, onChange, onPrev, onNext }: Props) 
     }, 500)
   }
 
-  useEffect(() => () => clearTimeout(timer.current), [])
+  useEffect(() => () => { if (timer.current) clearTimeout(timer.current) }, [])
 
   const borderColor =
     status === 'ok'    ? 'var(--mp-color-success)' :
