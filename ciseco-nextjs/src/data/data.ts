@@ -2,7 +2,7 @@
  * KN541 쇼핑몰 데이터 레이어
  * - NEXT_PUBLIC_API_URL 설정 시 실제 KN541 API 호출
  * - 미설정 또는 API 오류 시 더미데이터로 자동 폴백
- * fix: getProductByHandle — product_code(handle)로 목록 검색 후 id로 단건 조회
+ * fix v2: product_id(UUID) 사용, product_status 필터 제거, description 실제값 사용
  */
 
 import collectionImage1 from '@/images/collections/1.png'
@@ -63,6 +63,7 @@ import {
   getBestProducts,
   getNewProducts,
   getProductById,
+  getProductByCode,
   getProducts as apiGetProducts,
   getProductsByCategory,
 } from '@/lib/api/products'
@@ -330,7 +331,7 @@ export async function getProducts(params?: {
       size: params?.size ?? 20,
       page: params?.page,
       keyword: params?.q,
-      product_status: 'ACTIVE',
+      // ★ product_status 필터 제거 — 모든 상태 조회
     })
     if (result.items.length > 0) {
       return adaptProducts(result.items)
@@ -342,57 +343,69 @@ export async function getProducts(params?: {
 }
 
 /**
- * handle(product_code)로 상품 조회
- * fix: 목록 API에서 product_code 매칭 → id로 단건 조회
- *      숫자 ID인 경우 직접 단건 조회도 시도
+ * ★ handle(product_code)로 상품 조회 — 완전 수정
+ * 1. getProductByCode API 사용 (product_id UUID로 단건 조회)
+ * 2. 실패 시 더미 데이터로 폴백 (단, notFound를 위해 null 반환 가능)
  */
 export async function getProductByHandle(handle: string) {
+  const originalHandle = handle
   handle = handle.toLowerCase()
+
   try {
-    // 1) product_code(handle)로 목록에서 찾아서 실제 id 획득
-    const result = await apiGetProducts({ size: 100, product_status: 'ACTIVE' })
-    const found = result.items.find(
-      (p) => p.product_code?.toLowerCase() === handle || String(p.id) === handle
-    )
-    if (found) {
-      // 2) id로 단건 상세 조회 (description, detail_images 등 포함)
-      const detail = await getProductById(String(found.id))
-      return adaptProduct(detail)
+    // ★ 신규: getProductByCode 사용 (product_code로 UUID 찾아 단건 조회)
+    const product = await getProductByCode(handle)
+    if (product) {
+      return adaptProduct(product)
     }
-  } catch {
-    // 폴백
+  } catch (e) {
+    console.error('[getProductByHandle] error:', e)
   }
-  // 더미 폴백
+
+  // 더미 폴백 (개발 환경 or API 오류 시)
   const products = getDummyProducts()
-  return products.find((p) => p.handle === handle) ?? products[0]
+  return products.find((p) => p.handle === handle) ?? null
 }
 
+/**
+ * ★ 상세 페이지용 — 실제 description, images 포함
+ */
 export async function getProductDetailByHandle(handle: string) {
   handle = handle.toLowerCase()
   const product = await getProductByHandle(handle)
+
+  if (!product) return { id: '' } // notFound 처리용
+
+  // ★ description: 실제 API 값 사용 (HTML 가능)
+  const rawDescription = (product as any).description as string | undefined
+
+  // ★ 배송비 정보
+  const delivery = (product as any).delivery as {
+    sc_type?: number
+    shipping_fee?: number
+    free_over?: number | null
+    return_fee?: number
+    delivery_days?: number
+  } | undefined
+
+  const shippingFee = delivery?.shipping_fee ?? 3000
+  const freeOver = delivery?.free_over ?? 50000
+
   return {
     ...product,
-    status: 'In Stock',
+    status: product.status ?? 'In Stock',
     breadcrumbs: [
-      { id: 1, name: 'Home', href: '/' },
-      { id: 2, name: 'Products', href: '/collections/all' },
+      { id: 1, name: '홈', href: '/' },
+      { id: 2, name: '상품 목록', href: '/collections/all' },
     ],
-    description: product?.title
-      ? `${product.title} 상품입니다.`
-      : 'Fashion is a form of self-expression and autonomy at a particular period and place.',
+    // ★ 실제 description 사용
+    description: rawDescription || product?.title || '',
     publishedAt: product?.createdAt ?? '2025-01-01T00:00:00Z',
-    selectedOptions: [
-      { name: 'Color', value: (product?.options as any)?.[0]?.optionValues?.[0]?.name },
-      { name: 'Size', value: (product?.options as any)?.[1]?.optionValues?.[0]?.name },
-    ],
-    features: [
-      'Material: 43% Sorona Yarn + 57% Stretch Polyester',
-      'Casual pants waist with elastic elastic inside',
-      'The pants are a bit tight so you always feel comfortable',
-      'Excool technology application 4-way stretch',
-    ],
-    careInstruction: 'Machine wash cold with like colors. Do not bleach. Tumble dry low.',
-    shippingAndReturn: '50,000원 이상 무료배송. 30일 이내 반품/교환 가능.',
+    selectedOptions: [],
+    // 배송 정보
+    shippingFee,
+    freeShippingOver: freeOver,
+    returnFee: delivery?.return_fee ?? 0,
+    deliveryDays: delivery?.delivery_days ?? 3,
   }
 }
 

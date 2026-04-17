@@ -5,6 +5,7 @@ import { useRouter } from '@/i18n/navigation'
 import ButtonPrimary from '@/shared/Button/ButtonPrimary'
 import ButtonSecondary from '@/shared/Button/ButtonSecondary'
 import { toast } from 'react-hot-toast'
+import KakaoAddressInput, { AddressValue } from '@/components/common/KakaoAddressSearch'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL || 'https://kn541-production.up.railway.app'
 
@@ -23,6 +24,11 @@ interface Address {
   is_default: boolean
 }
 
+const EMPTY_FORM = {
+  recipient_name: '', phone: '', is_default: false,
+}
+const EMPTY_ADDR: AddressValue = { zipcode: '', address1: '', address2: '' }
+
 export default function AddressesPage() {
   const router = useRouter()
   const [addresses, setAddresses] = useState<Address[]>([])
@@ -30,13 +36,10 @@ export default function AddressesPage() {
   const [userId, setUserId] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
-  const [form, setForm] = useState({
-    recipient_name: '', phone: '', zipcode: '', address1: '', address2: '', is_default: false,
-  })
+  const [form, setForm] = useState(EMPTY_FORM)
+  const [address, setAddress] = useState<AddressValue>(EMPTY_ADDR)
 
-  useEffect(() => {
-    fetchMe()
-  }, [])
+  useEffect(() => { fetchMe() }, [])
 
   async function fetchMe() {
     try {
@@ -64,20 +67,29 @@ export default function AddressesPage() {
   }
 
   async function saveAddress() {
-    if (!form.recipient_name || !form.phone || !form.address1) {
+    if (!form.recipient_name || !form.phone || !address.address1) {
       toast.error('필수 항목을 입력해주세요'); return
     }
     try {
+      const body = {
+        recipient_name: form.recipient_name,
+        phone: form.phone,
+        zipcode: address.zipcode,
+        address1: address.address1,
+        address2: address.address2 || '',
+        is_default: form.is_default,
+      }
       const url = editId
         ? `${BASE}/members/${userId}/addresses/${editId}`
         : `${BASE}/members/${userId}/addresses`
-      const method = editId ? 'PATCH' : 'POST'
-      const r = await fetch(url, { method, headers: getHeaders(), body: JSON.stringify(form) })
+      const r = await fetch(url, {
+        method: editId ? 'PATCH' : 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(body),
+      })
       if (r.ok) {
         toast.success(editId ? '배송지가 수정됐습니다' : '배송지가 추가됐습니다')
-        setShowForm(false)
-        setEditId(null)
-        setForm({ recipient_name: '', phone: '', zipcode: '', address1: '', address2: '', is_default: false })
+        closeForm()
         fetchAddresses(userId)
       } else {
         toast.error('저장에 실패했습니다')
@@ -93,9 +105,7 @@ export default function AddressesPage() {
       await fetch(`${BASE}/members/${userId}/addresses/${id}`, { method: 'DELETE', headers: getHeaders() })
       toast.success('배송지가 삭제됐습니다')
       fetchAddresses(userId)
-    } catch {
-      toast.error('오류가 발생했습니다')
-    }
+    } catch { toast.error('오류가 발생했습니다') }
   }
 
   async function setDefault(id: string) {
@@ -103,23 +113,32 @@ export default function AddressesPage() {
       await fetch(`${BASE}/members/${userId}/addresses/${id}/default`, { method: 'PATCH', headers: getHeaders() })
       toast.success('기본 배송지로 설정됐습니다')
       fetchAddresses(userId)
-    } catch {
-      toast.error('오류가 발생했습니다')
-    }
+    } catch { toast.error('오류가 발생했습니다') }
+  }
+
+  function openAddForm() {
+    setEditId(null)
+    setForm(EMPTY_FORM)
+    setAddress(EMPTY_ADDR)
+    setShowForm(true)
   }
 
   function startEdit(addr: Address) {
     setEditId(addr.id)
-    setForm({
-      recipient_name: addr.recipient_name,
-      phone: addr.phone,
-      zipcode: addr.zipcode,
-      address1: addr.address1,
-      address2: addr.address2 || '',
-      is_default: addr.is_default,
-    })
+    setForm({ recipient_name: addr.recipient_name, phone: addr.phone, is_default: addr.is_default })
+    setAddress({ zipcode: addr.zipcode, address1: addr.address1, address2: addr.address2 || '' })
     setShowForm(true)
   }
+
+  function closeForm() {
+    setShowForm(false)
+    setEditId(null)
+    setForm(EMPTY_FORM)
+    setAddress(EMPTY_ADDR)
+  }
+
+  const inp = 'w-full rounded-xl border border-neutral-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-900'
+  const lbl = 'mb-1 block text-sm font-medium'
 
   if (loading) return (
     <div className="flex items-center justify-center py-20">
@@ -131,39 +150,49 @@ export default function AddressesPage() {
     <div className="flex flex-col gap-y-8">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold sm:text-3xl">배송지 관리</h1>
-        <ButtonPrimary onClick={() => { setShowForm(true); setEditId(null); setForm({ recipient_name: '', phone: '', zipcode: '', address1: '', address2: '', is_default: false }) }}>
-          + 배송지 추가
-        </ButtonPrimary>
+        <ButtonPrimary onClick={openAddForm}>+ 배송지 추가</ButtonPrimary>
       </div>
 
       {/* 추가/수정 폼 */}
       {showForm && (
         <div className="space-y-4 rounded-2xl border border-neutral-200 p-6 dark:border-neutral-700">
           <h3 className="font-semibold">{editId ? '배송지 수정' : '새 배송지'}</h3>
-          {[{ key: 'recipient_name', label: '받는 분 *', type: 'text', placeholder: '이름' },
-            { key: 'phone', label: '연락처 *', type: 'tel', placeholder: '010-0000-0000' },
-            { key: 'zipcode', label: '우편번호', type: 'text', placeholder: '우편번호' },
-            { key: 'address1', label: '주소 *', type: 'text', placeholder: '기본 주소' },
-            { key: 'address2', label: '상세 주소', type: 'text', placeholder: '상세 주소 (선택)' },
-          ].map(f => (
-            <div key={f.key}>
-              <label className="mb-1 block text-sm font-medium">{f.label}</label>
-              <input
-                type={f.type}
-                value={(form as any)[f.key]}
-                onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
-                placeholder={f.placeholder}
-                className="w-full rounded-xl border border-neutral-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-900"
-              />
-            </div>
-          ))}
+
+          {/* 받는 분 */}
+          <div>
+            <label className={lbl}>받는 분 *</label>
+            <input type="text" className={inp} placeholder="이름"
+              value={form.recipient_name}
+              onChange={(e) => setForm((p) => ({ ...p, recipient_name: e.target.value }))} />
+          </div>
+
+          {/* 연락처 */}
+          <div>
+            <label className={lbl}>연락처 *</label>
+            <input type="tel" className={inp} placeholder="010-0000-0000"
+              value={form.phone}
+              onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))} />
+          </div>
+
+          {/* ★ 카카오 주소 검색 */}
+          <KakaoAddressInput
+            value={address}
+            onChange={setAddress}
+            label="주소 *"
+            inputClassName={inp}
+            labelClassName={lbl}
+          />
+
+          {/* 기본 배송지 */}
           <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={form.is_default} onChange={e => setForm(prev => ({ ...prev, is_default: e.target.checked }))} />
+            <input type="checkbox" checked={form.is_default}
+              onChange={(e) => setForm((p) => ({ ...p, is_default: e.target.checked }))} />
             기본 배송지로 설정
           </label>
+
           <div className="flex gap-3">
             <ButtonPrimary onClick={saveAddress}>저장</ButtonPrimary>
-            <ButtonSecondary onClick={() => setShowForm(false)}>취소</ButtonSecondary>
+            <ButtonSecondary onClick={closeForm}>취소</ButtonSecondary>
           </div>
         </div>
       )}
@@ -173,9 +202,11 @@ export default function AddressesPage() {
         <div className="py-12 text-center text-sm text-neutral-500">등록된 배송지가 없습니다</div>
       ) : (
         <div className="space-y-3">
-          {addresses.map(addr => (
+          {addresses.map((addr) => (
             <div key={addr.id} className={`rounded-2xl border p-5 dark:border-neutral-700 ${
-              addr.is_default ? 'border-primary-300 bg-primary-50/30 dark:border-primary-700' : 'border-neutral-200'
+              addr.is_default
+                ? 'border-primary-300 bg-primary-50/30 dark:border-primary-700'
+                : 'border-neutral-200'
             }`}>
               <div className="flex items-start justify-between">
                 <div>
@@ -189,16 +220,19 @@ export default function AddressesPage() {
                   <p className="text-sm">[{addr.zipcode}] {addr.address1}</p>
                   {addr.address2 && <p className="text-sm text-neutral-500">{addr.address2}</p>}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2 justify-end">
                   {!addr.is_default && (
-                    <button onClick={() => setDefault(addr.id)} className="rounded-lg bg-neutral-100 px-3 py-1.5 text-xs hover:bg-neutral-200 dark:bg-neutral-800">
+                    <button onClick={() => setDefault(addr.id)}
+                      className="rounded-lg bg-neutral-100 px-3 py-1.5 text-xs hover:bg-neutral-200 dark:bg-neutral-800">
                       기본 설정
                     </button>
                   )}
-                  <button onClick={() => startEdit(addr)} className="rounded-lg bg-blue-50 px-3 py-1.5 text-xs text-blue-600 hover:bg-blue-100 dark:bg-blue-900/30">
+                  <button onClick={() => startEdit(addr)}
+                    className="rounded-lg bg-blue-50 px-3 py-1.5 text-xs text-blue-600 hover:bg-blue-100 dark:bg-blue-900/30">
                     수정
                   </button>
-                  <button onClick={() => deleteAddress(addr.id)} className="rounded-lg bg-red-50 px-3 py-1.5 text-xs text-red-600 hover:bg-red-100 dark:bg-red-900/30">
+                  <button onClick={() => deleteAddress(addr.id)}
+                    className="rounded-lg bg-red-50 px-3 py-1.5 text-xs text-red-600 hover:bg-red-100 dark:bg-red-900/30">
                     삭제
                   </button>
                 </div>
