@@ -6,6 +6,7 @@ import { getAuthHeader } from '@/lib/mypage/auth'
 import BackHeader from '@/components/mypage/BackHeader'
 import BigTabs from '@/components/mypage/BigTabs'
 import BigButton from '@/components/mypage/BigButton'
+import { MypageAddressInput } from '@/components/common/KakaoAddressSearch'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL
 
@@ -165,6 +166,13 @@ function ContactTab({ data, userId }: { data: Record<string, string | null>; use
   const [addr2, setAddr2] = useState(data.address2 ?? '')
   const [saving, setSaving] = useState(false)
 
+  // MypageAddressInput 의 onChange 핸들러
+  const handleAddressChange = (field: 'zip_code' | 'address1' | 'address2', value: string) => {
+    if (field === 'zip_code') setZip(value)
+    else if (field === 'address1') setAddr1(value)
+    else setAddr2(value)
+  }
+
   const inputStyle = {
     width: '100%', boxSizing: 'border-box' as const,
     height: 56, padding: '0 16px',
@@ -192,32 +200,21 @@ function ContactTab({ data, userId }: { data: Record<string, string | null>; use
 
   return (
     <div style={{ padding: 16 }}>
+      {/* 휴대폰 번호 */}
       <div style={{ marginBottom: 20 }}>
         <label style={{ display: 'block', fontSize: 15, fontWeight: 600, marginBottom: 8 }}>휴대폰 번호</label>
         <input type='tel' value={phone} onChange={e => setPhone(e.target.value)}
           placeholder='010-0000-0000' style={inputStyle} />
       </div>
-      <div style={{ marginBottom: 20 }}>
-        <label style={{ display: 'block', fontSize: 15, fontWeight: 600, marginBottom: 8 }}>주소</label>
-        <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-          <input value={zip} onChange={e => setZip(e.target.value)}
-            placeholder='우편번호'
-            style={{ ...inputStyle, flex: 1, width: 'auto' }}
-          />
-          <button
-            onClick={() => toast('주소 검색은 다음 단계에서 구현됩니다.')}
-            style={{
-              height: 56, padding: '0 16px', whiteSpace: 'nowrap',
-              background: '#F5F5F5', border: '1px solid var(--mp-color-border)',
-              borderRadius: 'var(--mp-radius)', fontSize: 16, cursor: 'pointer',
-            }}
-          >주소 검색</button>
-        </div>
-        <input value={addr1} onChange={e => setAddr1(e.target.value)}
-          placeholder='도로명 주소' style={{ ...inputStyle, marginBottom: 8 }} />
-        <input value={addr2} onChange={e => setAddr2(e.target.value)}
-          placeholder='상세주소 (동/호 등)' style={inputStyle} />
-      </div>
+
+      {/* ★ 카카오 주소 검색 (MypageAddressInput) */}
+      <MypageAddressInput
+        zipcode={zip}
+        address1={addr1}
+        address2={addr2}
+        onChange={handleAddressChange}
+      />
+
       <BigButton fullWidth onClick={save} disabled={saving}>
         {saving ? '저장 중…' : '저장하기'}
       </BigButton>
