@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>KN541 화면 목록 | Showcase</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans-serif;background:#FAFAFA;color:#111}
+  a{text-decoration:none;color:inherit}
+
+  /* ── 상단 헤더 ── */
+  .top-bar{position:sticky;top:0;z-index:100;background:#fff;border-bottom:1px solid #EAEAEA;padding:0 24px}
+  .top-inner{max-width:1400px;margin:0 auto;display:flex;align-items:center;gap:24px;height:56px}
+  .logo{font-size:16px;font-weight:600;letter-spacing:-.02em;color:#111;margin-right:8px}
+  .logo span{color:#6366F1}
+
+  /* ── 탭 ── */
+  .tabs{display:flex;gap:0}
+  .tab{padding:0 20px;height:56px;display:flex;align-items:center;font-size:14px;font-weight:500;color:#888;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:color .15s,border-color .15s}
+  .tab:hover{color:#111}
+  .tab.active{color:#111;border-bottom-color:#111}
+  .badge{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:18px;padding:0 6px;border-radius:99px;font-size:11px;font-weight:600;margin-left:6px}
+  .badge-admin{background:#EEF2FF;color:#4F46E5}
+  .badge-scm{background:#ECFDF5;color:#059669}
+  .badge-shop{background:#FEF9C3;color:#CA8A04}
+
+  /* ── 검색 ── */
+  .search-wrap{margin-left:auto}
+  .search-wrap input{height:34px;border:1px solid #E5E7EB;border-radius:8px;padding:0 12px;font-size:13px;width:200px;outline:none;color:#111;background:#F9FAFB}
+  .search-wrap input:focus{border-color:#6366F1;background:#fff}
+
+  /* ── 본문 ── */
+  .content{max-width:1400px;margin:0 auto;padding:32px 24px 80px}
+  .section{display:none}.section.active{display:block}
+  .group-label{font-size:11px;font-weight:600;color:#9CA3AF;letter-spacing:.08em;text-transform:uppercase;margin:28px 0 12px;padding-bottom:8px;border-bottom:1px solid #F3F4F6}
+  .group-label:first-child{margin-top:0}
+
+  /* ── 카드 그리드 ── */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:4px}
+
+  /* ── 카드 ── */
+  .card{border:1px solid #E9EAEC;border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .15s;background:#fff;display:block}
+  .card:hover{border-color:#C7D2FE;box-shadow:0 4px 16px rgba(99,102,241,.12);transform:translateY(-2px)}
+  .card.hidden-by-search{display:none}
+
+  /* 미리보기 영역 */
+  .preview{height:128px;background:linear-gradient(135deg,#F8F9FF 0%,#F3F4FF 100%);position:relative;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;overflow:hidden}
+  .preview-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;background:#fff;border:1px solid #E9EAEC}
+  .preview-path{font-size:10px;color:#9CA3AF;font-family:monospace;max-width:90%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .preview-bar{position:absolute;top:0;left:0;right:0;height:3px}
+  .admin .preview-bar{background:linear-gradient(90deg,#6366F1,#818CF8)}
+  .scm   .preview-bar{background:linear-gradient(90deg,#10B981,#34D399)}
+  .shop  .preview-bar{background:linear-gradient(90deg,#F59E0B,#FCD34D)}
+
+  /* 카드 바디 */
+  .card-body{padding:10px 14px 12px;border-top:1px solid #F3F4F6}
+  .card-name{font-size:13px;font-weight:600;color:#111;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .card-path{font-size:11px;color:#9CA3AF;font-family:monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .card-link{font-size:11px;color:#6366F1;margin-top:6px;display:inline-block}
+
+  /* ── 빈 상태 ── */
+  .empty{padding:60px 0;text-align:center;color:#9CA3AF;font-size:14px;display:none}
+
+  /* ── 통계 바 ── */
+  .stat-bar{display:flex;gap:20px;padding:16px 0;border-bottom:1px solid #F3F4F6;margin-bottom:8px;flex-wrap:wrap}
+  .stat-item{font-size:12px;color:#6B7280}
+  .stat-item strong{font-size:20px;font-weight:600;color:#111;margin-right:4px}
+</style>
+</head>
+<body>
+
+<header class="top-bar">
+  <div class="top-inner">
+    <div class="logo">KN<span>541</span> Showcase</div>
+    <nav class="tabs">
+      <button class="tab active" onclick="switchTab('admin')">
+        어드민 <span class="badge badge-admin" id="cnt-admin">0</span>
+      </button>
+      <button class="tab" onclick="switchTab('scm')">
+        SCM <span class="badge badge-scm" id="cnt-scm">0</span>
+      </button>
+      <button class="tab" onclick="switchTab('shop')">
+        쇼핑몰 <span class="badge badge-shop" id="cnt-shop">0</span>
+      </button>
+    </nav>
+    <div class="search-wrap">
+      <input type="search" id="search" placeholder="화면 이름 검색..." oninput="filterCards(this.value)" />
+    </div>
+  </div>
+</header>
+
+<main class="content">
+  <div id="sec-admin" class="section active"></div>
+  <div id="sec-scm"   class="section"></div>
+  <div id="sec-shop"  class="section"></div>
+  <div class="empty" id="empty-msg">검색 결과가 없습니다.</div>
+</main>
+
+<script>
+const BASE = {
+  admin: 'https://admin.kn541.co.kr',
+  scm:   'https://scm.kn541.co.kr',
+  shop:  'https://shop.kn541.co.kr'
+}
+
+const ICON = { admin: '🛠️', scm: '📦', shop: '🛍️' }
+const BADGE_CLS = { admin: 'badge-admin', scm: 'badge-scm', shop: 'badge-shop' }
+
+const DATA = {
+  admin: [
+    { group: '대시보드', pages: [
+      { name: '홈 현황', path: '/home' },
+      { name: '대시보드', path: '/admin/dashboard/v2' },
+    ]},
+    { group: '회원관리', pages: [
+      { name: '일반회원', path: '/admin/members/normal' },
+      { name: '유료회원', path: '/admin/members/paid' },
+      { name: '오프라인회원', path: '/admin/members/offline' },
+      { name: '다단계 트리', path: '/admin/members/mlm' },
+      { name: '휴면/탈퇴', path: '/admin/members/dormant' },
+      { name: '공급사관리', path: '/admin/members/supplier' },
+      { name: '포인트관리', path: '/admin/members/points' },
+    ]},
+    { group: '상품관리', pages: [
+      { name: '상품 목록', path: '/admin/products' },
+      { name: '상품 등록', path: '/admin/products/new' },
+      { name: '공급사 승인', path: '/admin/products/approval' },
+      { name: '카테고리', path: '/admin/products/categories' },
+      { name: '재고 현황', path: '/admin/products/stock' },
+      { name: '상품 진열', path: '/admin/products/display' },
+      { name: '매입가 관리', path: '/admin/products/supply-price' },
+    ]},
+    { group: '주문관리', pages: [
+      { name: '전체 주문', path: '/admin/order/list' },
+      { name: '배송 관리', path: '/admin/order/delivery' },
+      { name: '반품/교환', path: '/admin/order/return' },
+      { name: '취소/환불', path: '/admin/order/cancel' },
+    ]},
+    { group: '정산/수당', pages: [
+      { name: '수당 현황', path: '/admin/commission/status' },
+      { name: '수당 내역', path: '/admin/commission/history' },
+      { name: '수당 풀', path: '/admin/commission/pool' },
+      { name: '정산 대기', path: '/admin/commission/queue' },
+      { name: '지급 관리', path: '/admin/commission/payment' },
+      { name: '정산 처리', path: '/admin/commission/settle' },
+      { name: '수당 검증', path: '/admin/commission/verify' },
+      { name: '수당 규칙', path: '/admin/commission/rules' },
+    ]},
+    { group: 'CS / 프로모션', pages: [
+      { name: '고객지원', path: '/admin/cs' },
+      { name: '프로모션', path: '/admin/promotion' },
+      { name: '통계', path: '/admin/stats' },
+      { name: '엔진 설정', path: '/admin/engine' },
+    ]},
+    { group: '시스템 설정', pages: [
+      { name: '전역변수', path: '/admin/settings/system' },
+      { name: '약관 관리', path: '/admin/settings/terms' },
+      { name: '레벨 규칙', path: '/admin/settings/level-rules' },
+      { name: '포인트 규칙', path: '/admin/settings/point-rules' },
+      { name: '수당 규칙', path: '/admin/settings/commission-rules' },
+      { name: '메시지 템플릿', path: '/admin/settings/message-template' },
+      { name: '메시지 발송', path: '/admin/settings/messages' },
+      { name: '크론잡', path: '/admin/settings/cron' },
+    ]},
+    { group: 'KMC / SCM 연동', pages: [
+      { name: 'KMC 동기화', path: '/admin/kmc' },
+      { name: 'SCM 관리', path: '/admin/scm' },
+      { name: '사이트맵', path: '/admin/sitemap' },
+    ]},
+  ],
+  scm: [
+    { group: '메인', pages: [
+      { name: '홈', path: '/home' },
+      { name: '대시보드', path: '/dashboard' },
+    ]},
+    { group: '상품', pages: [
+      { name: '상품 목록', path: '/products' },
+    ]},
+    { group: '주문', pages: [
+      { name: '주문 관리', path: '/orders' },
+    ]},
+    { group: '정산', pages: [
+      { name: '정산 내역', path: '/settlements' },
+    ]},
+    { group: '문의', pages: [
+      { name: '1:1 문의', path: '/inquiries' },
+    ]},
+    { group: '마이페이지', pages: [
+      { name: '내 정보', path: '/mypage' },
+    ]},
+  ],
+  shop: [
+    { group: '메인', pages: [
+      { name: '홈', path: '/ko' },
+    ]},
+    { group: '상품', pages: [
+      { name: '전체 상품', path: '/ko/collections/all' },
+      { name: '상품 검색', path: '/ko/search' },
+      { name: '상품 상세', path: '/ko/products/435151' },
+    ]},
+    { group: '장바구니 / 결제', pages: [
+      { name: '장바구니', path: '/ko/cart' },
+      { name: '결제', path: '/ko/checkout' },
+      { name: '결제 완료', path: '/ko/order-successful' },
+    ]},
+    { group: '마이페이지', pages: [
+      { name: '마이페이지 홈', path: '/ko/mypage' },
+      { name: '내 정보', path: '/ko/mypage/profile' },
+      { name: '주문 내역', path: '/ko/mypage/orders' },
+      { name: '구매 내역', path: '/ko/mypage/purchases' },
+      { name: '수당/배당', path: '/ko/mypage/dividends' },
+      { name: '포인트', path: '/ko/mypage/points' },
+      { name: '쿠폰', path: '/ko/mypage/coupons' },
+      { name: '마이샵', path: '/ko/mypage/shop' },
+      { name: '조직도', path: '/ko/mypage/tree' },
+      { name: '통계', path: '/ko/mypage/stats' },
+      { name: '출금 신청', path: '/ko/mypage/withdraw' },
+      { name: '문의 내역', path: '/ko/mypage/inquiries' },
+      { name: '공지사항', path: '/ko/mypage/notices' },
+      { name: 'FAQ', path: '/ko/mypage/faq' },
+    ]},
+    { group: '계정', pages: [
+      { name: '배송지 관리', path: '/ko/addresses' },
+      { name: '회원가입', path: '/ko/signup' },
+      { name: '로그인', path: '/ko/login' },
+    ]},
+    { group: '기타', pages: [
+      { name: '공급사 입점문의', path: '/ko/vendor-inquiry' },
+      { name: '고객센터', path: '/ko/cs' },
+      { name: '구독/멤버십', path: '/ko/subscription' },
+      { name: 'FAQ', path: '/ko/faq' },
+      { name: '블로그', path: '/ko/blog' },
+      { name: '브랜드 소개', path: '/ko/about' },
+      { name: '문의하기', path: '/ko/contact' },
+    ]},
+  ]
+}
+
+let currentTab = 'admin'
+const allCards = []
+
+function buildSection(key) {
+  const base = BASE[key]
+  const sec  = document.getElementById('sec-' + key)
+  let total  = 0
+
+  DATA[key].forEach(g => {
+    const lbl = document.createElement('div')
+    lbl.className = 'group-label'
+    lbl.textContent = g.group
+    sec.appendChild(lbl)
+
+    const grid = document.createElement('div')
+    grid.className = 'grid'
+
+    g.pages.forEach(p => {
+      total++
+      const url = base + p.path
+      const card = document.createElement('a')
+      card.className = 'card ' + key
+      card.href = url
+      card.target = '_blank'
+      card.rel = 'noopener noreferrer'
+      card.dataset.name = p.name
+      card.dataset.path = p.path
+      card.dataset.tab  = key
+
+      card.innerHTML = `
+        <div class="preview">
+          <div class="preview-bar"></div>
+          <div class="preview-icon">${ICON[key]}</div>
+          <div class="preview-path">${base}${p.path}</div>
+        </div>
+        <div class="card-body">
+          <div class="card-name">${p.name}</div>
+          <div class="card-path">${p.path}</div>
+        </div>
+      `
+      grid.appendChild(card)
+      allCards.push(card)
+    })
+
+    sec.appendChild(grid)
+  })
+
+  document.getElementById('cnt-' + key).textContent = total
+}
+
+function switchTab(key) {
+  currentTab = key
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', ['admin','scm','shop'][i] === key)
+  })
+  document.querySelectorAll('.section').forEach((s, i) => {
+    s.classList.toggle('active', ['admin','scm','shop'][i] === key)
+  })
+  filterCards(document.getElementById('search').value)
+}
+
+function filterCards(q) {
+  q = q.trim().toLowerCase()
+  let visible = 0
+
+  allCards.forEach(card => {
+    if (card.dataset.tab !== currentTab) return
+    const match = !q || card.dataset.name.includes(q) || card.dataset.path.includes(q)
+    card.classList.toggle('hidden-by-search', !match)
+    if (match) visible++
+  })
+
+  document.getElementById('empty-msg').style.display = (visible === 0 && q) ? 'block' : 'none'
+}
+
+buildSection('admin')
+buildSection('scm')
+buildSection('shop')
+</script>
+</body>
+</html>
