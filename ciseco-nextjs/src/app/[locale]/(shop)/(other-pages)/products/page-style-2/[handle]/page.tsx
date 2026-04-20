@@ -20,7 +20,7 @@ import ProductStatus from '../../ProductStatus'
 
 export async function generateMetadata({ params }: { params: Promise<{ handle: string }> }): Promise<Metadata> {
   const { handle } = await params
-  const product = await getProductDetailByHandle(handle)
+  const product = await getProductDetailByHandle(handle) as any
   const title = product?.title || 'product detail'
   const description = product?.description || 'product detail page'
   return {
@@ -39,9 +39,9 @@ export default async function Page({ params }: { params: Promise<{ handle: strin
     return notFound()
   }
 
-  const { title, status, featuredImage, rating, reviewNumber, options, price, selectedOptions, images } = product
-  const sizeSelected = selectedOptions?.find((option) => option.name === 'Size')?.value || ''
-  const colorSelected = selectedOptions?.find((option) => option.name === 'Color')?.value || ''
+  const { title, status, featuredImage, rating, reviewNumber, options, price, selectedOptions, images } = product as any
+  const sizeSelected = selectedOptions?.find((option: any) => option.name === 'Size')?.value || ''
+  const colorSelected = selectedOptions?.find((option: any) => option.name === 'Color')?.value || ''
 
   const renderSectionSidebar = () => {
     return (
@@ -153,7 +153,7 @@ export default async function Page({ params }: { params: Promise<{ handle: strin
     )
   }
 
-  const galleryImages = [featuredImage, ...(images || [])].map((item) => item?.src).filter(Boolean) as string[]
+  const galleryImages = [featuredImage, ...(images || [])].map((item: any) => item?.src).filter(Boolean) as string[]
 
   return (
     <div>
