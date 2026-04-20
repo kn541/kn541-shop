@@ -1,7 +1,6 @@
 'use client'
 
 import { NotifyAddToCart } from '@/components/AddToCardButton'
-import { TProductDetail } from '@/data/data'
 import Form from 'next/form'
 import React from 'react'
 import toast from 'react-hot-toast'
@@ -13,7 +12,7 @@ const ProductForm = ({
 }: {
   children?: React.ReactNode
   className?: string
-  product: TProductDetail
+  product: any
 }) => {
   const { featuredImage, title, price } = product
 
@@ -41,9 +40,6 @@ const ProductForm = ({
     const color = formData.get('color') ? String(formData.get('color')) : ''
 
     notifyAddTocart(quantity, size, color)
-    // Here you can handle the form submission, such as adding the product to the cart
-    // For example, you might call an API endpoint to add the product to the cart
-
     console.log('Form submitted with data:', {
       productId: product.id,
       quantity,
