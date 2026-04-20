@@ -1,3 +1,6 @@
+// 빌드 시 API 호출로 인한 SSG 타임아웃 방지
+export const dynamic = 'force-dynamic'
+
 import { Divider } from '@/components/Divider'
 import Footer from '@/components/Footer'
 import Header2 from '@/components/Header/Header2'
