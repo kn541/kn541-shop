@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import BackgroundSection from '@/components/BackgroundSection/BackgroundSection'
 import { Divider } from '@/components/Divider'
 import Heading from '@/components/Heading/Heading'
