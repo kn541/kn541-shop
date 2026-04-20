@@ -12,7 +12,7 @@ import ProductActions from './ProductActions'
 
 export async function generateMetadata({ params }: { params: Promise<{ handle: string }> }): Promise<Metadata> {
   const { handle } = await params
-  const product = await getProductDetailByHandle(handle)
+  const product = await getProductDetailByHandle(handle) as any
   const title = product?.title || '상품 상세'
   // description이 HTML인 경우 태그 제거
   const rawDesc = product?.description || ''
