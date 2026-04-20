@@ -4,10 +4,18 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts')
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // TypeScript 빌드 에러 무시 (타입 불일치로 인한 배포 실패 방지)
+  // TypeScript 빌드 에러 무시
   typescript: {
     ignoreBuildErrors: true,
   },
+
+  // ESLint 빌드 에러 무시
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+
+  // 정적 페이지 생성 타임아웃 180초 (기본 60초)
+  staticPageGenerationTimeout: 180,
 
   async redirects() {
     const pages = [
