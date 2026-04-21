@@ -1,15 +1,19 @@
 'use client'
+// KN541 상품 상세 — 장바구니 담기 / 바로구매
+// useCart Context로 전역 상태 관리 (localStorage 동기화)
 
 import NcInputNumber from '@/components/NcInputNumber'
 import ProductColorOptions from '@/components/ProductForm/ProductColorOptions'
 import ProductSizeOptions from '@/components/ProductForm/ProductSizeOptions'
-import ButtonPrimary from '@/shared/Button/ButtonPrimary'
-import { ShoppingBag03Icon } from '@hugeicons/core-free-icons'
+import { useCart } from '@/lib/cart-context'
 import { HugeiconsIcon } from '@hugeicons/react'
+import { ShoppingBag03Icon } from '@hugeicons/core-free-icons'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import toast from 'react-hot-toast'
 
 interface Props {
+  productId: string   // ★ UUID (장바구니 ID 키)
   options: any
   colorSelected: string
   sizeSelected: string
@@ -19,6 +23,7 @@ interface Props {
 }
 
 export default function ProductActions({
+  productId,
   options,
   colorSelected,
   sizeSelected,
@@ -27,43 +32,52 @@ export default function ProductActions({
   productImage,
 }: Props) {
   const router = useRouter()
+  const { addItem, clearCart } = useCart()
   const [qty, setQty] = useState(1)
-  const [added, setAdded] = useState(false)
 
-  const handleAddToCart = () => {
-    // localStorage에 장바구니 저장 (실제 연동 시 zustand or context로 교체)
-    try {
-      const existing = JSON.parse(localStorage.getItem('kn541_cart') || '[]')
-      const item = {
-        id: Date.now().toString(),
-        name: productName,
-        price,
-        quantity: qty,
-        image: productImage,
-        color: colorSelected,
-        size: sizeSelected,
-      }
-      localStorage.setItem('kn541_cart', JSON.stringify([...existing, item]))
-    } catch {}
-
-    setAdded(true)
-    setTimeout(() => setAdded(false), 2000)
+  // 선택된 옵션 텍스트 생성
+  const buildOption = () => {
+    const parts: string[] = []
+    if (colorSelected) parts.push(colorSelected)
+    if (sizeSelected) parts.push(sizeSelected)
+    return parts.join(' / ') || undefined
   }
 
+  // ── 장바구니 담기 ──
+  const handleAddToCart = () => {
+    addItem({
+      productId,
+      name: productName,
+      price,
+      quantity: qty,
+      image: productImage,
+      option: buildOption(),
+    })
+    toast.success(
+      <span>
+        장바구니에 담겼습니다!{' '}
+        <button
+          className="font-semibold underline"
+          onClick={() => router.push('/ko/cart')}
+        >
+          장바구니 보기
+        </button>
+      </span>,
+      { duration: 3000 }
+    )
+  }
+
+  // ── 바로구매 ── 기존 장바구니를 이 상품으로 대체 후 결제페이지로
   const handleBuyNow = () => {
-    // 바로구매: 장바구니에 담고 결제페이지로
-    try {
-      const item = {
-        id: Date.now().toString(),
-        name: productName,
-        price,
-        quantity: qty,
-        image: productImage,
-        color: colorSelected,
-        size: sizeSelected,
-      }
-      localStorage.setItem('kn541_cart', JSON.stringify([item]))
-    } catch {}
+    clearCart()
+    addItem({
+      productId,
+      name: productName,
+      price,
+      quantity: qty,
+      image: productImage,
+      option: buildOption(),
+    })
     router.push('/ko/checkout')
   }
 
@@ -90,29 +104,16 @@ export default function ProductActions({
         {/* 장바구니 */}
         <button
           onClick={handleAddToCart}
-          className={`flex flex-1 items-center justify-center gap-2 rounded-full px-6 py-3.5 text-sm font-semibold transition-all ${
-            added
-              ? 'bg-green-500 text-white'
-              : 'bg-primary-600 text-white hover:bg-primary-700'
-          }`}
+          className="flex flex-1 items-center justify-center gap-2 rounded-full bg-primary-600 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-primary-700"
         >
-          {added ? (
-            <>
-              <span>✓</span>
-              <span>담겼습니다!</span>
-            </>
-          ) : (
-            <>
-              <HugeiconsIcon
-                icon={ShoppingBag03Icon}
-                size={18}
-                color="currentColor"
-                strokeWidth={1.5}
-                className="hidden sm:block"
-              />
-              <span>장바구니에 담기</span>
-            </>
-          )}
+          <HugeiconsIcon
+            icon={ShoppingBag03Icon}
+            size={18}
+            color="currentColor"
+            strokeWidth={1.5}
+            className="hidden sm:block"
+          />
+          <span>장바구니에 담기</span>
         </button>
 
         {/* 바로구매 */}
@@ -123,19 +124,6 @@ export default function ProductActions({
           바로구매
         </button>
       </div>
-
-      {/* 장바구니 버튼 클릭 시 안내 */}
-      {added && (
-        <div className="flex items-center justify-between rounded-2xl bg-green-50 px-4 py-3 dark:bg-green-900/20">
-          <p className="text-sm text-green-700 dark:text-green-400">✅ 장바구니에 담겼습니다</p>
-          <button
-            onClick={() => router.push('/ko/cart')}
-            className="text-sm font-semibold text-green-700 underline dark:text-green-400"
-          >
-            장바구니 보기 →
-          </button>
-        </div>
-      )}
     </div>
   )
 }
