@@ -3,9 +3,13 @@
  * 정책: 프론트는 API로만 데이터를 가져온다
  * 인증 불필요 (공개 API)
  * fix: product_id(UUID) 필드 추가, description/images 필드 추가
+ * fix: getProductByCode — UUID 직접 조회 + keyword 없이 전체 목록 조회 후 product_code 필터
  */
 
 const BASE = process.env.NEXT_PUBLIC_API_URL
+
+/** UUID v4 패턴 */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 // 실제 API 응답 구조 기반
 export interface Product {
@@ -128,19 +132,38 @@ export async function getProductById(productId: string): Promise<Product> {
   return data.data
 }
 
-// ★ product_code로 product_id(UUID) 조회 후 단건 조회
+/**
+ * ★ product_code 또는 UUID로 상품 조회
+ *
+ * 수정 이유:
+ *   - 백엔드 keyword 검색(PGroonga)이 product_code(숫자) 매칭 안 됨
+ *   - 어드민에서 UUID URL 사용 시 빠른 직접 조회 지원
+ *
+ * 우선순위:
+ *   1. UUID 패턴 → getProductById 직접 조회 (빠름)
+ *   2. 숫자/코드 → keyword 없이 전체 목록 조회 후 product_code 정확 매칭 → UUID 단건 조회
+ */
 export async function getProductByCode(productCode: string): Promise<Product | null> {
   try {
-    // 목록에서 product_code로 찾기 (상태 필터 없이)
-    const query = new URLSearchParams({ size: '200', keyword: productCode })
+    // 1. UUID 패턴이면 바로 단건 조회 (어드민 UUID URL 클릭 경우)
+    if (UUID_RE.test(productCode)) {
+      return await getProductById(productCode)
+    }
+
+    // 2. keyword 없이 전체 목록 조회 후 product_code 정확 매칭
+    //    (백엔드 keyword 검색은 상품명 기반 — product_code 숫자 매칭 안 됨)
+    const query = new URLSearchParams({ size: '200' })
     const res = await fetch(`${BASE}/products?${query}`, { next: { revalidate: 60 } })
     if (!res.ok) return null
     const data = await res.json()
     const items: Product[] = data.data?.items ?? []
 
-    // product_code 정확 매칭
+    // product_code 정확 매칭 (product_no, kmc_serial 포함)
     const found = items.find(
-      (p) => p.product_code === productCode || p.product_no === productCode || p.kmc_serial === productCode
+      (p) =>
+        p.product_code === productCode ||
+        p.product_no === productCode ||
+        p.kmc_serial === productCode
     )
     if (!found) return null
 
