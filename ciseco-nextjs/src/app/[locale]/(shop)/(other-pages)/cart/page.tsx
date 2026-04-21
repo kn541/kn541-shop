@@ -1,5 +1,5 @@
 'use client'
-// KN541 장바구니 페이지 — useCart Context로 실제 데이터 표시
+// KN541 장바구니 페이지 — 상품별 배송비 적용
 
 import Prices from '@/components/Prices'
 import NcInputNumber from '@/components/NcInputNumber'
@@ -8,15 +8,12 @@ import { Link } from '@/shared/link'
 import { CheckIcon, TrashIcon, ShoppingBagIcon } from '@heroicons/react/24/outline'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { useCart } from '@/lib/cart-context'
+import { useCart, calcItemShipping } from '@/lib/cart-context'
 
 export default function CartPage() {
   const router = useRouter()
-  const { items, removeItem, updateQty, totalPrice } = useCart()
-
-  // 배송비: 3만원 이상 무료
-  const shipping = totalPrice >= 30000 ? 0 : 3000
-  const total = totalPrice + shipping
+  const { items, removeItem, updateQty, totalPrice, totalShipping } = useCart()
+  const total = totalPrice + totalShipping
 
   // 장바구니 비어있을 때
   if (items.length === 0) {
@@ -47,65 +44,72 @@ export default function CartPage() {
           {/* 상품 목록 */}
           <div className="flex-1">
             <div className="divide-y divide-neutral-200 dark:divide-neutral-700">
-              {items.map((item) => (
-                <div key={item.id} className="flex gap-5 py-6 sm:gap-8">
-                  {/* 이미지 */}
-                  <div className="relative h-28 w-24 shrink-0 overflow-hidden rounded-2xl bg-neutral-100 sm:h-36 sm:w-32">
-                    {item.image ? (
-                      <Image
-                        src={item.image}
-                        alt={item.name}
-                        fill
-                        className="object-cover object-center"
-                        sizes="150px"
-                        unoptimized
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center text-neutral-300">
-                        <ShoppingBagIcon className="h-10 w-10" />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* 상품 정보 */}
-                  <div className="flex flex-1 flex-col">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="text-base font-semibold text-neutral-900 dark:text-neutral-100 line-clamp-2">
-                          {item.name}
-                        </h3>
-                        {item.option && (
-                          <p className="mt-1 text-sm text-neutral-500">{item.option}</p>
-                        )}
-                      </div>
-                      <button
-                        onClick={() => removeItem(item.id)}
-                        className="ml-3 rounded-full p-1 text-neutral-400 hover:bg-neutral-100 hover:text-red-500 dark:hover:bg-neutral-800 shrink-0"
-                        aria-label="삭제"
-                      >
-                        <TrashIcon className="h-5 w-5" />
-                      </button>
+              {items.map((item) => {
+                const itemShipping = calcItemShipping(item)
+                return (
+                  <div key={item.id} className="flex gap-5 py-6 sm:gap-8">
+                    {/* 이미지 */}
+                    <div className="relative h-28 w-24 shrink-0 overflow-hidden rounded-2xl bg-neutral-100 sm:h-36 sm:w-32">
+                      {item.image ? (
+                        <Image
+                          src={item.image}
+                          alt={item.name}
+                          fill
+                          className="object-cover object-center"
+                          sizes="150px"
+                          unoptimized
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-neutral-300">
+                          <ShoppingBagIcon className="h-10 w-10" />
+                        </div>
+                      )}
                     </div>
 
-                    <div className="mt-auto flex items-center justify-between pt-4">
-                      <NcInputNumber
-                        defaultValue={item.quantity}
-                        min={1}
-                        max={99}
-                        onChange={(val) => updateQty(item.id, val)}
-                      />
-                      <div className="text-right">
-                        <p className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
-                          {(item.price * item.quantity).toLocaleString('ko-KR')}원
-                        </p>
-                        <p className="text-xs text-neutral-400">
-                          단가 {item.price.toLocaleString('ko-KR')}원
-                        </p>
+                    {/* 상품 정보 */}
+                    <div className="flex flex-1 flex-col">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h3 className="text-base font-semibold text-neutral-900 dark:text-neutral-100 line-clamp-2">
+                            {item.name}
+                          </h3>
+                          {item.option && (
+                            <p className="mt-1 text-sm text-neutral-500">{item.option}</p>
+                          )}
+                          {/* 상품별 배송비 표시 */}
+                          <p className="mt-1 text-xs text-neutral-400">
+                            배송비: {itemShipping === 0 ? '무료' : `${itemShipping.toLocaleString('ko-KR')}원`}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => removeItem(item.id)}
+                          className="ml-3 rounded-full p-1 text-neutral-400 hover:bg-neutral-100 hover:text-red-500 dark:hover:bg-neutral-800 shrink-0"
+                          aria-label="삭제"
+                        >
+                          <TrashIcon className="h-5 w-5" />
+                        </button>
+                      </div>
+
+                      <div className="mt-auto flex items-center justify-between pt-4">
+                        <NcInputNumber
+                          defaultValue={item.quantity}
+                          min={1}
+                          max={99}
+                          onChange={(val) => updateQty(item.id, val)}
+                        />
+                        <div className="text-right">
+                          <p className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
+                            {(item.price * item.quantity).toLocaleString('ko-KR')}원
+                          </p>
+                          <p className="text-xs text-neutral-400">
+                            단가 {item.price.toLocaleString('ko-KR')}원
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
 
             {/* 쇼핑 계속 */}
@@ -141,17 +145,26 @@ export default function CartPage() {
                   <span>소계</span>
                   <span>{totalPrice.toLocaleString('ko-KR')}원</span>
                 </div>
-                <div className="flex justify-between">
-                  <span>배송비</span>
-                  <span className={shipping === 0 ? 'text-green-600 font-medium' : ''}>
-                    {shipping === 0 ? '무료' : `${shipping.toLocaleString('ko-KR')}원`}
+                {/* 상품별 배송비 상세 */}
+                {items.map((item) => {
+                  const fee = calcItemShipping(item)
+                  return (
+                    <div key={item.id} className="flex justify-between text-xs pl-2">
+                      <span className="text-neutral-400 line-clamp-1 max-w-[65%]">
+                        └ {item.name} 배송비
+                      </span>
+                      <span className={fee === 0 ? 'text-green-600' : ''}>
+                        {fee === 0 ? '무료' : `${fee.toLocaleString('ko-KR')}원`}
+                      </span>
+                    </div>
+                  )
+                })}
+                <div className="flex justify-between font-medium border-t border-neutral-100 pt-2 dark:border-neutral-700">
+                  <span>총 배송비</span>
+                  <span className={totalShipping === 0 ? 'text-green-600 font-medium' : ''}>
+                    {totalShipping === 0 ? '무료' : `${totalShipping.toLocaleString('ko-KR')}원`}
                   </span>
                 </div>
-                {shipping === 0 && (
-                  <p className="rounded-lg bg-green-50 px-3 py-2 text-xs text-green-700 dark:bg-green-900/20 dark:text-green-400">
-                    ✅ 3만원 이상 무료배송 적용!
-                  </p>
-                )}
               </div>
 
               <div className="my-5 border-t border-neutral-200 dark:border-neutral-700" />
