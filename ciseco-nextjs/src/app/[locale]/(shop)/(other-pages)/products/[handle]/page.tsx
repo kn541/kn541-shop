@@ -44,12 +44,12 @@ export default async function Page({ params }: { params: Promise<{ handle: strin
 
   // ── 배송비 정보: adapters.ts가 delivery 객체에 저장하므로 여기서 꺼냄
   const deliveryInfo = p.delivery || {}
-  const shippingFee    = deliveryInfo.shipping_fee    ?? 0
-  const freeShippingOver = deliveryInfo.free_over     ?? null
-  const returnFee      = deliveryInfo.return_fee      ?? 0
-  const exchangeFee    = deliveryInfo.exchange_fee    ?? 0
-  const deliveryDays   = deliveryInfo.delivery_days   ?? 3
-  const deliveryCompany = deliveryInfo.delivery_company ?? null
+  const shippingFee      = Number(deliveryInfo.shipping_fee    ?? 0)
+  const freeShippingOver = Number(deliveryInfo.free_over       ?? 0)
+  const scType           = Number(deliveryInfo.sc_type         ?? 1)
+  const returnFee        = Number(deliveryInfo.return_fee      ?? 0)
+  const deliveryDays     = Number(deliveryInfo.delivery_days   ?? 3)
+  const deliveryCompany  = deliveryInfo.delivery_company ?? null
 
   // 이미지 배열 — 갤러리용 (중복 제거)
   const allImages: string[] = [featuredImage, ...(images || [])]
@@ -65,20 +65,17 @@ export default async function Page({ params }: { params: Promise<{ handle: strin
   // 배송비 텍스트
   // KMC sc_type: 0=무료, 1=고정유료, 2=조건부무료(sc_minimum 이상 무료), 4=지역별/무게별
   const shippingText = (() => {
-    const sc = deliveryInfo.sc_type ?? 1
-    const fee = Number(shippingFee)
-    // sc_type=0 명시 무료, 또는 배송비=0이면 무료
-    if (sc === 0 || fee === 0) return '무료배송'
-    const feeStr = fee.toLocaleString('ko-KR')
-    if (freeShippingOver && Number(freeShippingOver) > 0) {
-      const over = Number(freeShippingOver).toLocaleString('ko-KR')
+    if (scType === 0 || shippingFee === 0) return '무료배송'
+    const feeStr = shippingFee.toLocaleString('ko-KR')
+    if (freeShippingOver > 0) {
+      const over = freeShippingOver.toLocaleString('ko-KR')
       return `${feeStr}원 (${over}원 이상 무료배송)`
     }
     return `${feeStr}원`
   })()
 
-  const returnText = returnFee && Number(returnFee) > 0
-    ? `반품 ${Number(returnFee).toLocaleString('ko-KR')}원`
+  const returnText = returnFee > 0
+    ? `반품 ${returnFee.toLocaleString('ko-KR')}원`
     : '반품 무료'
 
   // 카테고리 브레드크럼
@@ -205,7 +202,7 @@ export default async function Page({ params }: { params: Promise<{ handle: strin
               </table>
             </div>
 
-            {/* ★ 옵션 + 수량 + 장바구니/바로구매 — productId 전달 */}
+            {/* ★ 옵션 + 수량 + 장바구니/바로구매 — productId + 배송비 정보 전달 */}
             <ProductActions
               productId={String(productId || handle)}
               options={p.options}
@@ -214,6 +211,9 @@ export default async function Page({ params }: { params: Promise<{ handle: strin
               price={price || 0}
               productName={title || ''}
               productImage={thumbImage}
+              shippingFee={shippingFee}
+              freeShippingOver={freeShippingOver}
+              scType={scType}
             />
 
             <Divider />
