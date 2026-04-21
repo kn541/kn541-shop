@@ -40,11 +40,16 @@ export default async function Page({ params }: { params: Promise<{ handle: strin
     price,
     images,
     description,
-    shippingFee,
-    freeShippingOver,
-    returnFee,
-    deliveryDays,
   } = p
+
+  // ── 배송비 정보: adapters.ts가 delivery 객체에 저장하므로 여기서 꺼냄
+  const deliveryInfo = p.delivery || {}
+  const shippingFee    = deliveryInfo.shipping_fee    ?? 0
+  const freeShippingOver = deliveryInfo.free_over     ?? null
+  const returnFee      = deliveryInfo.return_fee      ?? 0
+  const exchangeFee    = deliveryInfo.exchange_fee    ?? 0
+  const deliveryDays   = deliveryInfo.delivery_days   ?? 3
+  const deliveryCompany = deliveryInfo.delivery_company ?? null
 
   // 이미지 배열 — 갤러리용 (중복 제거)
   const allImages: string[] = [featuredImage, ...(images || [])]
@@ -58,15 +63,18 @@ export default async function Page({ params }: { params: Promise<{ handle: strin
   const isHtmlDesc = /<[a-z][\s\S]*>/i.test(description || '')
 
   // 배송비 텍스트
+  // KMC sc_type: 0=무료, 1=고정유료, 2=조건부무료(sc_minimum 이상 무료), 4=지역별/무게별
   const shippingText = (() => {
-    const sc = p.delivery?.sc_type ?? 1
-    if (sc === 1 || !shippingFee || Number(shippingFee) === 0) return '무료배송'
-    const fee = Number(shippingFee).toLocaleString('ko-KR')
+    const sc = deliveryInfo.sc_type ?? 1
+    const fee = Number(shippingFee)
+    // sc_type=0 명시 무료, 또는 배송비=0이면 무료
+    if (sc === 0 || fee === 0) return '무료배송'
+    const feeStr = fee.toLocaleString('ko-KR')
     if (freeShippingOver && Number(freeShippingOver) > 0) {
       const over = Number(freeShippingOver).toLocaleString('ko-KR')
-      return `${fee}원 (${over}원 이상 무료배송)`
+      return `${feeStr}원 (${over}원 이상 무료배송)`
     }
-    return `${fee}원`
+    return `${feeStr}원`
   })()
 
   const returnText = returnFee && Number(returnFee) > 0
@@ -216,7 +224,7 @@ export default async function Page({ params }: { params: Promise<{ handle: strin
                 <tbody>
                   <tr className="border-b border-neutral-100 dark:border-neutral-700">
                     <td className="px-4 py-2.5 w-28 font-medium text-neutral-500 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-800">배송방법</td>
-                    <td className="px-4 py-2.5 text-neutral-800 dark:text-neutral-200">일반배송 ({deliveryDays || 3}일 이내){p.delivery?.delivery_company ? ` · ${p.delivery.delivery_company}` : ''}</td>
+                    <td className="px-4 py-2.5 text-neutral-800 dark:text-neutral-200">일반배송 ({deliveryDays}일 이내){deliveryCompany ? ` · ${deliveryCompany}` : ''}</td>
                   </tr>
                   <tr className="border-b border-neutral-100 dark:border-neutral-700">
                     <td className="px-4 py-2.5 w-28 font-medium text-neutral-500 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-800">배송비</td>
@@ -282,7 +290,7 @@ export default async function Page({ params }: { params: Promise<{ handle: strin
           <div className="flex flex-col gap-3 text-sm text-neutral-600 dark:text-neutral-400">
             <div className="flex gap-4">
               <span className="w-28 shrink-0 font-medium text-neutral-800 dark:text-neutral-200">배송방법</span>
-              <span>일반택배 ({deliveryDays || 3}일 이내 출발){p.delivery?.delivery_company ? ` · ${p.delivery.delivery_company}` : ''}</span>
+              <span>일반택배 ({deliveryDays}일 이내 출발){deliveryCompany ? ` · ${deliveryCompany}` : ''}</span>
             </div>
             <div className="flex gap-4">
               <span className="w-28 shrink-0 font-medium text-neutral-800 dark:text-neutral-200">배송비</span>
