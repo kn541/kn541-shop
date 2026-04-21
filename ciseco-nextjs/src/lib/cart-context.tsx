@@ -20,6 +20,10 @@ export interface CartItem {
   quantity: number
   image: string
   option?: string   // 선택 옵션 (색상·사이즈 등)
+  // 상품별 배송비 정보 (product_shipping 테이블)
+  shippingFee: number       // 배송비 (0이면 무료)
+  freeShippingOver: number  // 이 금액 이상이면 무료 (0이면 조건 없음)
+  scType: number            // KMC sc_type: 0=무료, 1=고정유료, 2=조건부무료, 4=지역별
 }
 
 interface CartContextValue {
@@ -29,12 +33,25 @@ interface CartContextValue {
   updateQty: (id: string, qty: number) => void
   clearCart: () => void
   totalCount: number  // 총 수량 (배지용)
-  totalPrice: number  // 총 금액
+  totalPrice: number  // 총 상품 금액 (배송비 제외)
+  totalShipping: number // 총 배송비 (상품별 합산)
 }
 
 const CartContext = createContext<CartContextValue | null>(null)
 
 const STORAGE_KEY = 'kn541_cart'
+
+/** 상품 1개의 배송비 계산
+ * - scType=0 또는 shippingFee=0 → 무료
+ * - scType=2 (조건부무료): 상품 소계 >= freeShippingOver → 무료
+ * - 그 외: shippingFee 그대로
+ */
+export function calcItemShipping(item: CartItem): number {
+  const subtotal = item.price * item.quantity
+  if (item.scType === 0 || item.shippingFee === 0) return 0
+  if (item.scType === 2 && item.freeShippingOver > 0 && subtotal >= item.freeShippingOver) return 0
+  return item.shippingFee
+}
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
@@ -88,12 +105,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setItems([])
   }, [])
 
-  const totalCount = items.reduce((sum, i) => sum + i.quantity, 0)
-  const totalPrice = items.reduce((sum, i) => sum + i.price * i.quantity, 0)
+  const totalCount    = items.reduce((sum, i) => sum + i.quantity, 0)
+  const totalPrice    = items.reduce((sum, i) => sum + i.price * i.quantity, 0)
+  const totalShipping = items.reduce((sum, i) => sum + calcItemShipping(i), 0)
 
   return (
     <CartContext.Provider
-      value={{ items, addItem, removeItem, updateQty, clearCart, totalCount, totalPrice }}
+      value={{ items, addItem, removeItem, updateQty, clearCart, totalCount, totalPrice, totalShipping }}
     >
       {children}
     </CartContext.Provider>
