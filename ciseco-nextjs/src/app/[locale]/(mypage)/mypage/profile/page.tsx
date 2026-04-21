@@ -207,7 +207,7 @@ function ContactTab({ data, userId }: { data: Record<string, string | null>; use
           placeholder='010-0000-0000' style={inputStyle} />
       </div>
 
-      {/* ★ 카카오 주소 검색 (MypageAddressInput) */}
+      {/* 카카오 주소 검색 (MypageAddressInput) */}
       <MypageAddressInput
         zipcode={zip}
         address1={addr1}
