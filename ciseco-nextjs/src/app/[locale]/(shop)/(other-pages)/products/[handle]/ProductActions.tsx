@@ -20,6 +20,10 @@ interface Props {
   price: number
   productName: string
   productImage: string
+  // 상품별 배송비 정보
+  shippingFee?: number
+  freeShippingOver?: number
+  scType?: number
 }
 
 export default function ProductActions({
@@ -30,6 +34,9 @@ export default function ProductActions({
   price,
   productName,
   productImage,
+  shippingFee = 0,
+  freeShippingOver = 0,
+  scType = 1,
 }: Props) {
   const router = useRouter()
   const { addItem, clearCart } = useCart()
@@ -52,6 +59,9 @@ export default function ProductActions({
       quantity: qty,
       image: productImage,
       option: buildOption(),
+      shippingFee,
+      freeShippingOver,
+      scType,
     })
     toast.success(
       <span>
@@ -77,6 +87,9 @@ export default function ProductActions({
       quantity: qty,
       image: productImage,
       option: buildOption(),
+      shippingFee,
+      freeShippingOver,
+      scType,
     })
     router.push('/ko/checkout')
   }
