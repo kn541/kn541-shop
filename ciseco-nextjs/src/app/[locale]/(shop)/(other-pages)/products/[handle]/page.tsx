@@ -43,13 +43,13 @@ export default async function Page({ params }: { params: Promise<{ handle: strin
   } = p
 
   // ── 배송비 정보: adapters.ts가 delivery 객체에 저장하므로 여기서 꺼냄
-  const deliveryInfo = p.delivery || {}
-  const shippingFee      = Number(deliveryInfo.shipping_fee    ?? 0)
-  const freeShippingOver = Number(deliveryInfo.free_over       ?? 0)
-  const scType           = Number(deliveryInfo.sc_type         ?? 1)
-  const returnFee        = Number(deliveryInfo.return_fee      ?? 0)
-  const deliveryDays     = Number(deliveryInfo.delivery_days   ?? 3)
-  const deliveryCompany  = deliveryInfo.delivery_company ?? null
+  const deliveryInfo    = p.delivery || {}
+  const shippingFee     = Number(deliveryInfo.shipping_fee    ?? 0)
+  const freeShippingOver = Number(deliveryInfo.free_over      ?? 0)
+  const scType          = Number(deliveryInfo.sc_type         ?? 1)
+  const returnFee       = Number(deliveryInfo.return_fee      ?? 0)
+  const deliveryDays    = Number(deliveryInfo.delivery_days   ?? 3)
+  const deliveryCompany = deliveryInfo.delivery_company ?? null
 
   // 이미지 배열 — 갤러리용 (중복 제거)
   const allImages: string[] = [featuredImage, ...(images || [])]
@@ -63,10 +63,12 @@ export default async function Page({ params }: { params: Promise<{ handle: strin
   const isHtmlDesc = /<[a-z][\s\S]*>/i.test(description || '')
 
   // 배송비 텍스트
-  // KMC sc_type: 0=무료, 1=고정유료, 2=조건부무료(sc_minimum 이상 무료), 4=지역별/무게별
+  // KN541 sc_type: 1=무료, 2=조건부무료(freeShippingOver 이상 무료), 3=유료건당, 4=유료수량별
   const shippingText = (() => {
-    if (scType === 0 || shippingFee === 0) return '무료배송'
+    // sc_type=1(무료배송) 또는 배송비=0이면 무료
+    if (scType === 1 || shippingFee === 0) return '무료배송'
     const feeStr = shippingFee.toLocaleString('ko-KR')
+    // sc_type=2(조건부무료): 무료배송 기준금액 표시
     if (freeShippingOver > 0) {
       const over = freeShippingOver.toLocaleString('ko-KR')
       return `${feeStr}원 (${over}원 이상 무료배송)`

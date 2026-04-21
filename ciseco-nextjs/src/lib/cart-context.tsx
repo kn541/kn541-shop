@@ -20,10 +20,11 @@ export interface CartItem {
   quantity: number
   image: string
   option?: string   // 선택 옵션 (색상·사이즈 등)
-  // 상품별 배송비 정보 (product_shipping 테이블)
+  // 상품별 배송비 정보 (product_shipping 테이블 기준)
+  // KN541 sc_type: 1=무료, 2=조건부무료, 3=유료건당, 4=유료수량별
   shippingFee: number       // 배송비 (0이면 무료)
-  freeShippingOver: number  // 이 금액 이상이면 무료 (0이면 조건 없음)
-  scType: number            // KMC sc_type: 0=무료, 1=고정유료, 2=조건부무료, 4=지역별
+  freeShippingOver: number  // sc_type=2 조건부무료 기준금액 (0이면 조건 없음)
+  scType: number
 }
 
 interface CartContextValue {
@@ -32,8 +33,8 @@ interface CartContextValue {
   removeItem: (id: string) => void
   updateQty: (id: string, qty: number) => void
   clearCart: () => void
-  totalCount: number  // 총 수량 (배지용)
-  totalPrice: number  // 총 상품 금액 (배송비 제외)
+  totalCount: number    // 총 수량 (배지용)
+  totalPrice: number    // 총 상품 금액 (배송비 제외)
   totalShipping: number // 총 배송비 (상품별 합산)
 }
 
@@ -41,14 +42,19 @@ const CartContext = createContext<CartContextValue | null>(null)
 
 const STORAGE_KEY = 'kn541_cart'
 
-/** 상품 1개의 배송비 계산
- * - scType=0 또는 shippingFee=0 → 무료
- * - scType=2 (조건부무료): 상품 소계 >= freeShippingOver → 무료
- * - 그 외: shippingFee 그대로
+/**
+ * 상품 1개의 배송비 계산
+ * KN541 sc_type: 1=무료, 2=조건부무료, 3=유료건당, 4=유료수량별
+ *
+ * - sc_type=1 (무료) 또는 shippingFee=0 → 무료
+ * - sc_type=2 (조건부무료): 상품 소계 >= freeShippingOver → 무료
+ * - sc_type=3/4 (유료): shippingFee 적용
  */
 export function calcItemShipping(item: CartItem): number {
   const subtotal = item.price * item.quantity
-  if (item.scType === 0 || item.shippingFee === 0) return 0
+  // sc_type=1(무료배송) 또는 배송비=0이면 무료
+  if (item.scType === 1 || item.shippingFee === 0) return 0
+  // sc_type=2(조건부무료): 소계가 무료기준금액 이상이면 무료
   if (item.scType === 2 && item.freeShippingOver > 0 && subtotal >= item.freeShippingOver) return 0
   return item.shippingFee
 }
