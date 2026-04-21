@@ -9,19 +9,18 @@ import ProductReviews from '../ProductReviews'
 import ProductStatus from '../ProductStatus'
 import KoreanProductGallery from '../KoreanProductGallery'
 import ProductActions from './ProductActions'
+import Link from 'next/link'
 
-export async function generateMetadata({ params }: { params: Promise<{ handle: string }> }): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ handle: string; locale: string }> }): Promise<Metadata> {
   const { handle } = await params
   const product = await getProductDetailByHandle(handle) as any
   const title = product?.title || '상품 상세'
-  // description이 HTML인 경우 태그 제거
-  const rawDesc = product?.description || ''
-  const plainDesc = rawDesc.replace(/<[^>]*>/g, '').slice(0, 160)
-  return { title, description: plainDesc || '상품 상세 페이지' }
+  const rawDesc = (product?.description || '').replace(/<[^>]*>/g, '').slice(0, 160)
+  return { title, description: rawDesc || '상품 상세 페이지' }
 }
 
-export default async function Page({ params }: { params: Promise<{ handle: string }> }) {
-  const { handle } = await params
+export default async function Page({ params }: { params: Promise<{ handle: string; locale: string }> }) {
+  const { handle, locale } = await params
   const product = await getProductDetailByHandle(handle)
 
   if (!product?.id) return notFound()
@@ -29,27 +28,28 @@ export default async function Page({ params }: { params: Promise<{ handle: strin
   const relatedProducts = (await getProducts()).slice(0, 8)
   const reviews = await getProductReviews(handle)
 
+  const p = product as any
+
   const {
     title,
     status,
     featuredImage,
     rating,
     reviewNumber,
-    options,
     price,
     images,
-    breadcrumbs,
     description,
     shippingFee,
     freeShippingOver,
     returnFee,
     deliveryDays,
-  } = product as any
+  } = p
 
-  const allImages = [featuredImage, ...(images || [])]
+  // 이미지 배열 — 갤러리용 (중복 제거)
+  const allImages: string[] = [featuredImage, ...(images || [])]
     .map((i: any) => i?.src)
     .filter(Boolean)
-    .filter((src: string, idx: number, arr: string[]) => arr.indexOf(src) === idx) as string[]
+    .filter((src: string, idx: number, arr: string[]) => arr.indexOf(src) === idx)
 
   const thumbImage = allImages[0] || ''
 
@@ -58,9 +58,10 @@ export default async function Page({ params }: { params: Promise<{ handle: strin
 
   // 배송비 텍스트
   const shippingText = (() => {
-    if (!shippingFee || shippingFee === 0) return '무료배송'
+    const sc = p.delivery?.sc_type ?? 1
+    if (sc === 1 || !shippingFee || Number(shippingFee) === 0) return '무료배송'
     const fee = Number(shippingFee).toLocaleString('ko-KR')
-    if (freeShippingOver && freeShippingOver > 0) {
+    if (freeShippingOver && Number(freeShippingOver) > 0) {
       const over = Number(freeShippingOver).toLocaleString('ko-KR')
       return `${fee}원 (${over}원 이상 무료배송)`
     }
@@ -71,9 +72,38 @@ export default async function Page({ params }: { params: Promise<{ handle: strin
     ? `반품 ${Number(returnFee).toLocaleString('ko-KR')}원`
     : '반품 무료'
 
+  // 카테고리 브레드크럼
+  const breadcrumbs: { name: string; href?: string }[] = [
+    { name: '홈', href: `/${locale}` },
+    { name: '전체 상품', href: `/${locale}/collections/all` },
+  ]
+  if (p.categoryName1) breadcrumbs.push({ name: p.categoryName1 })
+  if (p.categoryName2) breadcrumbs.push({ name: p.categoryName2 })
+  if (p.categoryName) breadcrumbs.push({ name: p.categoryName })
+
+  // 원가 / 할인율
+  const originalPrice = p.originalSupplyPrice || 0
+  const discountRate = originalPrice > 0 && price > 0
+    ? Math.round((1 - price / (originalPrice * 1.5)) * 100)
+    : 0
+
   return (
     <main className="container mt-5 lg:mt-8">
-      {/* 상단 2단 레이아웃 */}
+
+      {/* ── 카테고리 브레드크럼 ── */}
+      <nav className="flex items-center gap-1 text-sm text-neutral-500 dark:text-neutral-400 mb-5 flex-wrap">
+        {breadcrumbs.map((bc, i) => (
+          <span key={i} className="flex items-center gap-1">
+            {i > 0 && <span className="text-neutral-300">/</span>}
+            {bc.href
+              ? <Link href={bc.href} className="hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors">{bc.name}</Link>
+              : <span className="text-neutral-900 dark:text-neutral-100 font-medium">{bc.name}</span>
+            }
+          </span>
+        ))}
+      </nav>
+
+      {/* ── 상단 2단 레이아웃 ── */}
       <div className="flex flex-col gap-8 lg:flex-row lg:gap-10">
 
         {/* 좌: 이미지 갤러리 */}
@@ -81,46 +111,98 @@ export default async function Page({ params }: { params: Promise<{ handle: strin
           <KoreanProductGallery images={allImages} />
         </div>
 
-        {/* 우: sticky 상품 정보 */}
+        {/* 우: 상품 정보 */}
         <div className="w-full lg:w-[45%]">
-          <div className="sticky top-8 flex flex-col gap-5">
+          <div className="sticky top-8 flex flex-col gap-4">
 
-            {/* 브랜드 / 카테고리 */}
-            {(product as any).vendor && (
-              <p className="text-sm font-semibold uppercase tracking-widest text-primary-600">
-                {(product as any).vendor}
-              </p>
+            {/* 브랜드 / 공급사 */}
+            {(p.vendor || p.supplierName) && (
+              <div className="flex items-center gap-2 flex-wrap">
+                {p.vendor && (
+                  <span className="text-sm font-semibold uppercase tracking-widest text-primary-600">
+                    {p.vendor}
+                  </span>
+                )}
+                {p.supplierName && p.supplierName !== p.vendor && (
+                  <span className="text-xs text-neutral-400 border border-neutral-200 rounded px-2 py-0.5">
+                    {p.supplierName}
+                  </span>
+                )}
+              </div>
             )}
 
             {/* 상품명 */}
             <h1 className="text-2xl font-bold leading-snug sm:text-3xl">{title}</h1>
 
-            {/* 별점 */}
-            <div className="flex items-center gap-2">
+            {/* 별점 + 재고상태 */}
+            <div className="flex items-center gap-3 flex-wrap">
               <div className="flex">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <StarIcon
-                    key={i}
-                    className={`h-4 w-4 ${i < Math.round(rating || 0) ? 'text-yellow-400' : 'text-neutral-200'}`}
-                  />
+                  <StarIcon key={i} className={`h-4 w-4 ${i < Math.round(rating || 0) ? 'text-yellow-400' : 'text-neutral-200'}`} />
                 ))}
               </div>
               {reviewNumber > 0 && (
-                <a href="#reviews" className="text-sm text-neutral-500 underline">
-                  {reviewNumber}개 리뷰
-                </a>
+                <a href="#reviews" className="text-sm text-neutral-500 underline">{reviewNumber}개 리뷰</a>
               )}
               <ProductStatus status={status} />
+              {/* 재고 */}
+              {p.stockQty === 0 && (
+                <span className="text-xs bg-red-50 text-red-600 border border-red-200 rounded px-2 py-0.5">품절</span>
+              )}
+              {p.stockQty > 0 && p.stockQty <= 10 && (
+                <span className="text-xs bg-orange-50 text-orange-600 border border-orange-200 rounded px-2 py-0.5">재고 {p.stockQty}개</span>
+              )}
             </div>
 
             {/* 가격 */}
-            <Prices contentClass="text-3xl font-bold" price={price || 0} />
+            <div className="flex items-end gap-3">
+              <Prices contentClass="text-3xl font-bold" price={price || 0} />
+              {originalPrice > 0 && originalPrice !== price && (
+                <span className="text-base text-neutral-400 line-through mb-0.5">
+                  {Number(originalPrice * 1.5).toLocaleString('ko-KR')}원
+                </span>
+              )}
+            </div>
 
             <Divider />
 
+            {/* 상품 기본 정보 표 */}
+            <div className="rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+              <table className="w-full text-sm">
+                <tbody>
+                  {p.productCode && (
+                    <tr className="border-b border-neutral-100 dark:border-neutral-700">
+                      <td className="px-4 py-2.5 w-28 font-medium text-neutral-500 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-800">상품코드</td>
+                      <td className="px-4 py-2.5 text-neutral-800 dark:text-neutral-200">{p.productCode}</td>
+                    </tr>
+                  )}
+                  {p.vendor && (
+                    <tr className="border-b border-neutral-100 dark:border-neutral-700">
+                      <td className="px-4 py-2.5 w-28 font-medium text-neutral-500 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-800">브랜드</td>
+                      <td className="px-4 py-2.5 text-neutral-800 dark:text-neutral-200">{p.vendor}</td>
+                    </tr>
+                  )}
+                  {p.origin && (
+                    <tr className="border-b border-neutral-100 dark:border-neutral-700">
+                      <td className="px-4 py-2.5 w-28 font-medium text-neutral-500 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-800">원산지</td>
+                      <td className="px-4 py-2.5 text-neutral-800 dark:text-neutral-200">{p.origin}</td>
+                    </tr>
+                  )}
+                  <tr className="border-b border-neutral-100 dark:border-neutral-700">
+                    <td className="px-4 py-2.5 w-28 font-medium text-neutral-500 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-800">과세유형</td>
+                    <td className="px-4 py-2.5 text-neutral-800 dark:text-neutral-200">{p.taxLabel || '과세 (10%)'}</td>
+                  </tr>
+                  <tr className="border-b border-neutral-100 dark:border-neutral-700">
+                    <td className="px-4 py-2.5 w-28 font-medium text-neutral-500 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-800">최소주문</td>
+                    <td className="px-4 py-2.5 text-neutral-800 dark:text-neutral-200">{p.minOrderQty || 1}개{p.maxOrderQty ? ` / 최대 ${p.maxOrderQty}개` : ''}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
             {/* 옵션 + 수량 + 장바구니/바로구매 */}
             <ProductActions
-              options={options}
+              options={p.options}
               colorSelected=""
               sizeSelected=""
               price={price || 0}
@@ -131,74 +213,65 @@ export default async function Page({ params }: { params: Promise<{ handle: strin
             <Divider />
 
             {/* 배송 안내 */}
-            <div className="flex flex-col gap-2.5 text-sm text-neutral-600 dark:text-neutral-400">
-              <div className="flex gap-3">
-                <span className="w-24 shrink-0 font-medium text-neutral-800 dark:text-neutral-200">배송방법</span>
-                <span>일반배송 ({deliveryDays || 3}일 이내)</span>
-              </div>
-              <div className="flex gap-3">
-                <span className="w-24 shrink-0 font-medium text-neutral-800 dark:text-neutral-200">배송비</span>
-                <span>{shippingText}</span>
-              </div>
-              {returnFee !== undefined && (
-                <div className="flex gap-3">
-                  <span className="w-24 shrink-0 font-medium text-neutral-800 dark:text-neutral-200">반품/교환</span>
-                  <span>{returnText} · 수령 후 30일 이내</span>
-                </div>
-              )}
+            <div className="rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+              <table className="w-full text-sm">
+                <tbody>
+                  <tr className="border-b border-neutral-100 dark:border-neutral-700">
+                    <td className="px-4 py-2.5 w-28 font-medium text-neutral-500 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-800">배송방법</td>
+                    <td className="px-4 py-2.5 text-neutral-800 dark:text-neutral-200">일반배송 ({deliveryDays || 3}일 이내){p.delivery?.delivery_company ? ` · ${p.delivery.delivery_company}` : ''}</td>
+                  </tr>
+                  <tr className="border-b border-neutral-100 dark:border-neutral-700">
+                    <td className="px-4 py-2.5 w-28 font-medium text-neutral-500 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-800">배송비</td>
+                    <td className="px-4 py-2.5 text-neutral-800 dark:text-neutral-200">{shippingText}</td>
+                  </tr>
+                  <tr className="border-b border-neutral-100 dark:border-neutral-700">
+                    <td className="px-4 py-2.5 w-28 font-medium text-neutral-500 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-800">반품/교환</td>
+                    <td className="px-4 py-2.5 text-neutral-800 dark:text-neutral-200">{returnText} · 수령 후 30일 이내</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
 
           </div>
         </div>
       </div>
 
-      {/* 하단: 상품상세 + 리뷰 */}
+      {/* ── 하단: 탭 + 상세설명 + 리뷰 ── */}
       <div className="mt-16 flex flex-col gap-0 sm:mt-20">
 
         {/* 탭 헤더 */}
         <div className="flex gap-8 border-b border-neutral-200 dark:border-neutral-700 mb-10">
           {['상품상세', '리뷰', '배송/교환/반품'].map((tab, idx) => (
-            <button
-              key={tab}
+            <button key={tab}
               className={`pb-3 text-sm font-semibold transition-colors ${
                 idx === 0
                   ? 'border-b-2 border-neutral-900 text-neutral-900 dark:border-neutral-100 dark:text-neutral-100'
                   : 'text-neutral-400 hover:text-neutral-600'
-              }`}
-            >
+              }`}>
               {tab}
             </button>
           ))}
         </div>
 
-        {/* 상품 상세 — HTML or 이미지 */}
+        {/* 상세설명 */}
         {isHtmlDesc ? (
-          /* HTML description 렌더링 */
           <div
             className="prose prose-sm sm:prose max-w-none dark:prose-invert mx-auto w-full"
             dangerouslySetInnerHTML={{ __html: description }}
           />
         ) : description ? (
-          /* 텍스트 description */
           <div className="mx-auto w-full max-w-3xl">
-            <p className="whitespace-pre-wrap text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
-              {description}
-            </p>
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">{description}</p>
           </div>
         ) : null}
 
-        {/* 상품 이미지 세로 나열 (description 없거나 이미지 추가 표시) */}
-        {allImages.length > 0 && (
+        {/* 상세 이미지 (DETAIL 타입만) */}
+        {allImages.length > 1 && (
           <div className="mt-8 flex flex-col items-center gap-0">
-            {allImages.map((src, idx) => (
+            {allImages.slice(1).map((src, idx) => (
               // eslint-disable-next-line @next/next/no-img-element
-              <img
-                key={idx}
-                src={src}
-                alt={`${title} 상세 이미지 ${idx + 1}`}
-                className="w-full max-w-3xl object-cover"
-                loading={idx === 0 ? 'eager' : 'lazy'}
-              />
+              <img key={idx} src={src} alt={`상세 이미지 ${idx + 1}`}
+                className="w-full max-w-3xl object-cover" loading="lazy" />
             ))}
           </div>
         )}
@@ -210,24 +283,24 @@ export default async function Page({ params }: { params: Promise<{ handle: strin
           <h3 className="mb-4 text-base font-bold">배송 / 교환 / 반품 안내</h3>
           <div className="flex flex-col gap-3 text-sm text-neutral-600 dark:text-neutral-400">
             <div className="flex gap-4">
-              <span className="w-24 shrink-0 font-medium text-neutral-800 dark:text-neutral-200">배송방법</span>
-              <span>일반택배 ({deliveryDays || 3}일 이내 출발)</span>
+              <span className="w-28 shrink-0 font-medium text-neutral-800 dark:text-neutral-200">배송방법</span>
+              <span>일반택배 ({deliveryDays || 3}일 이내 출발){p.delivery?.delivery_company ? ` · ${p.delivery.delivery_company}` : ''}</span>
             </div>
             <div className="flex gap-4">
-              <span className="w-24 shrink-0 font-medium text-neutral-800 dark:text-neutral-200">배송비</span>
+              <span className="w-28 shrink-0 font-medium text-neutral-800 dark:text-neutral-200">배송비</span>
               <span>{shippingText}</span>
             </div>
             <div className="flex gap-4">
-              <span className="w-24 shrink-0 font-medium text-neutral-800 dark:text-neutral-200">반품비용</span>
+              <span className="w-28 shrink-0 font-medium text-neutral-800 dark:text-neutral-200">반품비용</span>
               <span>{returnText}</span>
             </div>
             <Divider />
             <div className="flex gap-4">
-              <span className="w-24 shrink-0 font-medium text-neutral-800 dark:text-neutral-200">반품기한</span>
+              <span className="w-28 shrink-0 font-medium text-neutral-800 dark:text-neutral-200">반품기한</span>
               <span>수령 후 30일 이내 (단순변심 포함)</span>
             </div>
             <div className="flex gap-4">
-              <span className="w-24 shrink-0 font-medium text-neutral-800 dark:text-neutral-200">반품불가</span>
+              <span className="w-28 shrink-0 font-medium text-neutral-800 dark:text-neutral-200">반품불가</span>
               <span>사용/개봉, 파손·훼손, 주문 제작 상품</span>
             </div>
           </div>
