@@ -2,12 +2,18 @@
 // fix: product_status 'ACTIVE' 필터 제거 (실제 DB는 ON_SALE)
 // fix: id/handle → product_id(UUID) 기반 (상세페이지 UUID 직접 조회)
 // fix: 백엔드 category_id OR 조건 지원으로 대/중/소분류 모두 매칭
+// fix: BASE URL fallback 추가 (env var 미설정 시에도 동작)
+// fix: console.error 로깅 추가 (Vercel 런타임 로그에서 원인 추적)
 
 import { Suspense } from 'react'
 import ProductsPageClient from './ProductsPageClient'
 import type { Metadata } from 'next'
 
-const BASE = process.env.NEXT_PUBLIC_API_URL
+// ★ env var 미설정 시 Railway URL로 fallback
+const BASE =
+  process.env.NEXT_PUBLIC_API_URL ||
+  process.env.API_URL ||
+  'https://kn541-production.up.railway.app'
 
 export const metadata: Metadata = {
   title: '상품목록 | KN541',
@@ -44,14 +50,20 @@ function flattenCategories(items: any[]): CategoryInfo[] {
 }
 
 async function fetchAllCategories(): Promise<CategoryInfo[]> {
-  if (!BASE) return []
   try {
-    const res = await fetch(`${BASE}/categories`, { next: { revalidate: 300 } })
-    if (!res.ok) return []
+    const url = `${BASE}/categories`
+    console.log('[products] fetchAllCategories URL:', url)
+    const res = await fetch(url, { cache: 'no-store' })
+    if (!res.ok) {
+      console.error('[products] fetchAllCategories HTTP error:', res.status, res.statusText)
+      return []
+    }
     const data = await res.json()
     const raw = data?.data?.items ?? []
+    console.log('[products] fetchAllCategories count:', raw.length)
     return flattenCategories(raw)
-  } catch {
+  } catch (err) {
+    console.error('[products] fetchAllCategories 예외:', err)
     return []
   }
 }
@@ -85,18 +97,24 @@ function mapProduct(p: any) {
 }
 
 async function fetchProducts(categoryId?: string): Promise<any[]> {
-  if (!BASE) return []
   try {
     // ★ product_status 필터 제거: 실제 DB 값은 'ON_SALE'이므로 'ACTIVE' 필터 시 0개 반환
     // ★ 백엔드가 category_id OR 조건 지원: category_id_1/category_id_2/category_id 모두 매칭
     const qs = new URLSearchParams({ size: '40' })
     if (categoryId) qs.set('category_id', categoryId)
-    const res = await fetch(`${BASE}/products?${qs}`, { next: { revalidate: 60 } })
-    if (!res.ok) return []
+    const url = `${BASE}/products?${qs}`
+    console.log('[products] fetchProducts URL:', url)
+    const res = await fetch(url, { cache: 'no-store' })
+    if (!res.ok) {
+      console.error('[products] fetchProducts HTTP error:', res.status, res.statusText)
+      return []
+    }
     const data = await res.json()
     const items = data?.data?.items ?? []
+    console.log('[products] fetchProducts count:', items.length, '| data keys:', Object.keys(data))
     return items.map(mapProduct)
-  } catch {
+  } catch (err) {
+    console.error('[products] fetchProducts 예외:', err)
     return []
   }
 }
@@ -109,6 +127,8 @@ export default async function ProductsPage({
   const { cid } = await searchParams
   const allCategories = await fetchAllCategories()
   const products = await fetchProducts(cid)
+
+  console.log('[products] 렌더링 — 카테고리:', allCategories.length, '| 상품:', products.length)
 
   const currentCategory = cid
     ? allCategories.find((c) => c.id === String(cid)) ?? null
