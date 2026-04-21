@@ -109,6 +109,8 @@ export function adaptProduct(p: Product): TProductItem {
     productCode: p.product_code ?? '',
     productNo: p.product_no ?? '',
     stockQty: p.stock_qty ?? 0,
+    /** DB 원본 product_status (ON_SALE, SOLDOUT 등) — 장바구니 검증용 */
+    productStatus: p.product_status ?? '',
     minOrderQty: p.min_order_qty ?? 1,
     maxOrderQty: p.max_order_qty ?? null,
     supplierName: p.supplier_name ?? '',

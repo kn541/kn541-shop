@@ -1,6 +1,7 @@
 'use client'
 // KN541 상품 상세 — 장바구니 담기 / 바로구매
 // useCart Context로 전역 상태 관리 (localStorage 동기화)
+// 판매상태·재고·색상/사이즈 옵션 검증
 
 import NcInputNumber from '@/components/NcInputNumber'
 import ProductColorOptions from '@/components/ProductForm/ProductColorOptions'
@@ -9,95 +10,205 @@ import { useCart } from '@/lib/cart-context'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { ShoppingBag03Icon } from '@hugeicons/core-free-icons'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
 
 interface Props {
-  productId: string   // ★ UUID (장바구니 ID 키)
+  productId: string
   options: any
-  colorSelected: string
-  sizeSelected: string
   price: number
   productName: string
   productImage: string
-  // 상품별 배송비 정보
   shippingFee?: number
   freeShippingOver?: number
   scType?: number
+  /** API product_status (ON_SALE 등) */
+  productStatus: string
+  /** 판매 가능 수량 */
+  stock: number
+  /** Color 옵션 UI가 있을 때 선택 필수 */
+  hasColorOption: boolean
+  /** Size 옵션 UI가 있을 때 선택 필수 */
+  hasSizeOption: boolean
+  /** 어댑터 표시용 상태 (품절, 판매종료 등) */
+  listingStatus?: string
+}
+
+function validateCartAction(p: {
+  productStatus: string
+  stock: number
+  qty: number
+  hasColorOption: boolean
+  hasSizeOption: boolean
+  colorSelected: string
+  sizeSelected: string
+  listingStatus?: string
+}): string | null {
+  const { productStatus, stock, qty, hasColorOption, hasSizeOption, colorSelected, sizeSelected, listingStatus } = p
+  const list = (listingStatus || '').trim()
+  if (list === '품절' || list === '판매종료') {
+    return '현재 구매할 수 없는 상품입니다.'
+  }
+  const ps = (productStatus || '').toUpperCase()
+  if (ps) {
+    if (['SOLDOUT', 'SOLD_OUT', 'DISCONTINUED', 'INACTIVE', 'WAITING', 'PENDING'].includes(ps)) {
+      return '현재 구매할 수 없는 상품입니다.'
+    }
+    if (ps !== 'ON_SALE' && ps !== 'ACTIVE') {
+      return '현재 구매할 수 없는 상품입니다.'
+    }
+  }
+  if (stock <= 0) {
+    return '품절된 상품입니다.'
+  }
+  if (qty > stock) {
+    return `최대 ${stock.toLocaleString('ko-KR')}개까지 구매할 수 있습니다.`
+  }
+  if (hasColorOption && !String(colorSelected).trim()) {
+    return '색상을 선택해 주세요.'
+  }
+  if (hasSizeOption && !String(sizeSelected).trim()) {
+    return '사이즈를 선택해 주세요.'
+  }
+  return null
 }
 
 export default function ProductActions({
   productId,
   options,
-  colorSelected,
-  sizeSelected,
   price,
   productName,
   productImage,
   shippingFee = 0,
   freeShippingOver = 0,
   scType = 1,
+  productStatus,
+  stock,
+  hasColorOption,
+  hasSizeOption,
+  listingStatus,
 }: Props) {
   const router = useRouter()
   const { addItem, clearCart } = useCart()
   const [qty, setQty] = useState(1)
+  const [colorSel, setColorSel] = useState('')
+  const [sizeSel, setSizeSel] = useState('')
 
-  // 선택된 옵션 텍스트 생성
+  const maxQty = Math.max(1, Math.min(99, stock || 1))
+
+  const blockReason = useMemo(
+    () =>
+      validateCartAction({
+        productStatus,
+        stock,
+        qty,
+        hasColorOption,
+        hasSizeOption,
+        colorSelected: colorSel,
+        sizeSelected: sizeSel,
+        listingStatus,
+      }),
+    [productStatus, stock, qty, hasColorOption, hasSizeOption, colorSel, sizeSel, listingStatus]
+  )
+
   const buildOption = () => {
     const parts: string[] = []
-    if (colorSelected) parts.push(colorSelected)
-    if (sizeSelected) parts.push(sizeSelected)
+    if (colorSel) parts.push(colorSel)
+    if (sizeSel) parts.push(sizeSel)
     return parts.join(' / ') || undefined
   }
 
-  // ── 장바구니 담기 ──
-  const handleAddToCart = () => {
-    addItem({
-      productId,
-      name: productName,
-      price,
-      quantity: qty,
-      image: productImage,
-      option: buildOption(),
-      shippingFee,
-      freeShippingOver,
-      scType,
+  const runWithValidation = (fn: () => void) => {
+    const err = validateCartAction({
+      productStatus,
+      stock,
+      qty,
+      hasColorOption,
+      hasSizeOption,
+      colorSelected: colorSel,
+      sizeSelected: sizeSel,
+      listingStatus,
     })
-    toast.success(
-      <span>
-        장바구니에 담겼습니다!{' '}
-        <button
-          className="font-semibold underline"
-          onClick={() => router.push('/ko/cart')}
-        >
-          장바구니 보기
-        </button>
-      </span>,
-      { duration: 3000 }
-    )
+    if (err) {
+      toast.error(err)
+      return
+    }
+    fn()
   }
 
-  // ── 바로구매 ── 기존 장바구니를 이 상품으로 대체 후 결제페이지로
-  const handleBuyNow = () => {
-    clearCart()
-    addItem({
-      productId,
-      name: productName,
-      price,
-      quantity: qty,
-      image: productImage,
-      option: buildOption(),
-      shippingFee,
-      freeShippingOver,
-      scType,
+  const handleAddToCart = () => {
+    runWithValidation(() => {
+      addItem({
+        productId,
+        name: productName,
+        price,
+        quantity: qty,
+        image: productImage,
+        option: buildOption(),
+        shippingFee,
+        freeShippingOver,
+        scType,
+      })
+      toast.success(
+        <span>
+          장바구니에 담겼습니다!{' '}
+          <button
+            type="button"
+            className="font-semibold underline"
+            onClick={() => router.push('/ko/cart')}
+          >
+            장바구니 보기
+          </button>
+        </span>,
+        { duration: 3000 }
+      )
     })
-    router.push('/ko/checkout')
   }
+
+  const handleBuyNow = () => {
+    runWithValidation(() => {
+      clearCart()
+      addItem({
+        productId,
+        name: productName,
+        price,
+        quantity: qty,
+        image: productImage,
+        option: buildOption(),
+        shippingFee,
+        freeShippingOver,
+        scType,
+      })
+      router.push('/ko/checkout')
+    })
+  }
+
+  const buttonsDisabled = Boolean(blockReason)
+  const hint =
+    stock > 0 && blockReason && !['색상을 선택해 주세요.', '사이즈를 선택해 주세요.'].includes(blockReason)
+      ? blockReason
+      : null
 
   return (
     <div className="flex flex-col gap-6">
-      <ProductColorOptions options={options} defaultColor={colorSelected} />
-      <ProductSizeOptions options={options} defaultSize={sizeSelected} />
+      <ProductColorOptions
+        options={options}
+        colorSelected={colorSel}
+        onColorChange={setColorSel}
+      />
+      <ProductSizeOptions
+        options={options}
+        sizeSelected={sizeSel}
+        onSizeChange={setSizeSel}
+      />
+
+      {hasColorOption && !colorSel.trim() && (
+        <p className="text-sm text-amber-700 dark:text-amber-400">색상을 선택해 주세요.</p>
+      )}
+      {hasSizeOption && !sizeSel.trim() && (
+        <p className="text-sm text-amber-700 dark:text-amber-400">사이즈를 선택해 주세요.</p>
+      )}
+      {hint && <p className="text-sm text-red-600 dark:text-red-400">{hint}</p>}
 
       {/* 수량 */}
       <div className="flex items-center gap-3">
@@ -106,18 +217,23 @@ export default function ProductActions({
           <NcInputNumber
             defaultValue={1}
             min={1}
-            max={99}
+            max={maxQty}
             onChange={(val) => setQty(val)}
           />
         </div>
+        {stock > 0 && (
+          <span className="text-xs text-neutral-500 dark:text-neutral-400">
+            (재고 {stock.toLocaleString('ko-KR')}개)
+          </span>
+        )}
       </div>
 
-      {/* 버튼 2개 */}
       <div className="flex gap-3 pt-2">
-        {/* 장바구니 */}
         <button
+          type="button"
           onClick={handleAddToCart}
-          className="flex flex-1 items-center justify-center gap-2 rounded-full bg-primary-600 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-primary-700"
+          disabled={buttonsDisabled}
+          className="flex flex-1 items-center justify-center gap-2 rounded-full bg-primary-600 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <HugeiconsIcon
             icon={ShoppingBag03Icon}
@@ -129,10 +245,11 @@ export default function ProductActions({
           <span>장바구니에 담기</span>
         </button>
 
-        {/* 바로구매 */}
         <button
+          type="button"
           onClick={handleBuyNow}
-          className="flex flex-1 items-center justify-center gap-2 rounded-full bg-neutral-900 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-neutral-700 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
+          disabled={buttonsDisabled}
+          className="flex flex-1 items-center justify-center gap-2 rounded-full bg-neutral-900 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
         >
           바로구매
         </button>

@@ -35,13 +35,20 @@ const demoSizeChart = [
 const ProductSizeOptions = ({
   options,
   className,
-  defaultSize,
+  defaultSize = '',
+  sizeSelected: controlledSize,
+  onSizeChange,
 }: {
   options: TProductItem['options']
   className?: string
-  defaultSize: string
+  defaultSize?: string
+  sizeSelected?: string
+  onSizeChange?: (value: string) => void
 }) => {
-  const [sizeSelected, setSizeSelected] = useState(defaultSize)
+  const [internalSize, setInternalSize] = useState(defaultSize)
+  const isControlled = onSizeChange != null
+  const sizeSelected = isControlled ? (controlledSize ?? '') : internalSize
+  const setSizeSelected = isControlled ? onSizeChange : setInternalSize
   const [isOpen, setIsOpen] = useState(false)
 
   if (!options?.length) {

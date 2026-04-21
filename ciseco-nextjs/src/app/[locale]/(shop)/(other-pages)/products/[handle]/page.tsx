@@ -92,6 +92,19 @@ export default async function Page({ params }: { params: Promise<{ handle: strin
   // 원가
   const originalPrice = p.originalSupplyPrice || 0
 
+  const productStatus = String((p as { productStatus?: string }).productStatus ?? '')
+  const stock = Number(p.stockQty ?? 0)
+  const rawOpts = ((p as { options?: unknown[] }).options ?? []) as Array<{
+    name?: string
+    optionValues?: unknown[]
+  }>
+  const hasColorOption = rawOpts.some(
+    (o) => o?.name === 'Color' && Array.isArray(o?.optionValues) && o.optionValues.length > 0
+  )
+  const hasSizeOption = rawOpts.some(
+    (o) => o?.name === 'Size' && Array.isArray(o?.optionValues) && o.optionValues.length > 0
+  )
+
   return (
     <main className="container mt-5 lg:mt-8">
 
@@ -208,14 +221,17 @@ export default async function Page({ params }: { params: Promise<{ handle: strin
             <ProductActions
               productId={String(productId || handle)}
               options={p.options}
-              colorSelected=""
-              sizeSelected=""
               price={price || 0}
               productName={title || ''}
               productImage={thumbImage}
               shippingFee={shippingFee}
               freeShippingOver={freeShippingOver}
               scType={scType}
+              productStatus={productStatus}
+              stock={stock}
+              hasColorOption={hasColorOption}
+              hasSizeOption={hasSizeOption}
+              listingStatus={status}
             />
 
             <Divider />

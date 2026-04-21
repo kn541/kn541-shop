@@ -8,13 +8,21 @@ import { useState } from 'react'
 const ProductColorOptions = ({
   options,
   className,
-  defaultColor,
+  defaultColor = '',
+  colorSelected: controlledColor,
+  onColorChange,
 }: {
   options: TProductItem['options']
   className?: string
-  defaultColor: string
+  defaultColor?: string
+  /** 제어 모드: 부모에서 선택값 동기화 (장바구니 검증 등) */
+  colorSelected?: string
+  onColorChange?: (value: string) => void
 }) => {
-  const [colorSelected, setColorSelected] = useState(defaultColor)
+  const [internalColor, setInternalColor] = useState(defaultColor)
+  const isControlled = onColorChange != null
+  const colorSelected = isControlled ? (controlledColor ?? '') : internalColor
+  const setColorSelected = isControlled ? onColorChange : setInternalColor
 
   const colorOptionValues = options?.find((option) => option.name === 'Color')?.optionValues
 
