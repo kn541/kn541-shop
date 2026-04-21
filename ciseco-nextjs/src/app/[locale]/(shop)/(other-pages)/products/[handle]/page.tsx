@@ -31,6 +31,7 @@ export default async function Page({ params }: { params: Promise<{ handle: strin
   const p = product as any
 
   const {
+    id: productId,
     title,
     status,
     featuredImage,
@@ -75,17 +76,14 @@ export default async function Page({ params }: { params: Promise<{ handle: strin
   // 카테고리 브레드크럼
   const breadcrumbs: { name: string; href?: string }[] = [
     { name: '홈', href: `/${locale}` },
-    { name: '전체 상품', href: `/${locale}/collections/all` },
+    { name: '전체 상품', href: `/${locale}/products` },
   ]
   if (p.categoryName1) breadcrumbs.push({ name: p.categoryName1 })
   if (p.categoryName2) breadcrumbs.push({ name: p.categoryName2 })
   if (p.categoryName) breadcrumbs.push({ name: p.categoryName })
 
-  // 원가 / 할인율
+  // 원가
   const originalPrice = p.originalSupplyPrice || 0
-  const discountRate = originalPrice > 0 && price > 0
-    ? Math.round((1 - price / (originalPrice * 1.5)) * 100)
-    : 0
 
   return (
     <main className="container mt-5 lg:mt-8">
@@ -145,7 +143,6 @@ export default async function Page({ params }: { params: Promise<{ handle: strin
                 <a href="#reviews" className="text-sm text-neutral-500 underline">{reviewNumber}개 리뷰</a>
               )}
               <ProductStatus status={status} />
-              {/* 재고 */}
               {p.stockQty === 0 && (
                 <span className="text-xs bg-red-50 text-red-600 border border-red-200 rounded px-2 py-0.5">품절</span>
               )}
@@ -200,8 +197,9 @@ export default async function Page({ params }: { params: Promise<{ handle: strin
               </table>
             </div>
 
-            {/* 옵션 + 수량 + 장바구니/바로구매 */}
+            {/* ★ 옵션 + 수량 + 장바구니/바로구매 — productId 전달 */}
             <ProductActions
+              productId={String(productId || handle)}
               options={p.options}
               colorSelected=""
               sizeSelected=""
@@ -265,7 +263,7 @@ export default async function Page({ params }: { params: Promise<{ handle: strin
           </div>
         ) : null}
 
-        {/* 상세 이미지 (DETAIL 타입만) */}
+        {/* 상세 이미지 */}
         {allImages.length > 1 && (
           <div className="mt-8 flex flex-col items-center gap-0">
             {allImages.slice(1).map((src, idx) => (
