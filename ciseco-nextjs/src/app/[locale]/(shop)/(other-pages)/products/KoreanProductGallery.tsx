@@ -1,12 +1,12 @@
 'use client'
 
-import Image from 'next/image'
 import { useState } from 'react'
 
 /**
  * KoreanProductGallery
- * 10x10 스타일: 좌측 세로 썸네일 + 우측 메인 이미지 큰 화면
- * 모바일: 메인 이미지 상단 + 하단 가로 썸네일 스크롤
+ * - 외부 도메인 이미지 지원을 위해 <img> 태그 사용 (next/image remotePatterns 우회)
+ * - 데스크톱: 좌측 세로 썸네일 + 우측 메인 이미지
+ * - 모바일: 메인 이미지 상단 + 하단 가로 썸네일 스크롤
  */
 export default function KoreanProductGallery({ images }: { images: string[] }) {
   const [current, setCurrent] = useState(0)
@@ -15,9 +15,8 @@ export default function KoreanProductGallery({ images }: { images: string[] }) {
 
   return (
     <>
-      {/* ── 데스크톱: 좌측 썸네일 + 우측 메인 ── */}
+      {/* ── 데스크톱 ── */}
       <div className="hidden sm:flex gap-3">
-
         {/* 썸네일 세로 목록 */}
         <div className="flex flex-col gap-2 overflow-y-auto" style={{ maxHeight: '600px' }}>
           {images.map((src, idx) => (
@@ -25,46 +24,32 @@ export default function KoreanProductGallery({ images }: { images: string[] }) {
               key={idx}
               onClick={() => setCurrent(idx)}
               className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 transition ${
-                idx === current
-                  ? 'border-neutral-900'
-                  : 'border-transparent hover:border-neutral-300'
+                idx === current ? 'border-neutral-900' : 'border-transparent hover:border-neutral-300'
               }`}
             >
-              <Image
-                src={src}
-                alt={`썸네일 ${idx + 1}`}
-                fill
-                sizes="64px"
-                className="object-cover"
-              />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={src} alt={`썸네일 ${idx + 1}`} className="w-full h-full object-cover" />
             </button>
           ))}
         </div>
 
         {/* 메인 이미지 */}
-        <div className="relative flex-1 overflow-hidden rounded-2xl bg-neutral-100" style={{ aspectRatio: '1/1' }}>
-          <Image
+        <div className="relative flex-1 overflow-hidden rounded-2xl bg-neutral-100 flex items-center justify-center" style={{ minHeight: '400px', maxHeight: '600px' }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             src={images[current]}
             alt="메인 이미지"
-            fill
-            sizes="(max-width: 1200px) 50vw, 600px"
-            className="object-contain"
-            priority
+            className="w-full h-full object-contain"
+            style={{ maxHeight: '600px' }}
           />
         </div>
       </div>
 
-      {/* ── 모바일: 메인 + 하단 가로 썸네일 ── */}
+      {/* ── 모바일 ── */}
       <div className="flex flex-col gap-3 sm:hidden">
-        <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-neutral-100">
-          <Image
-            src={images[current]}
-            alt="메인 이미지"
-            fill
-            sizes="100vw"
-            className="object-contain"
-            priority
-          />
+        <div className="relative w-full overflow-hidden rounded-2xl bg-neutral-100 flex items-center justify-center" style={{ minHeight: '300px' }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={images[current]} alt="메인 이미지" className="w-full object-contain" style={{ maxHeight: '400px' }} />
         </div>
         <div className="flex gap-2 overflow-x-auto pb-1">
           {images.map((src, idx) => (
@@ -72,18 +57,11 @@ export default function KoreanProductGallery({ images }: { images: string[] }) {
               key={idx}
               onClick={() => setCurrent(idx)}
               className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 transition ${
-                idx === current
-                  ? 'border-neutral-900'
-                  : 'border-transparent hover:border-neutral-300'
+                idx === current ? 'border-neutral-900' : 'border-transparent hover:border-neutral-300'
               }`}
             >
-              <Image
-                src={src}
-                alt={`썸네일 ${idx + 1}`}
-                fill
-                sizes="64px"
-                className="object-cover"
-              />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={src} alt={`썸네일 ${idx + 1}`} className="w-full h-full object-cover" />
             </button>
           ))}
         </div>
