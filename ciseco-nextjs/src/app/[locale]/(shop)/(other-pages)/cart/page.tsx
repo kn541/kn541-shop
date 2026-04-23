@@ -1,7 +1,6 @@
 'use client'
 // KN541 장바구니 페이지 — 상품별 배송비 적용
 
-import Prices from '@/components/Prices'
 import NcInputNumber from '@/components/NcInputNumber'
 import ButtonPrimary from '@/shared/Button/ButtonPrimary'
 import { Link } from '@/shared/link'
@@ -15,7 +14,6 @@ export default function CartPage() {
   const { items, removeItem, updateQty, totalPrice, totalShipping } = useCart()
   const total = totalPrice + totalShipping
 
-  // 장바구니 비어있을 때
   if (items.length === 0) {
     return (
       <div className="container py-20 text-center">
@@ -32,11 +30,10 @@ export default function CartPage() {
   return (
     <div className="bg-white dark:bg-neutral-900">
       <main className="container py-16 lg:pt-20 lg:pb-28">
-        {/* 헤더 */}
         <div className="mb-10">
           <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100 lg:text-4xl">장바구니</h1>
           <p className="mt-2 text-sm text-neutral-500">
-            선택하신 상품 {items.reduce((s, i) => s + i.quantity, 0)}개
+            선택하신 상품 {items.reduce((s, i) => s + (Number(i.quantity) || 0), 0)}개
           </p>
         </div>
 
@@ -46,9 +43,10 @@ export default function CartPage() {
             <div className="divide-y divide-neutral-200 dark:divide-neutral-700">
               {items.map((item) => {
                 const itemShipping = calcItemShipping(item)
+                const price = Number(item.price) || 0
+                const qty   = Number(item.quantity) || 1
                 return (
                   <div key={item.id} className="flex gap-5 py-6 sm:gap-8">
-                    {/* 이미지 */}
                     <div className="relative h-28 w-24 shrink-0 overflow-hidden rounded-2xl bg-neutral-100 sm:h-36 sm:w-32">
                       {item.image ? (
                         <Image
@@ -66,7 +64,6 @@ export default function CartPage() {
                       )}
                     </div>
 
-                    {/* 상품 정보 */}
                     <div className="flex flex-1 flex-col">
                       <div className="flex items-start justify-between">
                         <div>
@@ -76,7 +73,6 @@ export default function CartPage() {
                           {item.option && (
                             <p className="mt-1 text-sm text-neutral-500">{item.option}</p>
                           )}
-                          {/* 상품별 배송비 표시 */}
                           <p className="mt-1 text-xs text-neutral-400">
                             배송비: {itemShipping === 0 ? '무료' : `${itemShipping.toLocaleString('ko-KR')}원`}
                           </p>
@@ -92,17 +88,17 @@ export default function CartPage() {
 
                       <div className="mt-auto flex items-center justify-between pt-4">
                         <NcInputNumber
-                          defaultValue={item.quantity}
+                          defaultValue={qty}
                           min={1}
                           max={99}
                           onChange={(val) => updateQty(item.id, val)}
                         />
                         <div className="text-right">
                           <p className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
-                            {(item.price * item.quantity).toLocaleString('ko-KR')}원
+                            {(price * qty).toLocaleString('ko-KR')}원
                           </p>
                           <p className="text-xs text-neutral-400">
-                            단가 {item.price.toLocaleString('ko-KR')}원
+                            단가 {price.toLocaleString('ko-KR')}원
                           </p>
                         </div>
                       </div>
@@ -112,7 +108,6 @@ export default function CartPage() {
               })}
             </div>
 
-            {/* 쇼핑 계속 */}
             <div className="mt-6">
               <Link href="/ko/products" className="inline-flex items-center gap-2 text-sm font-medium text-primary-600 hover:text-primary-500">
                 <span>←</span>
@@ -121,7 +116,6 @@ export default function CartPage() {
             </div>
           </div>
 
-          {/* 구분선 */}
           <div className="hidden border-l border-neutral-200 lg:block dark:border-neutral-700" />
 
           {/* 주문 요약 */}
@@ -132,8 +126,8 @@ export default function CartPage() {
               <div className="space-y-3 text-sm">
                 {items.map((item) => (
                   <div key={item.id} className="flex justify-between text-neutral-600 dark:text-neutral-400">
-                    <span className="line-clamp-1 max-w-[60%]">{item.name} ×{item.quantity}</span>
-                    <span>{(item.price * item.quantity).toLocaleString('ko-KR')}원</span>
+                    <span className="line-clamp-1 max-w-[60%]">{item.name} ×{Number(item.quantity) || 1}</span>
+                    <span>{((Number(item.price) || 0) * (Number(item.quantity) || 1)).toLocaleString('ko-KR')}원</span>
                   </div>
                 ))}
               </div>
@@ -145,7 +139,6 @@ export default function CartPage() {
                   <span>소계</span>
                   <span>{totalPrice.toLocaleString('ko-KR')}원</span>
                 </div>
-                {/* 상품별 배송비 상세 */}
                 {items.map((item) => {
                   const fee = calcItemShipping(item)
                   return (

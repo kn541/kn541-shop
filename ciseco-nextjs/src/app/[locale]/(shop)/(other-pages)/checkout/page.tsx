@@ -1,11 +1,12 @@
 'use client'
 // KN541 결제 페이지 — 토스페이먼츠 결제위젯 v2 연동 (Redirect 방식)
-// 흐름: 실 장바구니 → 배송지 입력 → 주문 생성 → 사전등록 → 토스 결제창 → success/fail
+// 흐름: 실 장바구니 → 배송지 입력 → 주문 생성 → 사전등록 → 토스 결제창
+// 구형 아이템(productId 없음): checkout에서 필터링, KN541 상품만 주문
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { LockClosedIcon } from '@heroicons/react/24/outline'
+import { LockClosedIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
 import ButtonPrimary from '@/shared/Button/ButtonPrimary'
 import KakaoAddressInput, { AddressValue } from '@/components/common/KakaoAddressSearch'
 import { useCart } from '@/lib/cart-context'
@@ -21,7 +22,18 @@ function getToken(): string | null {
 export default function CheckoutPage() {
   const router = useRouter()
   const { items, totalPrice, totalShipping, clearCart } = useCart()
-  const total = totalPrice + totalShipping
+
+  // KN541 상품만 필터 (productId UUID 있는 아이템만 주문 가능)
+  const orderableItems = items.filter(i => i.productId && i.productId.includes('-'))
+  const skippedCount   = items.length - orderableItems.length
+
+  // 주문 가능 아이템 기준으로 합계 계산
+  const orderTotal    = orderableItems.reduce((s, i) => s + (Number(i.price) || 0) * (Number(i.quantity) || 0), 0)
+  const orderShipping = orderableItems.reduce((s, i) => {
+    const { calcItemShipping } = require('@/lib/cart-context')
+    return s + calcItemShipping(i)
+  }, 0)
+  const total = orderTotal + orderShipping
 
   const [form, setForm] = useState({ name: '', phone: '', email: '', memo: '' })
   const [address, setAddress] = useState<AddressValue>({ zipcode: '', address1: '', address2: '' })
@@ -29,21 +41,20 @@ export default function CheckoutPage() {
   const [widgetReady, setWidgetReady] = useState(false)
   const widgetRef = useRef<any>(null)
 
-  // 장바구니 비어있으면 cart로 redirect
+  // 주문 가능 상품 없으면 cart로
   useEffect(() => {
-    if (items.length === 0) {
+    if (orderableItems.length === 0) {
       router.replace('/ko/cart')
     }
-  }, [items.length, router])
+  }, [orderableItems.length, router])
 
   // 토스페이먼츠 위젯 초기화
   useEffect(() => {
-    if (items.length === 0) return
+    if (orderableItems.length === 0) return
     let mounted = true
 
     async function initWidget() {
       try {
-        // 1. clientKey 조회 (GET /payments/config)
         const token = getToken()
         const configRes = await fetch(`${BASE}/payments/config`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -51,17 +62,13 @@ export default function CheckoutPage() {
         if (!configRes.ok) throw new Error('결제 설정을 불러올 수 없습니다')
         const { data: { client_key } } = await configRes.json()
 
-        // 2. SDK 동적 임포트 (패키지명: @tosspayments/tosspayments-sdk)
         const { loadTossPayments } = await import('@tosspayments/tosspayments-sdk')
         const tossPayments = await loadTossPayments(client_key)
 
-        // 3. customerKey = userId(UUID) — 유추 불가 고유값 요구사항 충족
         let customerKey = 'ANONYMOUS'
         if (token) {
           try {
-            const meRes = await fetch(`${BASE}/auth/me`, {
-              headers: { Authorization: `Bearer ${token}` },
-            })
+            const meRes = await fetch(`${BASE}/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
             if (meRes.ok) {
               const meData = await meRes.json()
               customerKey = meData.data?.user_id ?? 'ANONYMOUS'
@@ -69,15 +76,11 @@ export default function CheckoutPage() {
           } catch {}
         }
 
-        // 4. 위젯 초기화
         const widgets = tossPayments.widgets({ customerKey })
         if (!mounted) return
         widgetRef.current = widgets
 
-        // 5. 금액 설정 — renderPaymentMethods 호출 전 반드시 먼저
         await widgets.setAmount({ value: Math.round(total), currency: 'KRW' })
-
-        // 6. 결제 UI + 약관 UI 동시 렌더링
         await Promise.all([
           widgets.renderPaymentMethods({ selector: '#toss-payment-method' }),
           widgets.renderAgreement({ selector: '#toss-agreement' }),
@@ -95,39 +98,31 @@ export default function CheckoutPage() {
       widgetRef.current = null
       setWidgetReady(false)
     }
-  }, [items.length, total])
+  }, [orderableItems.length, total])
 
-  // 결제 버튼 클릭 핸들러
   const handlePay = async () => {
     if (isSubmitting) return
-
-    // 폼 검증
-    if (!form.name.trim())   { toast.error('수령자 이름을 입력해 주세요.'); return }
-    if (!form.phone.trim())  { toast.error('휴대폰 번호를 입력해 주세요.'); return }
-    if (!address.address1)   { toast.error('배송지 주소를 입력해 주세요.'); return }
-    if (!widgetRef.current)  { toast.error('결제 위젯이 준비 중입니다. 잠시 후 다시 시도해 주세요.'); return }
+    if (!form.name.trim())  { toast.error('수령자 이름을 입력해 주세요.'); return }
+    if (!form.phone.trim()) { toast.error('휴대폰 번호를 입력해 주세요.'); return }
+    if (!address.address1)  { toast.error('배송지 주소를 입력해 주세요.'); return }
+    if (!widgetRef.current) { toast.error('결제 위젯이 준비 중입니다.'); return }
 
     setIsSubmitting(true)
-
     try {
       const token = getToken()
-      if (!token) {
-        toast.error('로그인이 필요합니다.')
-        router.push('/ko/login')
-        return
-      }
+      if (!token) { toast.error('로그인이 필요합니다.'); router.push('/ko/login'); return }
 
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       }
 
-      // STEP 1: 주문 생성 (POST /orders)
+      // KN541 상품만 주문
       const orderBody = {
-        items: items.map(i => ({
+        items: orderableItems.map(i => ({
           product_id: i.productId,
-          option_id: null,
-          quantity: i.quantity,
+          option_id:  null,
+          quantity:   Number(i.quantity) || 1,
         })),
         recipient_name:  form.name.trim(),
         recipient_phone: form.phone.trim(),
@@ -137,6 +132,7 @@ export default function CheckoutPage() {
         delivery_memo:   form.memo,
         payment_method:  'TOSS',
       }
+
       const orderRes = await fetch(`${BASE}/orders`, {
         method: 'POST', headers, body: JSON.stringify(orderBody),
       })
@@ -144,36 +140,27 @@ export default function CheckoutPage() {
       if (!orderRes.ok) throw new Error(orderData.detail ?? '주문 생성에 실패했습니다')
       const { order_id, order_no, total_amount } = orderData.data
 
-      // STEP 2: 결제 사전등록 (POST /payments/prepare) — 금액 조작 방지 핵심
-      const orderName = items.length === 1
-        ? items[0].name
-        : `${items[0].name} 외 ${items.length - 1}건`
+      const orderName = orderableItems.length === 1
+        ? orderableItems[0].name
+        : `${orderableItems[0].name} 외 ${orderableItems.length - 1}건`
 
       const prepareRes = await fetch(`${BASE}/payments/prepare`, {
         method: 'POST', headers,
-        body: JSON.stringify({
-          order_id,
-          amount:     Math.round(total_amount),
-          order_name: orderName,
-        }),
+        body: JSON.stringify({ order_id, amount: Math.round(total_amount), order_name: orderName }),
       })
       const prepareData = await prepareRes.json()
       if (!prepareRes.ok) throw new Error(prepareData.detail ?? '결제 사전등록에 실패했습니다')
 
-      // STEP 3: 토스 결제 요청 (Redirect 방식 — PC/모바일 모두 지원)
-      // successUrl에 internal_order_id(UUID) 포함 → confirm 시 payment_orders 조회에 사용
       const origin = window.location.origin
       await widgetRef.current.requestPayment({
-        orderId:             order_no,   // 12자리 숫자 (토스 요건: 6~64자 충족)
+        orderId:             order_no,
         orderName,
         customerName:        form.name.trim(),
         customerEmail:       form.email.trim() || undefined,
-        customerMobilePhone: form.phone.replace(/[^0-9]/g, ''),  // 숫자만 (하이픈 제거)
+        customerMobilePhone: form.phone.replace(/[^0-9]/g, ''),
         successUrl: `${origin}/ko/payment/success?internal_order_id=${order_id}`,
         failUrl:    `${origin}/ko/payment/fail`,
       })
-      // requestPayment 이후 페이지가 이동하므로 아래 코드는 실행되지 않음
-
     } catch (err: any) {
       const msg = err?.message ?? '결제 요청 중 오류가 발생했습니다.'
       if (!msg.includes('취소')) toast.error(msg)
@@ -184,27 +171,30 @@ export default function CheckoutPage() {
   const inputCls = 'w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100'
   const labelCls = 'mb-1.5 block text-sm font-medium text-neutral-700 dark:text-neutral-300'
 
-  if (items.length === 0) return null
+  if (orderableItems.length === 0) return null
 
   return (
     <main className="container py-16 lg:pt-20 lg:pb-28">
-      {/* 헤더 */}
       <div className="mb-10">
         <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100 lg:text-4xl">결제</h1>
         <div className="mt-2 flex items-center gap-2 text-sm text-neutral-500">
-          <span className="text-neutral-400">장바구니</span>
-          <span>›</span>
-          <span className="font-medium text-neutral-900 dark:text-neutral-100">결제</span>
-          <span>›</span>
+          <span className="text-neutral-400">장바구니</span><span>›</span>
+          <span className="font-medium text-neutral-900 dark:text-neutral-100">결제</span><span>›</span>
           <span className="text-neutral-400">완료</span>
         </div>
       </div>
 
+      {/* 구형 상품 제외 안내 */}
+      {skippedCount > 0 && (
+        <div className="mb-6 flex items-center gap-2 rounded-2xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800 dark:border-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300">
+          <ExclamationTriangleIcon className="h-4 w-4 shrink-0" />
+          <span>KN541 외 상품 {skippedCount}건은 주문에서 제외됩니다. (데모 데이터 또는 외부 상품)</span>
+        </div>
+      )}
+
       <div className="flex flex-col gap-10 lg:flex-row">
-        {/* 왼쪽: 배송정보 + 결제위젯 */}
         <div className="flex-1 space-y-8">
 
-          {/* STEP 1 — 배송 정보 */}
           <section className="rounded-3xl border border-neutral-200 p-6 dark:border-neutral-700">
             <h2 className="mb-5 flex items-center gap-2 text-lg font-bold text-neutral-900 dark:text-neutral-100">
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-600 text-sm font-bold text-white">1</span>
@@ -227,18 +217,12 @@ export default function CheckoutPage() {
                   value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
               </div>
               <div className="sm:col-span-2">
-                <KakaoAddressInput
-                  value={address}
-                  onChange={setAddress}
-                  label="주소 *"
-                  inputClassName={inputCls}
-                  labelClassName={labelCls}
-                />
+                <KakaoAddressInput value={address} onChange={setAddress} label="주소 *"
+                  inputClassName={inputCls} labelClassName={labelCls} />
               </div>
               <div className="sm:col-span-2">
                 <label className={labelCls}>배송 메모 (선택)</label>
-                <select className={inputCls} value={form.memo}
-                  onChange={e => setForm({ ...form, memo: e.target.value })}>
+                <select className={inputCls} value={form.memo} onChange={e => setForm({ ...form, memo: e.target.value })}>
                   <option value="">선택해 주세요</option>
                   <option>문앞에 두고 가주세요</option>
                   <option>경비실에 맡겨주세요</option>
@@ -249,7 +233,6 @@ export default function CheckoutPage() {
             </div>
           </section>
 
-          {/* STEP 2 — 결제 수단 (토스페이먼츠 위젯 마운트 포인트) */}
           <section className="rounded-3xl border border-neutral-200 p-6 dark:border-neutral-700">
             <h2 className="mb-5 flex items-center gap-2 text-lg font-bold text-neutral-900 dark:text-neutral-100">
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-600 text-sm font-bold text-white">2</span>
@@ -267,25 +250,19 @@ export default function CheckoutPage() {
             <div id="toss-payment-method" />
           </section>
 
-          {/* STEP 3 — 약관 동의 (토스 위젯 자동 렌더링) */}
           <div id="toss-agreement" />
-
         </div>
 
         <div className="hidden border-l border-neutral-200 lg:block dark:border-neutral-700" />
 
-        {/* 오른쪽: 주문 요약 + 결제 버튼 */}
         <div className="w-full lg:w-80 xl:w-96">
           <div className="sticky top-8 rounded-3xl border border-neutral-200 bg-neutral-50 p-6 dark:border-neutral-700 dark:bg-neutral-800">
             <h3 className="mb-5 font-bold text-neutral-900 dark:text-neutral-100">주문 상품</h3>
-
             <div className="space-y-4">
-              {items.map(item => (
+              {orderableItems.map(item => (
                 <div key={item.id} className="flex gap-3">
                   <div className="relative h-14 w-12 shrink-0 overflow-hidden rounded-xl bg-neutral-100">
-                    {item.image && (
-                      <Image src={item.image} alt={item.name} fill className="object-cover" sizes="60px" unoptimized />
-                    )}
+                    {item.image && <Image src={item.image} alt={item.name} fill className="object-cover" sizes="60px" unoptimized />}
                   </div>
                   <div className="flex flex-1 items-center justify-between">
                     <div>
@@ -294,7 +271,7 @@ export default function CheckoutPage() {
                       <p className="text-xs text-neutral-400">×{item.quantity}</p>
                     </div>
                     <p className="text-sm font-semibold">
-                      {(item.price * item.quantity).toLocaleString()}원
+                      {((Number(item.price) || 0) * (Number(item.quantity) || 1)).toLocaleString()}원
                     </p>
                   </div>
                 </div>
@@ -306,12 +283,12 @@ export default function CheckoutPage() {
             <div className="space-y-2.5 text-sm text-neutral-600 dark:text-neutral-400">
               <div className="flex justify-between">
                 <span>상품금액</span>
-                <span>{totalPrice.toLocaleString()}원</span>
+                <span>{orderTotal.toLocaleString()}원</span>
               </div>
               <div className="flex justify-between">
                 <span>배송비</span>
-                <span className={totalShipping === 0 ? 'font-medium text-green-600' : ''}>
-                  {totalShipping === 0 ? '무료' : `${totalShipping.toLocaleString()}원`}
+                <span className={orderShipping === 0 ? 'font-medium text-green-600' : ''}>
+                  {orderShipping === 0 ? '무료' : `${orderShipping.toLocaleString()}원`}
                 </span>
               </div>
             </div>
@@ -320,16 +297,10 @@ export default function CheckoutPage() {
 
             <div className="flex items-center justify-between">
               <span className="font-bold">총 결제금액</span>
-              <span className="text-xl font-bold text-primary-600">
-                {total.toLocaleString()}원
-              </span>
+              <span className="text-xl font-bold text-primary-600">{total.toLocaleString()}원</span>
             </div>
 
-            <ButtonPrimary
-              className="mt-6 w-full"
-              onClick={handlePay}
-              disabled={isSubmitting || !widgetReady}
-            >
+            <ButtonPrimary className="mt-6 w-full" onClick={handlePay} disabled={isSubmitting || !widgetReady}>
               {isSubmitting ? (
                 <span className="flex items-center gap-2">
                   <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">

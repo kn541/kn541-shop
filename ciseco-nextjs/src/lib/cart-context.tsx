@@ -1,7 +1,6 @@
 'use client'
 // KN541 장바구니 전역 Context
 // localStorage('kn541_cart')에 저장 → 새로고침 후에도 유지
-// CartProvider를 [locale]/layout.tsx에 감싸서 전역 사용
 
 import {
   createContext,
@@ -19,11 +18,10 @@ export interface CartItem {
   price: number
   quantity: number
   image: string
-  option?: string   // 선택 옵션 (색상·사이즈 등)
-  // 상품별 배송비 정보 (product_shipping 테이블 기준)
-  // KN541 sc_type: 1=무료, 2=조건부무료, 3=유료건당, 4=유료수량별
-  shippingFee: number       // 배송비 (0이면 무료)
-  freeShippingOver: number  // sc_type=2 조건부무료 기준금액 (0이면 조건 없음)
+  option?: string   // 선택 옵션
+  // 상품별 배송비 (product_shipping 테이블 기준)
+  shippingFee: number
+  freeShippingOver: number
   scType: number
 }
 
@@ -33,9 +31,9 @@ interface CartContextValue {
   removeItem: (id: string) => void
   updateQty: (id: string, qty: number) => void
   clearCart: () => void
-  totalCount: number    // 총 수량 (배지용)
-  totalPrice: number    // 총 상품 금액 (배송비 제외)
-  totalShipping: number // 총 배송비 (상품별 합산)
+  totalCount: number
+  totalPrice: number
+  totalShipping: number
 }
 
 const CartContext = createContext<CartContextValue | null>(null)
@@ -44,26 +42,25 @@ const STORAGE_KEY = 'kn541_cart'
 
 /**
  * 상품 1개의 배송비 계산
- * KN541 sc_type: 1=무료, 2=조건부무료, 3=유료건당, 4=유료수량별
- *
- * - sc_type=1 (무료) 또는 shippingFee=0 → 무료
- * - sc_type=2 (조건부무료): 상품 소계 >= freeShippingOver → 무료
- * - sc_type=3/4 (유료): shippingFee 적용
+ * 구형 아이템(shippingFee/scType 없음)도 0 안전하게 반환
  */
-export function calcItemShipping(item: CartItem): number {
-  const subtotal = item.price * item.quantity
-  // sc_type=1(무료배송) 또는 배송비=0이면 무료
-  if (item.scType === 1 || item.shippingFee === 0) return 0
-  // sc_type=2(조건부무료): 소계가 무료기준금액 이상이면 무료
-  if (item.scType === 2 && item.freeShippingOver > 0 && subtotal >= item.freeShippingOver) return 0
-  return item.shippingFee
+export function calcItemShipping(item: any): number {
+  const price    = Number(item.price ?? 0)
+  const qty      = Number(item.quantity ?? 1)
+  const subtotal = price * qty
+  const fee      = Number(item.shippingFee ?? 0)
+  const scType   = Number(item.scType ?? 1) // 값 없으면 무료(1) 위행
+  const freeOver = Number(item.freeShippingOver ?? 0)
+
+  if (scType === 1 || fee === 0) return 0
+  if (scType === 2 && freeOver > 0 && subtotal >= freeOver) return 0
+  return fee
 }
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
   const [hydrated, setHydrated] = useState(false)
 
-  // 클라이언트 마운트 시 localStorage에서 복원 (SSR 하이드레이션 불일치 방지)
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY)
@@ -72,7 +69,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setHydrated(true)
   }, [])
 
-  // items 변경 시 localStorage 동기화
   useEffect(() => {
     if (!hydrated) return
     try {
@@ -80,7 +76,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     } catch {}
   }, [items, hydrated])
 
-  // 장바구니 담기 — 동일 상품+옵션이면 수량만 증가
   const addItem = useCallback((newItem: Omit<CartItem, 'id'>) => {
     const id = `${newItem.productId}__${newItem.option ?? ''}`
     setItems((prev) => {
@@ -94,25 +89,22 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     })
   }, [])
 
-  // 아이템 삭제
   const removeItem = useCallback((id: string) => {
     setItems((prev) => prev.filter((i) => i.id !== id))
   }, [])
 
-  // 수량 변경
   const updateQty = useCallback((id: string, qty: number) => {
     setItems((prev) =>
       prev.map((i) => (i.id === id ? { ...i, quantity: Math.max(1, qty) } : i))
     )
   }, [])
 
-  // 장바구니 비우기
   const clearCart = useCallback(() => {
     setItems([])
   }, [])
 
-  const totalCount    = items.reduce((sum, i) => sum + i.quantity, 0)
-  const totalPrice    = items.reduce((sum, i) => sum + i.price * i.quantity, 0)
+  const totalCount    = items.reduce((sum, i) => sum + (Number(i.quantity) || 0), 0)
+  const totalPrice    = items.reduce((sum, i) => sum + (Number(i.price) || 0) * (Number(i.quantity) || 0), 0)
   const totalShipping = items.reduce((sum, i) => sum + calcItemShipping(i), 0)
 
   return (
