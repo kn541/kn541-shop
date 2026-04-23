@@ -17,7 +17,7 @@ export default function BottomTabBar() {
   return (
     <nav
       aria-label='하단 내비게이션'
-      className='mp-bottom-tab-bar'
+      className='mp-bottom-tab-bar md:hidden'
       style={{
         position: 'fixed',
         bottom: 0,
