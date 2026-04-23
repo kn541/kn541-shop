@@ -51,8 +51,8 @@ export default function CheckoutPage() {
         if (!configRes.ok) throw new Error('결제 설정을 불러올 수 없습니다')
         const { data: { client_key } } = await configRes.json()
 
-        // 2. SDK 동적 임포트 (Next.js SSR 방지)
-        const { loadTossPayments } = await import('@tosspayments/tosspayments-js')
+        // 2. SDK 동적 임포트 (패키지명: @tosspayments/tosspayments-sdk)
+        const { loadTossPayments } = await import('@tosspayments/tosspayments-sdk')
         const tossPayments = await loadTossPayments(client_key)
 
         // 3. customerKey = userId(UUID) — 유추 불가 고유값 요구사항 충족
@@ -255,7 +255,6 @@ export default function CheckoutPage() {
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-600 text-sm font-bold text-white">2</span>
               결제 수단
             </h2>
-            {/* 위젯 렌더링 전 로딩 인디케이터 */}
             {!widgetReady && (
               <div className="flex items-center justify-center py-8 text-sm text-neutral-400">
                 <svg className="mr-2 h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
@@ -265,7 +264,6 @@ export default function CheckoutPage() {
                 결제 수단 불러오는 중...
               </div>
             )}
-            {/* 토스 결제 UI 렌더링 위치 */}
             <div id="toss-payment-method" />
           </section>
 
