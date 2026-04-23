@@ -228,10 +228,10 @@ export default function CheckoutPage() {
       if (payMethod === 'CARD') {
         await paymentRef.current.requestPayment({ method: 'CARD', ...baseParams })
       } else if (payMethod === 'VIRTUAL_ACCOUNT') {
+        // 가상계좌: 은행 선택은 토스 결제창에서 직접 처리
         await paymentRef.current.requestPayment({
           method: 'VIRTUAL_ACCOUNT',
           ...baseParams,
-          virtualAccount: { cashReceiptType: 'ANONYMOUS', bank: 'KB' },
         })
       } else {
         await paymentRef.current.requestPayment({ method: 'TRANSFER', ...baseParams })
