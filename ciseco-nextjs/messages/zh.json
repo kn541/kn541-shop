@@ -158,6 +158,7 @@
     "billing": "支付信息",
     "accountHeaderLoading": "正在加载会员信息…",
     "accountHeaderGuest": "请先登录。",
+    "accountLoginPlease": "请先登录",
     "defaultDisplayName": "会员",
     "memberTypeUnknown": "未设置会员类型",
     "memberTypeCode": "会员类型 {code}"

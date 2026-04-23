@@ -11,7 +11,7 @@ import { getTranslations } from 'next-intl/server'
 import React, { FC } from 'react'
 import PageTab from './PageTab'
 import AccountsMobileBar from './AccountsMobileBar'
-import AccountHeader from './AccountHeader'
+import AccountHeaderInfo from './AccountHeaderInfo'
 
 interface Props {
   children?: React.ReactNode
@@ -28,7 +28,7 @@ const Layout: FC<Props> = async ({ children }) => {
           <div className="mx-auto max-w-4xl">
             <div className="max-w-2xl">
               <h2 className="text-3xl font-semibold xl:text-4xl">{t('title')}</h2>
-              <AccountHeader />
+              <AccountHeaderInfo />
             </div>
 
             <Divider className="mt-10" />

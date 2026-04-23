@@ -16,7 +16,7 @@ const MEMBER_TYPE_LABELS: Record<string, string> = {
   '009': '대구',
 }
 
-export default function AccountHeader() {
+export default function AccountHeaderInfo() {
   const t = useTranslations('Account')
   const { user, loading } = useAuth()
 
@@ -28,7 +28,7 @@ export default function AccountHeader() {
   }
 
   if (!user?.user_id) {
-    return <span className={lineClass}>{t('accountHeaderGuest')}</span>
+    return <span className={lineClass}>{t('accountLoginPlease')}</span>
   }
 
   const displayName =
