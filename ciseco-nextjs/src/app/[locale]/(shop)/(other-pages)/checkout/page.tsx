@@ -1,11 +1,16 @@
 'use client'
-// KN541 결제 페이지 — 토스페이먼츠 결제위젯 v2 연동 (Redirect 방식)
-// 흐름: 선택된 장바구니 → 배송지 입력 → 주문 생성 → 사전등록 → 토스 결제창
+// KN541 결제 페이지 — 토스페이먼츠 결제위젯 v2 + 저장된 배송지 선택
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { LockClosedIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
+import {
+  LockClosedIcon,
+  ExclamationTriangleIcon,
+  MapPinIcon,
+  PlusIcon,
+  CheckCircleIcon,
+} from '@heroicons/react/24/outline'
 import ButtonPrimary from '@/shared/Button/ButtonPrimary'
 import KakaoAddressInput, { AddressValue } from '@/components/common/KakaoAddressSearch'
 import { useCart, calcItemShipping } from '@/lib/cart-context'
@@ -18,30 +23,105 @@ function getToken(): string | null {
   return localStorage.getItem('access_token')
 }
 
+// 저장된 배송지 타입
+interface SavedAddress {
+  id: string
+  address_name?: string
+  recipient_name: string
+  recipient_phone: string
+  zip_code: string
+  address1: string
+  address2?: string
+  delivery_memo?: string
+  is_default: boolean
+}
+
 export default function CheckoutPage() {
   const router = useRouter()
   const { items, selectedIds, clearCart } = useCart()
 
   // 선택된 KN541 상품만 주문 대상
   const orderableItems = items.filter(
-    i => selectedIds.has(i.id) && i.productId && i.productId.includes('-')
+    i => selectedIds.has(i.id) && i.productId?.includes('-')
   )
   const skippedCount = items.filter(i => !i.productId?.includes('-')).length
 
-  const orderTotal    = orderableItems.reduce((s, i) => s + (Number(i.price) || 0) * (Number(i.quantity) || 0), 0)
+  const orderTotal    = orderableItems.reduce((s, i) => s + (Number(i.price)||0) * (Number(i.quantity)||0), 0)
   const orderShipping = orderableItems.reduce((s, i) => s + calcItemShipping(i), 0)
   const total         = orderTotal + orderShipping
 
+  // 배송지 상태
+  const [savedAddresses, setSavedAddresses]       = useState<SavedAddress[]>([])
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null)
+  const [showNewForm, setShowNewForm]             = useState(false)
+  const [saveNewAddress, setSaveNewAddress]       = useState(false)
+
+  // 폼 상태
   const [form, setForm]       = useState({ name: '', phone: '', email: '', memo: '' })
   const [address, setAddress] = useState<AddressValue>({ zipcode: '', address1: '', address2: '' })
+
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [widgetReady, setWidgetReady]   = useState(false)
   const widgetRef = useRef<any>(null)
 
+  // 주문 가능 상품 없으면 cart로
   useEffect(() => {
     if (orderableItems.length === 0) router.replace('/ko/cart')
   }, [orderableItems.length, router])
 
+  // 저장된 배송지 로드
+  useEffect(() => {
+    const token = getToken()
+    if (!token) return
+    fetch(`${BASE}/my/addresses`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.json())
+      .then(data => {
+        const addrs: SavedAddress[] = data?.data?.items ?? []
+        setSavedAddresses(addrs)
+        if (addrs.length > 0) {
+          // 기본배송지 자동 선택
+          const def = addrs.find(a => a.is_default) ?? addrs[0]
+          setSelectedAddressId(def.id)
+          applyAddress(def)
+        } else {
+          // 저장된 배송지 없으면 새 주소 폼 열기
+          setShowNewForm(true)
+        }
+      })
+      .catch(() => setShowNewForm(true))
+  }, [])
+
+  // 선택된 저장배송지 → 폼 자동 채우기
+  function applyAddress(addr: SavedAddress) {
+    setForm(f => ({
+      ...f,
+      name:  addr.recipient_name,
+      phone: addr.recipient_phone,
+      memo:  addr.delivery_memo ?? '',
+    }))
+    setAddress({
+      zipcode:  addr.zip_code,
+      address1: addr.address1,
+      address2: addr.address2 ?? '',
+    })
+  }
+
+  function handleSelectAddress(addr: SavedAddress) {
+    setSelectedAddressId(addr.id)
+    applyAddress(addr)
+    setShowNewForm(false)
+  }
+
+  function handleNewAddress() {
+    setSelectedAddressId(null)
+    setForm(f => ({ ...f, name: '', phone: '', memo: '' }))
+    setAddress({ zipcode: '', address1: '', address2: '' })
+    setShowNewForm(true)
+  }
+
+  // 토스 위젯 초기화
   useEffect(() => {
     if (orderableItems.length === 0) return
     let mounted = true
@@ -82,11 +162,7 @@ export default function CheckoutPage() {
     }
 
     initWidget()
-    return () => {
-      mounted = false
-      widgetRef.current = null
-      setWidgetReady(false)
-    }
+    return () => { mounted = false; widgetRef.current = null; setWidgetReady(false) }
   }, [orderableItems.length, total])
 
   const handlePay = async () => {
@@ -106,6 +182,25 @@ export default function CheckoutPage() {
         Authorization: `Bearer ${token}`,
       }
 
+      // 새 주소 저장 옵션
+      if (showNewForm && saveNewAddress) {
+        try {
+          await fetch(`${BASE}/my/addresses`, {
+            method: 'POST', headers,
+            body: JSON.stringify({
+              recipient_name:  form.name.trim(),
+              recipient_phone: form.phone.trim(),
+              zip_code:        address.zipcode,
+              address1:        address.address1,
+              address2:        address.address2 ?? '',
+              delivery_memo:   form.memo || null,
+              is_default:      savedAddresses.length === 0,
+            }),
+          })
+        } catch {}
+      }
+
+      // 주문 생성
       const orderBody = {
         items: orderableItems.map(i => ({
           product_id: i.productId,
@@ -120,7 +215,6 @@ export default function CheckoutPage() {
         delivery_memo:   form.memo,
         payment_method:  'TOSS',
       }
-
       const orderRes  = await fetch(`${BASE}/orders`, { method: 'POST', headers, body: JSON.stringify(orderBody) })
       const orderData = await orderRes.json()
       if (!orderRes.ok) throw new Error(orderData.detail ?? '주문 생성에 실패했습니다')
@@ -130,6 +224,7 @@ export default function CheckoutPage() {
         ? orderableItems[0].name
         : `${orderableItems[0].name} 외 ${orderableItems.length - 1}건`
 
+      // 결제 사전등록
       const prepareRes  = await fetch(`${BASE}/payments/prepare`, {
         method: 'POST', headers,
         body: JSON.stringify({ order_id, amount: Math.round(total_amount), order_name: orderName }),
@@ -137,6 +232,7 @@ export default function CheckoutPage() {
       const prepareData = await prepareRes.json()
       if (!prepareRes.ok) throw new Error(prepareData.detail ?? '결제 사전등록에 실패했습니다')
 
+      // 토스 결제 요청
       const origin = window.location.origin
       await widgetRef.current.requestPayment({
         orderId:             order_no,
@@ -161,6 +257,7 @@ export default function CheckoutPage() {
 
   return (
     <main className="container py-16 lg:pt-20 lg:pb-28">
+      {/* 헤더 */}
       <div className="mb-10">
         <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100 lg:text-4xl">결제</h1>
         <div className="mt-2 flex items-center gap-2 text-sm text-neutral-500">
@@ -179,43 +276,133 @@ export default function CheckoutPage() {
 
       <div className="flex flex-col gap-10 lg:flex-row">
         <div className="flex-1 space-y-8">
-          {/* STEP 1 — 배송 정보 */}
+
+          {/* STEP 1 — 배송지 선택 */}
           <section className="rounded-3xl border border-neutral-200 p-6 dark:border-neutral-700">
             <h2 className="mb-5 flex items-center gap-2 text-lg font-bold text-neutral-900 dark:text-neutral-100">
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-600 text-sm font-bold text-white">1</span>
               배송 정보
             </h2>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="sm:col-span-2">
-                <label className={labelCls}>수령자 이름 *</label>
-                <input className={inputCls} placeholder="홍길동" type="text"
-                  value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+
+            {/* 저장된 배송지 목록 */}
+            {savedAddresses.length > 0 && (
+              <div className="mb-4 space-y-2">
+                {savedAddresses.map(addr => (
+                  <button
+                    key={addr.id}
+                    onClick={() => handleSelectAddress(addr)}
+                    className={`w-full rounded-2xl border p-4 text-left transition-all ${
+                      selectedAddressId === addr.id
+                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                        : 'border-neutral-200 hover:border-neutral-300 dark:border-neutral-700'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-2">
+                        <MapPinIcon className={`h-4 w-4 shrink-0 mt-0.5 ${
+                          selectedAddressId === addr.id ? 'text-primary-600' : 'text-neutral-400'
+                        }`} />
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                              {addr.recipient_name}
+                            </span>
+                            {addr.address_name && (
+                              <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-500 dark:bg-neutral-700">
+                                {addr.address_name}
+                              </span>
+                            )}
+                            {addr.is_default && (
+                              <span className="rounded-full bg-primary-100 px-2 py-0.5 text-xs font-medium text-primary-600 dark:bg-primary-900/30">
+                                기본
+                              </span>
+                            )}
+                          </div>
+                          <p className="mt-0.5 text-sm text-neutral-500">{addr.recipient_phone}</p>
+                          <p className="mt-0.5 text-sm text-neutral-600 dark:text-neutral-400">
+                            [{addr.zip_code}] {addr.address1} {addr.address2}
+                          </p>
+                        </div>
+                      </div>
+                      {selectedAddressId === addr.id && (
+                        <CheckCircleIcon className="h-5 w-5 shrink-0 text-primary-600" />
+                      )}
+                    </div>
+                  </button>
+                ))}
+
+                {/* 새 배송지 입력 버튼 */}
+                <button
+                  onClick={handleNewAddress}
+                  className={`w-full rounded-2xl border p-4 text-left transition-all ${
+                    showNewForm
+                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                      : 'border-dashed border-neutral-300 hover:border-neutral-400 dark:border-neutral-600'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 text-sm font-medium text-neutral-600 dark:text-neutral-400">
+                    <PlusIcon className="h-4 w-4" />
+                    새 배송지 입력
+                  </div>
+                </button>
               </div>
-              <div>
-                <label className={labelCls}>휴대폰 *</label>
-                <input className={inputCls} placeholder="010-0000-0000" type="tel"
-                  value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
+            )}
+
+            {/* 새 주소 폼 */}
+            {showNewForm && (
+              <div className="space-y-4 pt-2">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="sm:col-span-2">
+                    <label className={labelCls}>수령자 이름 *</label>
+                    <input className={inputCls} placeholder="홍길동" type="text"
+                      value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>휴대폰 *</label>
+                    <input className={inputCls} placeholder="010-0000-0000" type="tel"
+                      value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>이메일 (선택)</label>
+                    <input className={inputCls} placeholder="example@email.com" type="email"
+                      value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <KakaoAddressInput value={address} onChange={setAddress} label="주소 *"
+                      inputClassName={inputCls} labelClassName={labelCls} />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className={labelCls}>배송 메모 (선택)</label>
+                    <select className={inputCls} value={form.memo} onChange={e => setForm({ ...form, memo: e.target.value })}>
+                      <option value="">선택해 주세요</option>
+                      <option>문앞에 두고 가주세요</option>
+                      <option>경비실에 맡겨주세요</option>
+                      <option>택배함에 넣어주세요</option>
+                      <option>직접 수령하겠습니다</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* 배송지 저장 옵션 */}
+                {getToken() && (
+                  <label className="flex cursor-pointer items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
+                    <input type="checkbox" checked={saveNewAddress}
+                      onChange={e => setSaveNewAddress(e.target.checked)}
+                      className="h-4 w-4 rounded border-neutral-300 text-primary-600" />
+                    이 배송지를 저장하기
+                  </label>
+                )}
               </div>
-              <div>
+            )}
+
+            {/* 저장된 배송지 선택 시 이메일만 추가 입력 */}
+            {!showNewForm && selectedAddressId && (
+              <div className="mt-4">
                 <label className={labelCls}>이메일 (선택)</label>
                 <input className={inputCls} placeholder="example@email.com" type="email"
                   value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
               </div>
-              <div className="sm:col-span-2">
-                <KakaoAddressInput value={address} onChange={setAddress} label="주소 *"
-                  inputClassName={inputCls} labelClassName={labelCls} />
-              </div>
-              <div className="sm:col-span-2">
-                <label className={labelCls}>배송 메모 (선택)</label>
-                <select className={inputCls} value={form.memo} onChange={e => setForm({ ...form, memo: e.target.value })}>
-                  <option value="">선택해 주세요</option>
-                  <option>문앞에 두고 가주세요</option>
-                  <option>경비실에 맡겨주세요</option>
-                  <option>택배함에 넣어주세요</option>
-                  <option>직접 수령하겠습니다</option>
-                </select>
-              </div>
-            </div>
+            )}
           </section>
 
           {/* STEP 2 — 결제 수단 */}
@@ -227,8 +414,8 @@ export default function CheckoutPage() {
             {!widgetReady && (
               <div className="flex items-center justify-center py-8 text-sm text-neutral-400">
                 <svg className="mr-2 h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                 </svg>
                 결제 수단 불러오는 중...
               </div>
@@ -259,7 +446,7 @@ export default function CheckoutPage() {
                       <p className="text-xs text-neutral-400">×{item.quantity}</p>
                     </div>
                     <p className="text-sm font-semibold">
-                      {((Number(item.price) || 0) * (Number(item.quantity) || 1)).toLocaleString()}원
+                      {((Number(item.price)||0)*(Number(item.quantity)||1)).toLocaleString()}원
                     </p>
                   </div>
                 </div>
@@ -291,8 +478,8 @@ export default function CheckoutPage() {
               {isSubmitting ? (
                 <span className="flex items-center gap-2">
                   <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                   </svg>
                   처리 중...
                 </span>
