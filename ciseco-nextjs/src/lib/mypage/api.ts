@@ -107,6 +107,16 @@ export async function mypageFetch<T>(path: string, init?: RequestInit): Promise<
     )
   }
 
+  const method = (init?.method ?? 'GET').toUpperCase()
+  if (
+    (method === 'DELETE' || res.status === 204) &&
+    body &&
+    typeof body === 'object' &&
+    Object.keys(body as object).length === 0
+  ) {
+    return undefined as T
+  }
+
   // { status: "success", data: T } envelope unwrap
   const envelope = body as ApiEnvelope<T>
   if (envelope.status === 'success') return envelope.data
