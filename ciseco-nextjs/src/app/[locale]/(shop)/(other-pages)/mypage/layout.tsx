@@ -4,14 +4,14 @@
 
 import { useEffect, type ReactNode } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import Link from 'next/link'
+import { Link } from '@/components/Link'
 
 const TABS = [
-  { label: '내 정보', href: '/mypage/profile', icon: '👤' },
-  { label: '주문 내역', href: '/mypage/orders', icon: '📦' },
-  { label: '내 쇼핑몰', href: '/mypage/myshop', icon: '🏪' },
-  { label: '수당 현황', href: '/mypage/commission', icon: '💰' },
-  { label: '배송지 관리', href: '/mypage/addresses', icon: '📍' },
+  { label: '내 정보', href: '/account', icon: '👤' },
+  { label: '주문 내역', href: '/orders', icon: '📦' },
+  { label: '내 쇼핑몰', href: '/myshop', icon: '🏪' },
+  { label: '수당 현황', href: '/commission', icon: '💰' },
+  { label: '배송지 관리', href: '/addresses', icon: '📍' },
 ]
 
 export default function MypageLayout({ children }: { children: ReactNode }) {
@@ -34,7 +34,7 @@ export default function MypageLayout({ children }: { children: ReactNode }) {
           <nav className="flex flex-row gap-1 overflow-x-auto lg:flex-col lg:overflow-visible">
             {TABS.map(tab => {
               // locale prefix 포함된 pathname에서 탭 매칭
-              const isActive = pathname.includes(tab.href.replace('/mypage', 'mypage'))
+              const isActive = pathname.includes(tab.href)
               return (
                 <Link
                   key={tab.href}

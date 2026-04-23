@@ -9,6 +9,8 @@ interface Props {
   children: ReactNode
   title: string
   lockBenefits?: string[]
+  /** (accounts) Ciseco 레이아웃 안에서 사용 시 BackHeader 생략 */
+  embedded?: boolean
 }
 
 const DEFAULT_BENEFITS = [
@@ -18,14 +20,14 @@ const DEFAULT_BENEFITS = [
 ]
 
 // L3 유료회원만 접근 가능—교 래퍼
-export default function L3Guard({ children, title, lockBenefits }: Props) {
+export default function L3Guard({ children, title, lockBenefits, embedded }: Props) {
   const locale = useLocale()
   const { data, loading } = useMypageHome()
 
   if (loading) {
     return (
       <>
-        <BackHeader title={title} />
+        {!embedded && <BackHeader title={title} />}
         <div style={{ textAlign: 'center', padding: 48, color: 'var(--mp-color-text-muted)' }}>불러오는 중…</div>
       </>
     )
@@ -37,7 +39,7 @@ export default function L3Guard({ children, title, lockBenefits }: Props) {
   if (!isL3) {
     return (
       <>
-        <BackHeader title={title} />
+        {!embedded && <BackHeader title={title} />}
         <div style={{ padding: 16 }}>
           <LockedCard
             icon='🔒'
@@ -45,7 +47,7 @@ export default function L3Guard({ children, title, lockBenefits }: Props) {
             reason='유료회원 전용 기능입니다. 유료회원이 되시면 이용하실 수 있어요.'
             benefitList={lockBenefits ?? DEFAULT_BENEFITS}
             actionLabel='유료회원 알아보기'
-            actionHref={`/${locale}/mypage/upgrade-paid`}
+            actionHref={`/${locale}/upgrade-paid`}
           />
         </div>
       </>

@@ -9,11 +9,15 @@ const links = [
   { nameKey: 'settings' as const, link: '/account' },
   { nameKey: 'wishlists' as const, link: '/account-wishlists' },
   { nameKey: 'ordersHistory' as const, link: '/orders' },
-  { nameKey: 'myshop' as const, link: '/myshop' },
+  { nameKey: 'points' as const, link: '/points' },
+  { nameKey: 'coupons' as const, link: '/coupons' },
   { nameKey: 'commission' as const, link: '/commission' },
+  { nameKey: 'dividends' as const, link: '/dividends' },
+  { nameKey: 'referralTree' as const, link: '/tree' },
+  { nameKey: 'myshop' as const, link: '/myshop' },
   { nameKey: 'addresses' as const, link: '/addresses' },
   { nameKey: 'changePassword' as const, link: '/account-password' },
-]
+] as const
 
 type PageTabVariant = 'tabs' | 'sidebar'
 
@@ -27,22 +31,24 @@ const PageTab = ({ variant = 'tabs' }: PageTabProps) => {
   const pathname = usePathname()
   const { user } = useAuth()
 
-  // 유료회원(006)만 내 쇼핑몰 + 수당현황 탭 노출
+  const paidShopTabs = ['/myshop', '/commission', '/dividends', '/tree'] as const
+
   const visibleLinks = links.filter(item => {
-    if (item.link === '/myshop' && user?.user_type !== '006') return false
-    if (item.link === '/commission' && user?.user_type !== '006') return false
+    if ((paidShopTabs as readonly string[]).includes(item.link) && user?.user_type !== '006') {
+      return false
+    }
     return true
   })
 
   const linkIsActive = (item: (typeof links)[number]) => {
     let isActive = pathname === item.link
-    if (item.link === '/orders' && (pathname.includes('/orders/') || pathname.startsWith('/mypage/orders'))) {
+    if (item.link === '/orders' && pathname.includes('/orders/')) {
       isActive = true
     }
-    if (
-      item.link === '/myshop' &&
-      (pathname.startsWith('/myshop') || pathname.startsWith('/mypage/shop'))
-    ) {
+    if (item.link === '/myshop' && pathname.startsWith('/myshop')) {
+      isActive = true
+    }
+    if (item.link === '/dividends' && pathname.startsWith('/dividends/')) {
       isActive = true
     }
     return isActive
@@ -74,7 +80,7 @@ const PageTab = ({ variant = 'tabs' }: PageTabProps) => {
   return (
     <div>
       <div className="hidden-scrollbar flex gap-x-8 overflow-x-auto md:gap-x-14">
-        {visibleLinks.map((item) => {
+        {visibleLinks.map(item => {
           const isActive = linkIsActive(item)
 
           return (

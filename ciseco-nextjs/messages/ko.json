@@ -150,8 +150,17 @@
     "ordersHistory": "주문 내역",
     "myshop": "내 쇼핑몰",
     "commission": "수당 현황",
+    "points": "적립금",
+    "coupons": "쿠폰",
+    "dividends": "배당 현황",
+    "referralTree": "추천인 트리",
     "changePassword": "비밀번호 변경",
-    "billing": "결제 정보"
+    "billing": "결제 정보",
+    "accountHeaderLoading": "회원 정보를 불러오는 중…",
+    "accountHeaderGuest": "로그인 후 이용할 수 있습니다.",
+    "defaultDisplayName": "회원",
+    "memberTypeUnknown": "회원유형 미지정",
+    "memberTypeCode": "회원유형 {code}"
   },
   "Search": {
     "ariaLabel": "상품 검색",

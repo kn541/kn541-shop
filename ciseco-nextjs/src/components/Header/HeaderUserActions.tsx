@@ -3,6 +3,7 @@
 // fix: hydration mismatch 방지 — isMounted 패턴으로 SSR/CSR 불일치 해소
 
 import { useEffect, useState, useRef } from 'react'
+import { useLocale } from 'next-intl'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL
 
@@ -39,6 +40,7 @@ function UserIcon() {
 }
 
 export default function HeaderUserActions() {
+  const locale = useLocale()
   // ✅ isMounted: SSR에서는 null 렌더링 → 클라이언트 마운트 후 실제 상태 렌더링
   const [isMounted, setIsMounted] = useState(false)
   const [user, setUser] = useState<UserInfo | null>(null)
@@ -110,7 +112,7 @@ export default function HeaderUserActions() {
     <div className="flex items-center gap-0.5">
 
       {/* 회원명+님 */}
-      <a href="/ko/mypage"
+      <a href={`/${locale}/account`}
         className="hidden sm:flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-semibold text-neutral-800 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors whitespace-nowrap">
         <span>{user.name}</span>
         <span className="text-neutral-500 font-normal">님</span>
@@ -135,13 +137,13 @@ export default function HeaderUserActions() {
       </div>
 
       {/* 주문/배송 */}
-      <a href="/ko/mypage/orders" aria-label="주문/배송" title="주문/배송"
+      <a href={`/${locale}/orders`} aria-label="주문/배송" title="주문/배송"
         className="-m-1 flex items-center justify-center rounded-full p-2.5 text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
         <PackageIcon />
       </a>
 
       {/* 마이페이지 */}
-      <a href="/ko/mypage" aria-label="마이페이지" title="마이페이지"
+      <a href={`/${locale}/account`} aria-label="마이페이지" title="마이페이지"
         className="-m-1 flex items-center justify-center rounded-full p-2.5 text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
         <UserIcon />
       </a>

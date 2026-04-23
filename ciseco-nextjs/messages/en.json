@@ -150,8 +150,17 @@
     "ordersHistory": "Orders history",
     "myshop": "My Shop",
     "commission": "Commission",
+    "points": "Points",
+    "coupons": "Coupons",
+    "dividends": "Dividends",
+    "referralTree": "Referral tree",
     "changePassword": "Change password",
-    "billing": "Billing"
+    "billing": "Billing",
+    "accountHeaderLoading": "Loading your profile…",
+    "accountHeaderGuest": "Please sign in to continue.",
+    "defaultDisplayName": "Member",
+    "memberTypeUnknown": "Member type not set",
+    "memberTypeCode": "Member type {code}"
   },
   "Search": {
     "ariaLabel": "Search for products",

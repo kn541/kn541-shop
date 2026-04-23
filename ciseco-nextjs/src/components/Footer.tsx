@@ -36,7 +36,7 @@ const widgetMenus: WidgetFooterMenu[] = [
     menus: [
       { href: '/login', label: '로그인' },
       { href: '/signup', label: '회원가입' },
-      { href: '/mypage', label: '마이페이지' },
+      { href: '/account', label: '마이페이지' },
       { href: '/terms/membership', label: '회원등급 안내' },
     ],
   },

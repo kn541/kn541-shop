@@ -150,8 +150,17 @@
     "ordersHistory": "历史订单",
     "myshop": "我的店铺",
     "commission": "佣金明细",
+    "points": "积分",
+    "coupons": "优惠券",
+    "dividends": "分红",
+    "referralTree": "推荐树",
     "changePassword": "修改密码",
-    "billing": "支付信息"
+    "billing": "支付信息",
+    "accountHeaderLoading": "正在加载会员信息…",
+    "accountHeaderGuest": "请先登录。",
+    "defaultDisplayName": "会员",
+    "memberTypeUnknown": "未设置会员类型",
+    "memberTypeCode": "会员类型 {code}"
   },
   "Search": {
     "ariaLabel": "搜索商品",

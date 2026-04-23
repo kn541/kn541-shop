@@ -1,13 +1,17 @@
 'use client'
 import Link from 'next/link'
-import { useLocale, useTranslations } from 'next-intl'
+import { useLocale } from 'next-intl'
 import { usePathname } from 'next/navigation'
 
+/** (accounts) 그룹 경로 — 하단 '마이' 탭 활성 구간 */
+const MYPAGE_SECTION_RE =
+  /^\/(account|orders|points|coupons|commission|dividends|tree|myshop|withdraw|addresses|account-wishlists|account-password|account-billing|upgrade-paid)(\/|$)/
+
 const TABS = [
-  { icon: '🏠', label: '홈',   hrefSuffix: '' },
-  { icon: '🛍️', label: '쇼핑',  hrefSuffix: '/products' },
-  { icon: '🏪', label: '내몰',  hrefSuffix: '/mypage/shop' },
-  { icon: '👤', label: '마이',  hrefSuffix: '/mypage' },
+  { icon: '🏠', label: '홈', hrefSuffix: '' },
+  { icon: '🛍️', label: '쇼핑', hrefSuffix: '/products' },
+  { icon: '🏪', label: '내몰', hrefSuffix: '/myshop' },
+  { icon: '👤', label: '마이', hrefSuffix: '/account' },
 ]
 
 export default function BottomTabBar() {
@@ -35,7 +39,9 @@ export default function BottomTabBar() {
         const active =
           t.hrefSuffix === ''
             ? pathname === `/${locale}` || pathname === `/${locale}/`
-            : pathname.startsWith(`/${locale}${t.hrefSuffix}`)
+            : t.hrefSuffix === '/account'
+              ? MYPAGE_SECTION_RE.test(pathname.replace(`/${locale}`, '') || '/')
+              : pathname.startsWith(`/${locale}${t.hrefSuffix}`)
         return (
           <Link
             key={t.hrefSuffix}

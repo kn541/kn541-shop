@@ -7,6 +7,7 @@ interface AuthUser {
   user_type: string
   username?: string
   email?: string
+  name?: string
 }
 
 // JWT payload 디코딩 (검증 없이 페이로드만 읽기)
@@ -51,6 +52,7 @@ export function useAuth() {
       user_type: (payload.user_type as string) || '',
       username: payload.username as string | undefined,
       email: payload.email as string | undefined,
+      name: (payload.name as string | undefined) || (payload.user_name as string | undefined),
     })
     setLoading(false)
   }, [])

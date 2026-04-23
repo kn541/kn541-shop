@@ -10,6 +10,8 @@ import AsideSidebarNavigation from '@/components/aside-sidebar-navigation'
 import { getTranslations } from 'next-intl/server'
 import React, { FC } from 'react'
 import PageTab from './PageTab'
+import AccountsMobileBar from './AccountsMobileBar'
+import AccountHeader from './AccountHeader'
 
 interface Props {
   children?: React.ReactNode
@@ -26,10 +28,7 @@ const Layout: FC<Props> = async ({ children }) => {
           <div className="mx-auto max-w-4xl">
             <div className="max-w-2xl">
               <h2 className="text-3xl font-semibold xl:text-4xl">{t('title')}</h2>
-              <span className="mt-4 block text-base text-neutral-500 sm:text-lg dark:text-neutral-400">
-                <span className="font-semibold text-neutral-900 dark:text-neutral-200">Enrico Cole,</span>{' '}
-                ciseco@gmail.com · Los Angeles, CA
-              </span>
+              <AccountHeader />
             </div>
 
             <Divider className="mt-10" />
@@ -37,8 +36,11 @@ const Layout: FC<Props> = async ({ children }) => {
             <Divider />
           </div>
         </div>
-        <div className="mx-auto max-w-4xl pt-14 pb-24 sm:pt-16 lg:pb-32">{children}</div>
+        <div className="mx-auto max-w-4xl pt-14 pb-[5.5rem] sm:pt-16 md:pb-24 lg:pb-32">
+          {children}
+        </div>
       </div>
+      <AccountsMobileBar />
       <Footer />
 
       <AsideSidebarNavigation />
