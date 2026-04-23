@@ -4,7 +4,8 @@
  */
 import type { MypageHomeResponse } from './types'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://kn541-backend.fly.dev'
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL || 'https://kn541-production.up.railway.app'
 
 // ─── 에러 클래스 ─────────────────────────────────────────────────
 export class MypageApiError extends Error {

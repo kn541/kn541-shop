@@ -7,7 +7,7 @@ import BackHeader from '@/components/mypage/BackHeader'
 import BigCard from '@/components/mypage/BigCard'
 import SectionHeader from '@/components/mypage/SectionHeader'
 import { useMypageHome } from '@/lib/mypage/useMypageHome'
-import { MOCK_SHOP_HOME } from '@/lib/mypage/mocks'
+import { useMyShop } from '@/lib/mypage/useMyShop'
 
 function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
@@ -25,12 +25,20 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
 export default function ShopHomePage() {
   const locale = useLocale()
   const router = useRouter()
-  const { data: home, loading } = useMypageHome()
-
+  const { data: home, loading: homeLoading } = useMypageHome()
   const shopStatus = home?.shop?.status
 
+  const shopApiEnabled = !homeLoading && (shopStatus === 'APPROVED' || shopStatus === 'SUSPENDED')
+  const { shop, dashboard, loading: shopLoading, error: shopError, refetch } = useMyShop(shopApiEnabled)
+
   useEffect(() => {
-    if (loading) return
+    if (shopError) {
+      toast.error(shopError.message)
+    }
+  }, [shopError])
+
+  useEffect(() => {
+    if (homeLoading) return
     if (!shopStatus || shopStatus === 'NONE') {
       router.replace(`/${locale}/mypage/shop/apply`)
     } else if (shopStatus === 'PENDING') {
@@ -38,9 +46,9 @@ export default function ShopHomePage() {
     } else if (shopStatus === 'REJECTED') {
       router.replace(`/${locale}/mypage/shop/apply`)
     }
-  }, [loading, shopStatus, locale, router])
+  }, [homeLoading, shopStatus, locale, router])
 
-  if (loading || !shopStatus || shopStatus !== 'APPROVED' && shopStatus !== 'SUSPENDED') {
+  if (homeLoading || !shopStatus || shopStatus !== 'APPROVED' && shopStatus !== 'SUSPENDED') {
     return <div style={{ padding: 48, textAlign: 'center', color: 'var(--mp-color-text-muted)' }}>불러오는 중…</div>
   }
 
@@ -59,16 +67,25 @@ export default function ShopHomePage() {
     )
   }
 
-  // APPROVED: 운영 홈
-  const shop = MOCK_SHOP_HOME
+  // APPROVED: 운영 홈 (GET /myshop + GET /myshop/dashboard)
+  if (shopLoading || !shop) {
+    return <div style={{ padding: 48, textAlign: 'center', color: 'var(--mp-color-text-muted)' }}>쇼핑몰 정보를 불러오는 중…</div>
+  }
+
+  const fullUrl = shop.shop_url || dashboard?.shop_url || ''
+  const shopName = shop.shop_name
+  const productCount = shop.product_count ?? dashboard?.product_count ?? 0
+  const todayVisits = dashboard?.today_visits ?? 0
+  const shareTotal = shop.share_count ?? 0
+  const monthOrders = dashboard?.month_orders ?? 0
 
   const handleShare = async () => {
     if (navigator.share) {
       try {
-        await navigator.share({ title: shop.shop_name, url: shop.full_url })
-      } catch {}
+        await navigator.share({ title: shopName, url: fullUrl })
+      } catch { /* user cancel */ }
     } else {
-      await navigator.clipboard.writeText(shop.full_url)
+      await navigator.clipboard.writeText(fullUrl)
       toast.success('링크를 복사했어요')
     }
   }
@@ -79,7 +96,6 @@ export default function ShopHomePage() {
     <>
       <BackHeader title='내 쇼핑몰' />
 
-      {/* 상단 숍 정보 */}
       <div style={{ background: '#fff', padding: '20px 16px', borderBottom: '1px solid var(--mp-color-border)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 12 }}>
           <div style={{
@@ -87,16 +103,20 @@ export default function ShopHomePage() {
             background: 'var(--mp-color-primary)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 28, flexShrink: 0,
-          }}>🏪</div>
+            overflow: 'hidden',
+          }}>
+            {shop.logo_url
+              ? <img src={shop.logo_url as string} alt='' style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              : '🏪'}
+          </div>
           <div>
-            <div style={{ fontSize: 20, fontWeight: 700 }}>{shop.shop_name}</div>
+            <div style={{ fontSize: 20, fontWeight: 700 }}>{shopName}</div>
             <div style={{ fontSize: 13, color: 'var(--mp-color-text-muted)', marginTop: 2 }}>
-              상품 {shop.total_product_count}개 운영 중
+              상품 {productCount}개 운영 중
             </div>
           </div>
         </div>
 
-        {/* URL + 공유 버튼 */}
         <div style={{
           background: 'var(--mp-color-bg)', borderRadius: 'var(--mp-radius)',
           border: '1px solid var(--mp-color-border)',
@@ -104,15 +124,16 @@ export default function ShopHomePage() {
           display: 'flex', alignItems: 'center', gap: 8,
         }}>
           <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--mp-color-text-muted)' }}>
-            {shop.full_url}
+            {fullUrl}
           </span>
-          <button onClick={handleShare} style={{
+          <button type='button' onClick={handleShare} style={{
             padding: '6px 14px', background: 'var(--mp-color-primary)', color: '#fff',
             border: 'none', borderRadius: 20, fontSize: 13, fontWeight: 700, cursor: 'pointer', flexShrink: 0,
           }}>공유</button>
           <button
+            type='button'
             onClick={async () => {
-              await navigator.clipboard.writeText(shop.full_url)
+              await navigator.clipboard.writeText(fullUrl)
               toast.success('복사됐어요')
             }}
             style={{
@@ -123,21 +144,30 @@ export default function ShopHomePage() {
         </div>
       </div>
 
-      {/* 이번 달 통계 */}
-      <SectionHeader title='이번 달' />
+      <SectionHeader title='이번 달 · 오늘' />
       <div style={{ padding: '0 16px', display: 'flex', gap: 10 }}>
-        <StatCard label='방문'   value={`${shop.this_month_visit_count.toLocaleString('ko-KR')}명`} />
-        <StatCard label='공유'   value={`${shop.this_month_share_count}회`} />
-        <StatCard label='주문'   value={`${shop.this_month_order_count}건`} />
+        <StatCard label='오늘 방문' value={`${todayVisits.toLocaleString('ko-KR')}명`} />
+        <StatCard label='누적 공유' value={`${shareTotal.toLocaleString('ko-KR')}회`} />
+        <StatCard label='이번 달 주문' value={`${monthOrders}건`} />
       </div>
 
-      {/* 관리 메뉴 */}
       <SectionHeader title='관리 메뉴' />
       <div style={{ padding: '0 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-        <BigCard icon='📦' label='상품 담기'  href={href('/mypage/shop/products')} />
-        <BigCard icon='🎨' label='꾸미기'     href={href('/mypage/shop/design')} />
-        <BigCard icon='📊' label='판매 실적'  href={href('/mypage/shop/sales')} />
-        <BigCard icon='🔗' label='공유하기'   href={shop.full_url} />
+        <BigCard icon='📦' label='상품 담기' href={href('/mypage/shop/products')} />
+        <BigCard icon='🎨' label='꾸미기' href={href('/mypage/shop/design')} />
+        <BigCard icon='📊' label='판매 실적' href={href('/mypage/shop/sales')} />
+        <BigCard icon='⚙️' label='설정' href={href('/mypage/shop/settings')} />
+        <BigCard icon='🔗' label='공유하기' href={fullUrl} />
+      </div>
+
+      <div style={{ padding: '12px 16px 0', fontSize: 13, color: 'var(--mp-color-text-muted)', textAlign: 'center' }}>
+        <button
+          type='button'
+          onClick={() => void refetch()}
+          style={{ background: 'none', border: 'none', color: 'var(--mp-color-primary)', textDecoration: 'underline', cursor: 'pointer', fontSize: 13 }}
+        >
+          새로고침
+        </button>
       </div>
 
       <div style={{ height: 24 }} />

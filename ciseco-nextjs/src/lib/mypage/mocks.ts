@@ -6,7 +6,6 @@ import type {
   MypageProfile, PointLedgerItem, PointsResponse,
   CouponItem, CouponListResponse,
   ShopTemplate, UrlCheckResponse,
-  MemberShopHome, ShopProduct, AvailableProduct, ShopSalesStats,
   DividendItem, DividendSummaryResponse, DividendHistoryResponse,
   DownlineMember, DownlineTreeResponse,
   WithdrawalItem, WithdrawalListResponse,
@@ -118,36 +117,6 @@ export function mockCheckUrlCode(code: string): UrlCheckResponse {
   if (code.toLowerCase().includes('taken') || code.toLowerCase() === 'admin')
     return { available: false, reason: 'TAKEN' }
   return { available: true }
-}
-
-export const MOCK_SHOP_HOME: MemberShopHome = {
-  shop_id: 'shop-001', shop_name: '홍길동의 건강샵', shop_url_code: 'hong-health',
-  full_url: 'https://shop.kn541.co.kr/shop/hong-health',
-  template_code: 'CLASSIC', status: 'APPROVED', status_label: '운영 중', logo_url: null,
-  this_month_visit_count: 234, this_month_share_count: 12, this_month_order_count: 3,
-  total_visit_count: 1_842, total_share_count: 89, total_product_count: 24,
-}
-
-export const MOCK_SHOP_PRODUCTS: ShopProduct[] = [
-  { shop_product_id: 'sp-001', product_id: 'p-001', product_name: '국산 건표고버섯 선물세트', product_price: 28_000, product_thumbnail: null, sort_order: 10, added_at: '2026-04-10T09:00:00' },
-  { shop_product_id: 'sp-002', product_id: 'p-002', product_name: 'ITREX C타입 충전케이블', product_price: 15_000, product_thumbnail: null, sort_order: 20, added_at: '2026-04-11T10:00:00' },
-  { shop_product_id: 'sp-003', product_id: 'p-003', product_name: '청정 세안제 리필업', product_price: 12_500, product_thumbnail: null, sort_order: 30, added_at: '2026-04-12T11:00:00' },
-]
-
-export const MOCK_AVAILABLE_PRODUCTS: AvailableProduct[] = [
-  { product_id: 'p-001', product_name: '국산 건표고버섯 선물세트', price: 28_000, thumbnail: null, category_code: 'food', is_added: true },
-  { product_id: 'p-002', product_name: 'ITREX C타입 충전케이블', price: 15_000, thumbnail: null, category_code: 'electronics', is_added: true },
-  { product_id: 'p-003', product_name: '청정 세안제 리필업', price: 12_500, thumbnail: null, category_code: 'beauty', is_added: true },
-  { product_id: 'p-004', product_name: '유기농 녹차 50티백', price: 18_000, thumbnail: null, category_code: 'food', is_added: false },
-  { product_id: 'p-005', product_name: '스마트 체중계', price: 45_000, thumbnail: null, category_code: 'health', is_added: false },
-  { product_id: 'p-006', product_name: '천연 샴푸 300ml', price: 22_000, thumbnail: null, category_code: 'beauty', is_added: false },
-]
-
-export const MOCK_SHOP_SALES: Record<string, ShopSalesStats> = {
-  TODAY: { period: 'TODAY', order_count: 1, total_revenue: 28_000, avg_order_value: 28_000, daily_series: [], recent_orders: [{ order_no: '2026041600001', ordered_at: '2026-04-16T10:00:00', main_item_name: '국산 건표고버섯 선물세트', item_count: 1, amount: 28_000 }], top_products: [{ product_id: 'p-001', product_name: '국산 건표고버섯', sold_count: 15 }] },
-  WEEK: { period: 'WEEK', order_count: 3, total_revenue: 87_000, avg_order_value: 29_000, daily_series: [{ date: '04-10', revenue: 28_000, orders: 1 }, { date: '04-12', revenue: 33_000, orders: 1 }, { date: '04-16', revenue: 28_000, orders: 1 }], recent_orders: [{ order_no: '2026041600001', ordered_at: '2026-04-16T10:00:00', main_item_name: '국산 건표고버섯 선물세트', item_count: 1, amount: 28_000 }, { order_no: '2026041200012', ordered_at: '2026-04-12T15:00:00', main_item_name: '청정 세안제 리필업 외 1건', item_count: 2, amount: 33_000 }], top_products: [{ product_id: 'p-001', product_name: '국산 건표고버섯', sold_count: 2 }] },
-  MONTH: { period: 'MONTH', order_count: 8, total_revenue: 248_000, avg_order_value: 31_000, daily_series: [], recent_orders: [{ order_no: '2026041600001', ordered_at: '2026-04-16T10:00:00', main_item_name: '국산 건표고버섯 선물세트', item_count: 1, amount: 28_000 }, { order_no: '2026041200012', ordered_at: '2026-04-12T15:00:00', main_item_name: '청정 세안제 리필업 외 1건', item_count: 2, amount: 33_000 }, { order_no: '2026041000008', ordered_at: '2026-04-10T09:00:00', main_item_name: 'ITREX C타입 충전케이블', item_count: 1, amount: 15_000 }], top_products: [{ product_id: 'p-001', product_name: '국산 건표고버섯', sold_count: 15 }, { product_id: 'p-002', product_name: 'ITREX C타입 케이블', sold_count: 8 }] },
-  ALL: { period: 'ALL', order_count: 42, total_revenue: 1_284_000, avg_order_value: 30_571, daily_series: [], recent_orders: [{ order_no: '2026041600001', ordered_at: '2026-04-16T10:00:00', main_item_name: '국산 건표고버섯 선물세트', item_count: 1, amount: 28_000 }, { order_no: '2026041200012', ordered_at: '2026-04-12T15:00:00', main_item_name: '청정 세안제 리필업 외 1건', item_count: 2, amount: 33_000 }, { order_no: '2026041000008', ordered_at: '2026-04-10T09:00:00', main_item_name: 'ITREX C타입 충전케이블', item_count: 1, amount: 15_000 }, { order_no: '2026040500033', ordered_at: '2026-04-05T09:00:00', main_item_name: '청정 세안제 리필업', item_count: 1, amount: 12_500 }, { order_no: '2026040300001', ordered_at: '2026-04-03T10:00:00', main_item_name: '국산 건표고버섯 선물세트', item_count: 1, amount: 28_000 }], top_products: [{ product_id: 'p-001', product_name: '국산 건표고버섯', sold_count: 18 }, { product_id: 'p-002', product_name: 'ITREX C타입 케이블', sold_count: 12 }, { product_id: 'p-003', product_name: '청정 세안제', sold_count: 8 }, { product_id: 'p-004', product_name: '유기농 녹차 50티백', sold_count: 4 }] },
 }
 
 // ──── Phase 7 ─────────────────────────────────────────────────────────────

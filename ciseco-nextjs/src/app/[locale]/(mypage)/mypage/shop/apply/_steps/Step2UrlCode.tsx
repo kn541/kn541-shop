@@ -1,19 +1,17 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import BigButton from '@/components/mypage/BigButton'
-import { mockCheckUrlCode } from '@/lib/mypage/mocks'
-import type { ShopApplyFormState, UrlCheckResponse } from '@/lib/mypage/types'
+import { checkShopUrlCode } from '@/lib/mypage/useMyShop'
+import { MypageApiError } from '@/lib/mypage/api'
+import type { ShopApplyFormState } from '@/lib/mypage/types'
 
-const URL_REGEX = /^[a-z0-9_]+$/i
+/** 백엔드 /myshop/check-url 과 동일: 영문+숫자 6~20자 */
+const URL_REGEX = /^[a-zA-Z0-9]{6,20}$/
+
+const SHOP_URL_PREVIEW_BASE =
+  process.env.NEXT_PUBLIC_SHOP_DISPLAY_BASE || 'https://kn541shop.com/shop'
 
 type CheckStatus = 'idle' | 'checking' | 'ok' | 'error'
-
-const REASON_MSG: Record<string, string> = {
-  TAKEN:          '이미 사용 중인 주소예요.',
-  INVALID_FORMAT: '영문(a~z) · 숫자 · 특수문자(_)만 입력 가능합니다.',
-  TOO_SHORT:      '3자 이상 입력해주세요.',
-  TOO_LONG:       '50자 이하로 입력해주세요.',
-}
 
 interface Props {
   form: ShopApplyFormState
@@ -28,24 +26,46 @@ export default function Step2UrlCode({ form, onChange, onPrev, onNext }: Props) 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const handleChange = (raw: string) => {
-    const cleaned = raw.replace(/[^a-z0-9_]/gi, '').toLowerCase()
+    const cleaned = raw.replace(/[^a-zA-Z0-9]/g, '')
     onChange({ ...form, shop_url_code: cleaned })
 
     if (!cleaned) { setStatus('idle'); setErrMsg(''); return }
-    if (cleaned.length < 3) { setStatus('error'); setErrMsg(REASON_MSG.TOO_SHORT); return }
-    if (!URL_REGEX.test(cleaned)) { setStatus('error'); setErrMsg(REASON_MSG.INVALID_FORMAT); return }
+    if (cleaned.length < 6) {
+      setStatus('error')
+      setErrMsg('6자 이상 입력해주세요.')
+      return
+    }
+    if (cleaned.length > 20) {
+      setStatus('error')
+      setErrMsg('20자 이하로 입력해주세요.')
+      return
+    }
+    if (!URL_REGEX.test(cleaned)) {
+      setStatus('error')
+      setErrMsg('영문(a~z, A~Z)과 숫자만 사용할 수 있어요.')
+      return
+    }
 
     setStatus('checking')
     if (timer.current) clearTimeout(timer.current)
     timer.current = setTimeout(() => {
-      const result: UrlCheckResponse = mockCheckUrlCode(cleaned)
-      if (result.available) {
-        setStatus('ok'); setErrMsg('')
-      } else {
-        setStatus('error')
-        setErrMsg(REASON_MSG[result.reason ?? 'TAKEN'])
-      }
-    }, 500)
+      void (async () => {
+        try {
+          const result = await checkShopUrlCode(cleaned)
+          if (result.available) {
+            setStatus('ok'); setErrMsg('')
+          } else {
+            setStatus('error')
+            setErrMsg(result.reason || '이미 사용 중인 주소예요.')
+          }
+        } catch (e) {
+          setStatus('error')
+          setErrMsg(
+            e instanceof MypageApiError ? e.message : '주소 확인에 실패했습니다.'
+          )
+        }
+      })()
+    }, 400)
   }
 
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current) }, [])
@@ -73,8 +93,8 @@ export default function Step2UrlCode({ form, onChange, onPrev, onNext }: Props) 
           type='text'
           value={form.shop_url_code}
           onChange={e => handleChange(e.target.value)}
-          maxLength={50}
-          placeholder='my-shop'
+          maxLength={20}
+          placeholder='hongshop12'
           style={{
             width: '100%', boxSizing: 'border-box',
             height: 64, padding: '0 16px',
@@ -91,7 +111,7 @@ export default function Step2UrlCode({ form, onChange, onPrev, onNext }: Props) 
         {status === 'error'    && <span style={{ color: 'var(--mp-color-danger)' }}>❌ {errMsg}</span>}
         {status === 'idle'     && (
           <span style={{ fontSize: 13, color: 'var(--mp-color-text-muted)' }}>
-            ⚠️ 영문(a~z) · 숫자 · 특수문자(_) 포함, 3~50자, 한글 불가
+            ⚠️ 영문·숫자만, 6~20자 (백엔드 정책과 동일)
           </span>
         )}
       </div>
@@ -103,13 +123,12 @@ export default function Step2UrlCode({ form, onChange, onPrev, onNext }: Props) 
           borderRadius: 'var(--mp-radius)', padding: '12px 16px',
           fontSize: 15, marginBottom: 32, wordBreak: 'break-all',
         }}>
-          <span style={{ color: 'var(--mp-color-text-muted)' }}>https://shop.kn541.co.kr/shop/</span>
+          <span style={{ color: 'var(--mp-color-text-muted)' }}>{SHOP_URL_PREVIEW_BASE}/</span>
           <strong style={{ color: 'var(--mp-color-primary)' }}>{form.shop_url_code}</strong>
         </div>
       )}
 
       <div style={{ display: 'flex', gap: 12 }}>
-        {/* BigButton은 style prop 미지원 → div로 감싸서 너비 제어 */}
         <div style={{ flex: '0 0 80px' }}>
           <BigButton variant='secondary' onClick={onPrev}>
             ◄ 이전

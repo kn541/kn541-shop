@@ -10,6 +10,8 @@ import StepProgress from './_steps/StepProgress'
 import Step1BasicInfo from './_steps/Step1BasicInfo'
 import Step2UrlCode from './_steps/Step2UrlCode'
 import Step3TemplatePick from './_steps/Step3TemplatePick'
+import { createMyShop, uiTemplateToApi } from '@/lib/mypage/useMyShop'
+import { MypageApiError } from '@/lib/mypage/api'
 
 export default function ShopApplyPage() {
   const locale = useLocale()
@@ -46,12 +48,18 @@ export default function ShopApplyPage() {
     setSubmitting(true)
     toast.loading('신청 중…', { id: 'apply' })
     try {
-      // Phase 2-3 API 완성 후: await fetch(`${API_BASE}/mypage/shop/apply`, { ... })
-      await new Promise(r => setTimeout(r, 1_000))
+      await createMyShop({
+        shop_name: form.shop_name.trim(),
+        shop_url_code: form.shop_url_code.trim() || undefined,
+        template_code: uiTemplateToApi(form.template_code),
+        shop_description: form.shop_description.trim() || undefined,
+      })
       toast.success('신청이 접수됐습니다. 승인을 기다려주세요.', { id: 'apply' })
-      router.replace(`/${locale}/mypage`)
-    } catch {
-      toast.error('신청 실패. 다시 시도해주세요.', { id: 'apply' })
+      router.replace(`/${locale}/mypage/shop/status`)
+    } catch (e) {
+      const msg =
+        e instanceof MypageApiError ? e.message : '신청 실패. 다시 시도해주세요.'
+      toast.error(msg, { id: 'apply' })
     } finally {
       setSubmitting(false)
     }

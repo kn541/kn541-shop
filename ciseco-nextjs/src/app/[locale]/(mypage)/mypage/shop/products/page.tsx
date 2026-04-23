@@ -1,16 +1,47 @@
 'use client'
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'react-hot-toast'
 import BackHeader from '@/components/mypage/BackHeader'
 import BigTabs from '@/components/mypage/BigTabs'
 import BigButton from '@/components/mypage/BigButton'
-import {
-  MOCK_SHOP_PRODUCTS,
-  MOCK_AVAILABLE_PRODUCTS,
-} from '@/lib/mypage/mocks'
 import type { ShopProduct, AvailableProduct } from '@/lib/mypage/types'
+import {
+  addMyShopProduct,
+  fetchMyShopProducts,
+  fetchMyShopProductsFind,
+  patchMyShopProduct,
+  removeMyShopProduct,
+  type MyShopProductApiItem,
+  type ProductFindRow,
+} from '@/lib/mypage/useMyShop'
+import { MypageApiError } from '@/lib/mypage/api'
 
-// ─── 탭 1: 담은 상품 ─────────────────────────────────────────────────────
+function mapMyItem(it: MyShopProductApiItem): ShopProduct {
+  const price = parseFloat(it.effective_price ?? it.base_sale_price ?? '0')
+  return {
+    shop_product_id: it.product_id,
+    product_id: it.product_id,
+    product_name: it.product_name ?? '',
+    product_price: Number.isFinite(price) ? price : 0,
+    product_thumbnail: it.thumbnail_url ?? null,
+    sort_order: it.sort_order ?? 0,
+    added_at: it.added_at ?? '',
+  }
+}
+
+function mapFindRow(row: ProductFindRow): AvailableProduct {
+  const pid = String(row.product_id ?? '')
+  const price = typeof row.sale_price === 'number' ? row.sale_price : parseFloat(String(row.sale_price ?? 0))
+  return {
+    product_id: pid,
+    product_name: String(row.product_name ?? ''),
+    price: Number.isFinite(price) ? price : 0,
+    thumbnail: (row.thumbnail_url as string | null) ?? null,
+    category_code: row.category_id != null ? String(row.category_id) : null,
+    is_added: !!row.is_in_my_shop,
+  }
+}
+
 function MyProductCard({
   item, onMoveUp, onMoveDown, onRemove, isFirst, isLast,
 }: {
@@ -28,7 +59,6 @@ function MyProductCard({
       padding: 14, marginBottom: 10,
       display: 'flex', gap: 12, alignItems: 'center',
     }}>
-      {/* 썸네일 */}
       <div style={{
         width: 64, height: 64, background: '#F5F5F5',
         borderRadius: 8, flexShrink: 0,
@@ -39,7 +69,6 @@ function MyProductCard({
           : '📦'}
       </div>
 
-      {/* 정보 */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{
           fontSize: 15, fontWeight: 600,
@@ -53,9 +82,9 @@ function MyProductCard({
         </div>
       </div>
 
-      {/* 순서 + 제거 버튼 (드래그 앤 드롭 대신 위/아래 버튼) */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0 }}>
         <button
+          type='button'
           onClick={onMoveUp}
           disabled={isFirst}
           title='위로'
@@ -66,6 +95,7 @@ function MyProductCard({
           }}
         >▲</button>
         <button
+          type='button'
           onClick={onMoveDown}
           disabled={isLast}
           title='아래로'
@@ -76,6 +106,7 @@ function MyProductCard({
           }}
         >▼</button>
         <button
+          type='button'
           onClick={onRemove}
           title='제거'
           style={{
@@ -89,7 +120,6 @@ function MyProductCard({
   )
 }
 
-// ─── 탭 2: 상품 담기 ─────────────────────────────────────────────────────
 function AvailableProductCard({
   item,
   onAdd,
@@ -128,6 +158,7 @@ function AvailableProductCard({
 
       {item.is_added ? (
         <button
+          type='button'
           onClick={onRemove}
           style={{
             padding: '8px 14px', background: '#F5F5F5',
@@ -138,6 +169,7 @@ function AvailableProductCard({
         >담김 ✓</button>
       ) : (
         <button
+          type='button'
           onClick={onAdd}
           style={{
             padding: '8px 14px', background: 'var(--mp-color-primary)', color: '#fff',
@@ -150,52 +182,106 @@ function AvailableProductCard({
   )
 }
 
-// ─── 메인 페이지 ───────────────────────────────────────────────────────────
 export default function ShopProductsPage() {
   const [tab, setTab] = useState<'MY' | 'ADD'>('MY')
-  const [myProducts, setMyProducts] = useState<ShopProduct[]>(MOCK_SHOP_PRODUCTS)
-  const [available, setAvailable] = useState<AvailableProduct[]>(MOCK_AVAILABLE_PRODUCTS)
+  const [myProducts, setMyProducts] = useState<ShopProduct[]>([])
+  const [available, setAvailable] = useState<AvailableProduct[]>([])
   const [keyword, setKeyword] = useState('')
+  const [loadingMy, setLoadingMy] = useState(true)
+  const [loadingFind, setLoadingFind] = useState(false)
 
-  // 위/아래 이동 (드래그 앤 드롭 대신)
+  const loadMy = useCallback(async () => {
+    setLoadingMy(true)
+    try {
+      const res = await fetchMyShopProducts(1, 200)
+      setMyProducts((res.items ?? []).map(mapMyItem))
+    } catch (e) {
+      toast.error(e instanceof MypageApiError ? e.message : '목록을 불러오지 못했습니다.')
+      setMyProducts([])
+    } finally {
+      setLoadingMy(false)
+    }
+  }, [])
+
+  const loadFind = useCallback(async (kw: string) => {
+    setLoadingFind(true)
+    try {
+      const res = await fetchMyShopProductsFind({
+        keyword: kw || undefined,
+        page: 1,
+        size: 50,
+        is_added: true,
+      })
+      setAvailable((res.items ?? []).map(mapFindRow))
+    } catch (e) {
+      toast.error(e instanceof MypageApiError ? e.message : '검색에 실패했습니다.')
+      setAvailable([])
+    } finally {
+      setLoadingFind(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    void loadMy()
+  }, [loadMy])
+
+  useEffect(() => {
+    if (tab !== 'ADD') return
+    const t = setTimeout(() => void loadFind(keyword), 300)
+    return () => clearTimeout(t)
+  }, [tab, keyword, loadFind])
+
+  const persistSortOrder = async (ordered: ShopProduct[]) => {
+    try {
+      await Promise.all(
+        ordered.map((p, i) =>
+          patchMyShopProduct(p.product_id, { sort_order: (i + 1) * 10 })
+        )
+      )
+    } catch (e) {
+      toast.error(e instanceof MypageApiError ? e.message : '순서 저장에 실패했습니다.')
+      void loadMy()
+    }
+  }
+
   const moveUp = (idx: number) => {
     if (idx === 0) return
     const next = [...myProducts]
     ;[next[idx - 1], next[idx]] = [next[idx], next[idx - 1]]
     setMyProducts(next)
+    void persistSortOrder(next)
   }
+
   const moveDown = (idx: number) => {
     if (idx === myProducts.length - 1) return
     const next = [...myProducts]
     ;[next[idx], next[idx + 1]] = [next[idx + 1], next[idx]]
     setMyProducts(next)
-  }
-  const removeFromMyShop = (shopProductId: string, productId: string) => {
-    setMyProducts(p => p.filter(x => x.shop_product_id !== shopProductId))
-    setAvailable(p => p.map(x => x.product_id === productId ? { ...x, is_added: false } : x))
-    toast.success('상품을 제거했어요')
+    void persistSortOrder(next)
   }
 
-  const addToMyShop = (productId: string) => {
-    const product = available.find(p => p.product_id === productId)
-    if (!product) return
-    const newItem: ShopProduct = {
-      shop_product_id: `sp-new-${Date.now()}`,
-      product_id: productId,
-      product_name: product.product_name,
-      product_price: product.price,
-      product_thumbnail: product.thumbnail,
-      sort_order: (myProducts.length + 1) * 10,
-      added_at: new Date().toISOString(),
+  const removeFromMyShop = async (productId: string) => {
+    try {
+      await removeMyShopProduct(productId)
+      setMyProducts(p => p.filter(x => x.product_id !== productId))
+      setAvailable(p => p.map(x => x.product_id === productId ? { ...x, is_added: false } : x))
+      toast.success('상품을 제거했어요')
+    } catch (e) {
+      toast.error(e instanceof MypageApiError ? e.message : '제거에 실패했습니다.')
     }
-    setMyProducts(p => [...p, newItem])
-    setAvailable(p => p.map(x => x.product_id === productId ? { ...x, is_added: true } : x))
-    toast.success('상품을 담았어요')
   }
 
-  const filteredAvailable = available.filter(p =>
-    !keyword || p.product_name.toLowerCase().includes(keyword.toLowerCase())
-  )
+  const addToMyShop = async (productId: string) => {
+    try {
+      const sortOrder = (myProducts.length + 1) * 10
+      await addMyShopProduct(productId, sortOrder)
+      toast.success('상품을 담았어요')
+      await loadMy()
+      if (tab === 'ADD') void loadFind(keyword)
+    } catch (e) {
+      toast.error(e instanceof MypageApiError ? e.message : '담기에 실패했습니다.')
+    }
+  }
 
   return (
     <>
@@ -211,8 +297,10 @@ export default function ShopProductsPage() {
       />
 
       <div style={{ padding: 16 }}>
-        {/* ── 탭 1: 담은 상품 ── */}
-        {tab === 'MY' && (
+        {tab === 'MY' && loadingMy && (
+          <div style={{ textAlign: 'center', padding: 48, color: 'var(--mp-color-text-muted)' }}>불러오는 중…</div>
+        )}
+        {tab === 'MY' && !loadingMy && (
           <>
             {myProducts.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '48px 0' }}>
@@ -229,13 +317,13 @@ export default function ShopProductsPage() {
                 </div>
                 {myProducts.map((item, idx) => (
                   <MyProductCard
-                    key={item.shop_product_id}
+                    key={item.product_id}
                     item={item}
                     isFirst={idx === 0}
                     isLast={idx === myProducts.length - 1}
                     onMoveUp={() => moveUp(idx)}
                     onMoveDown={() => moveDown(idx)}
-                    onRemove={() => removeFromMyShop(item.shop_product_id, item.product_id)}
+                    onRemove={() => void removeFromMyShop(item.product_id)}
                   />
                 ))}
               </>
@@ -243,7 +331,6 @@ export default function ShopProductsPage() {
           </>
         )}
 
-        {/* ── 탭 2: 상품 담기 ── */}
         {tab === 'ADD' && (
           <>
             <div style={{ marginBottom: 16 }}>
@@ -262,21 +349,21 @@ export default function ShopProductsPage() {
               />
             </div>
 
-            {filteredAvailable.length === 0 ? (
+            {loadingFind && (
+              <div style={{ textAlign: 'center', padding: 32, color: 'var(--mp-color-text-muted)' }}>검색 중…</div>
+            )}
+            {!loadingFind && available.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '48px 0' }}>
                 <div style={{ fontSize: 48, marginBottom: 12 }}>🔍</div>
                 <div style={{ fontSize: 18, color: 'var(--mp-color-text-muted)' }}>검색 결과가 없어요.</div>
               </div>
             ) : (
-              filteredAvailable.map(item => (
+              !loadingFind && available.map(item => (
                 <AvailableProductCard
                   key={item.product_id}
                   item={item}
-                  onAdd={() => addToMyShop(item.product_id)}
-                  onRemove={() => {
-                    const mine = myProducts.find(p => p.product_id === item.product_id)
-                    if (mine) removeFromMyShop(mine.shop_product_id, item.product_id)
-                  }}
+                  onAdd={() => void addToMyShop(item.product_id)}
+                  onRemove={() => void removeFromMyShop(item.product_id)}
                 />
               ))
             )}
