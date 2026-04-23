@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useLocale } from 'next-intl'
 
 interface AuthUser {
   user_id: string
@@ -25,6 +26,13 @@ function decodeJwt(token: string): Record<string, unknown> | null {
 export function useAuth() {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [loading, setLoading] = useState(true)
+  let locale = 'ko'
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    locale = useLocale()
+  } catch {
+    // useLocale 실패 시 기본값 ko
+  }
 
   useEffect(() => {
     const token = localStorage.getItem('access_token')
@@ -61,6 +69,8 @@ export function useAuth() {
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
     setUser(null)
+    // 로그아웃 후 메인 페이지로 이동
+    window.location.href = `/${locale}`
   }
 
   return { user, loading, logout }
