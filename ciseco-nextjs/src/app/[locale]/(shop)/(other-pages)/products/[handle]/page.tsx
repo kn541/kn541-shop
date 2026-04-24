@@ -1,6 +1,5 @@
 // KN541 상품 상세 페이지
-// fix: getProductById(UUID) 직접 호출 — getProductByCode 우회 경로 제거
-// fix: adaptProduct로 전체 필드 매핑 (배송비, 카테고리, 옵션 등)
+// fix: 소비자 UX 개선 — 상품코드/과세유형 제거, 할인율 뱃지, 품절 강화, 별점 숨김
 
 import { Divider } from '@/components/Divider'
 import Prices from '@/components/Prices'
@@ -104,7 +103,6 @@ export default async function Page({
   const isHtmlDesc = /<[a-z][\s\S]*>/i.test(description || '')
 
   // 배송비 텍스트
-  // sc_type: 1=무료, 2=조건부무료, 3=유료건당, 4=유료수량별
   const shippingText = (() => {
     if (scType === 1 || shippingFee === 0) return '무료배송'
     const feeStr = shippingFee.toLocaleString('ko-KR')
@@ -127,11 +125,23 @@ export default async function Page({
   if (p.categoryName2) breadcrumbs.push({ name: p.categoryName2 })
   if (p.categoryName) breadcrumbs.push({ name: p.categoryName })
 
-  // 원가
-  const originalPrice = p.originalSupplyPrice || 0
+  // ★ 소비자가 (consumer_price) — 할인율 계산 기준
+  const consumerPrice = Number(p.consumerPrice ?? p.consumer_price ?? 0)
+  const salePrice = Number(price || 0)
+  // 할인율 계산: (소비자가 - 판매가) / 소비자가 * 100
+  const discountRate = consumerPrice > 0 && consumerPrice > salePrice
+    ? Math.round((consumerPrice - salePrice) / consumerPrice * 100)
+    : 0
 
   const productStatus = String(p.productStatus ?? '')
   const stock = Number(p.stockQty ?? 0)
+  // ★ 품절 여부 — is_soldout / is_discontinued 추가 체크
+  const isSoldout = Boolean(p.isSoldout || p.is_soldout)
+  const isDiscontinued = Boolean(p.isDiscontinued || p.is_discontinued)
+  const isSoldoutOrUnavailable = isSoldout || isDiscontinued || stock <= 0 ||
+    ['SOLDOUT', 'SOLD_OUT', 'DISCONTINUED', 'INACTIVE'].includes(productStatus.toUpperCase()) ||
+    status === '품절' || status === 'Sold Out' || status === '판매종료'
+
   const rawOpts = ((p as { options?: unknown[] }).options ?? []) as Array<{
     name?: string
     optionValues?: unknown[]
@@ -197,58 +207,62 @@ export default async function Page({
 
             {/* 별점 + 재고상태 */}
             <div className="flex items-center gap-3 flex-wrap">
-              <div className="flex">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <StarIcon
-                    key={i}
-                    className={`h-4 w-4 ${i < Math.round(rating || 0) ? 'text-yellow-400' : 'text-neutral-200'}`}
-                  />
-                ))}
-              </div>
+              {/* ★ 리뷰가 있을 때만 별점 표시 */}
               {reviewNumber > 0 && (
-                <a href="#reviews" className="text-sm text-neutral-500 underline">
-                  {reviewNumber}개 리뷰
-                </a>
+                <>
+                  <div className="flex">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <StarIcon
+                        key={i}
+                        className={`h-4 w-4 ${i < Math.round(rating || 0) ? 'text-yellow-400' : 'text-neutral-200'}`}
+                      />
+                    ))}
+                  </div>
+                  <a href="#reviews" className="text-sm text-neutral-500 underline">
+                    {reviewNumber}개 리뷰
+                  </a>
+                </>
               )}
-              <ProductStatus status={status} />
-              {p.stockQty === 0 && (
-                <span className="text-xs bg-red-50 text-red-600 border border-red-200 rounded px-2 py-0.5">
-                  품절
+              {/* ★ 품절/판매불가 상태 표시 강화 */}
+              {isSoldoutOrUnavailable ? (
+                <span className="text-xs bg-red-50 text-red-600 border border-red-200 rounded px-2 py-0.5 font-medium">
+                  {isDiscontinued ? '판매종료' : '품절'}
                 </span>
-              )}
-              {p.stockQty > 0 && p.stockQty <= 10 && (
-                <span className="text-xs bg-orange-50 text-orange-600 border border-orange-200 rounded px-2 py-0.5">
-                  재고 {p.stockQty}개
-                </span>
+              ) : (
+                <>
+                  <ProductStatus status={status} />
+                  {stock > 0 && stock <= 10 && (
+                    <span className="text-xs bg-orange-50 text-orange-600 border border-orange-200 rounded px-2 py-0.5">
+                      재고 {stock}개
+                    </span>
+                  )}
+                </>
               )}
             </div>
 
-            {/* 가격 */}
+            {/* 가격 + 할인율 뱃지 */}
             <div className="flex items-end gap-3">
-              <Prices contentClass="text-3xl font-bold" price={price || 0} />
-              {originalPrice > 0 && originalPrice !== price && (
+              {/* ★ 할인율 뱃지 */}
+              {discountRate > 0 && (
+                <span className="text-2xl font-bold text-red-500">
+                  {discountRate}%
+                </span>
+              )}
+              <Prices contentClass="text-3xl font-bold" price={salePrice} />
+              {/* ★ 소비자가 (취소선) */}
+              {consumerPrice > 0 && consumerPrice > salePrice && (
                 <span className="text-base text-neutral-400 line-through mb-0.5">
-                  {Number(originalPrice * 1.5).toLocaleString('ko-KR')}원
+                  {consumerPrice.toLocaleString('ko-KR')}원
                 </span>
               )}
             </div>
 
             <Divider />
 
-            {/* 상품 기본 정보 표 */}
+            {/* 상품 기본 정보 표 — ★ 상품코드/과세유형 제거 */}
             <div className="rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
               <table className="w-full text-sm">
                 <tbody>
-                  {p.productCode && (
-                    <tr className="border-b border-neutral-100 dark:border-neutral-700">
-                      <td className="px-4 py-2.5 w-28 font-medium text-neutral-500 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-800">
-                        상품코드
-                      </td>
-                      <td className="px-4 py-2.5 text-neutral-800 dark:text-neutral-200">
-                        {p.productCode}
-                      </td>
-                    </tr>
-                  )}
                   {p.vendor && (
                     <tr className="border-b border-neutral-100 dark:border-neutral-700">
                       <td className="px-4 py-2.5 w-28 font-medium text-neutral-500 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-800">
@@ -271,14 +285,6 @@ export default async function Page({
                   )}
                   <tr className="border-b border-neutral-100 dark:border-neutral-700">
                     <td className="px-4 py-2.5 w-28 font-medium text-neutral-500 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-800">
-                      과세유형
-                    </td>
-                    <td className="px-4 py-2.5 text-neutral-800 dark:text-neutral-200">
-                      {p.taxLabel || '과세 (10%)'}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-neutral-100 dark:border-neutral-700">
-                    <td className="px-4 py-2.5 w-28 font-medium text-neutral-500 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-800">
                       최소주문
                     </td>
                     <td className="px-4 py-2.5 text-neutral-800 dark:text-neutral-200">
@@ -290,11 +296,11 @@ export default async function Page({
               </table>
             </div>
 
-            {/* ★ 옵션 + 수량 + 장바구니/바로구매 — productId + 배송비 정보 전달 */}
+            {/* ★ 옵션 + 수량 + 장바구니/바로구매 — isSoldoutOrUnavailable 전달 */}
             <ProductActions
               productId={String(productId || handle)}
               options={p.options}
-              price={price || 0}
+              price={salePrice}
               productName={title || ''}
               productImage={thumbImage}
               shippingFee={shippingFee}
@@ -305,6 +311,7 @@ export default async function Page({
               hasColorOption={hasColorOption}
               hasSizeOption={hasSizeOption}
               listingStatus={status}
+              isSoldout={isSoldoutOrUnavailable}
             />
 
             <Divider />

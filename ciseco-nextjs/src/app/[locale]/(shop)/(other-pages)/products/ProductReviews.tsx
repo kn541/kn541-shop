@@ -1,4 +1,5 @@
 'use client'
+// ★ 전체 한국어화
 
 import ReviewItem from '@/components/ReviewItem'
 import StarReview from '@/components/StarReview'
@@ -28,75 +29,74 @@ const ProductReviews = ({
   const [isOpen, setIsOpen] = React.useState(false)
 
   const handleSubmit = async (formData: FormData) => {
-    const formObjectEntries = Object.fromEntries(formData.entries())
-
     const review = formData.get('review')?.toString() || ''
-    const rating = formData.get('rating') ? parseInt(formData.get('rating')?.toString() || '0', 10) : 0
-    if (!review || rating < 1 || rating > 5) {
-      console.error('Invalid review or rating')
+    const ratingVal = formData.get('rating') ? parseInt(formData.get('rating')?.toString() || '0', 10) : 0
+    if (!review || ratingVal < 1 || ratingVal > 5) {
+      console.error('리뷰 내용 또는 별점이 올바르지 않습니다.')
       return
     }
-    // Here you would typically send the review to your server
-    console.log('Submitting review:', { review, rating, formObjectEntries })
-    // Close the dialog after submission
+    console.log('리뷰 등록:', { review, rating: ratingVal })
     setIsOpen(false)
-    // Optionally, you can also update the reviews state to include the new review
-    // For example, you could call a function to fetch the updated reviews
   }
 
   return (
     <div className={clsx(className)}>
       <div>
-        {/* HEADING */}
+        {/* 헤딩 — ★ 한국어 */}
         <h2 className="flex scroll-mt-8 items-center text-2xl font-semibold" id="reviews">
           <StarIcon className="mb-0.5 size-7" />
           <span className="ml-1.5">
-            {rating} · {reviewNumber} Reviews
+            {rating > 0 ? `${rating}점` : ''} · {reviewNumber}개 리뷰
           </span>
         </h2>
 
-        {/* comment */}
-        <div className="mt-10">
-          <div className="grid grid-cols-1 gap-x-14 gap-y-11 md:grid-cols-2 lg:gap-x-28">
-            {reviews.map((review) => (
-              <ReviewItem key={review.id} data={review} />
-            ))}
+        {/* 리뷰 목록 */}
+        {reviews.length > 0 ? (
+          <div className="mt-10">
+            <div className="grid grid-cols-1 gap-x-14 gap-y-11 md:grid-cols-2 lg:gap-x-28">
+              {reviews.map((review) => (
+                <ReviewItem key={review.id} data={review} />
+              ))}
+            </div>
           </div>
-        </div>
+        ) : (
+          <p className="mt-6 text-sm text-neutral-400">아직 등록된 리뷰가 없습니다.</p>
+        )}
 
-        {/* Add review form */}
+        {/* 리뷰 작성 버튼 — ★ 한국어 */}
         <Button className="mt-10" onClick={() => setIsOpen(true)}>
           <HugeiconsIcon icon={MessageAdd01Icon} size={20} />
-          Write a review
+          리뷰 작성
         </Button>
 
+        {/* 리뷰 작성 다이얼로그 — ★ 한국어 */}
         <Dialog size="2xl" open={isOpen} onClose={setIsOpen}>
           <DialogTitle>
             <div className="flex items-center">
               <HugeiconsIcon icon={MessageAdd01Icon} size={20} className="mr-2" />
-              Write a review
+              리뷰 작성
             </div>
           </DialogTitle>
           <DialogDescription>
-            Your email address will not be published. Required fields are marked with an asterisk (*).
+            솔직한 리뷰를 남겨주세요. 별점과 내용을 모두 입력해 주세요.
           </DialogDescription>
           <DialogBody>
             <Form action={handleSubmit} id="review-form">
               <Fieldset>
                 <StarReview />
                 <Field className="mt-5">
-                  <Label>Your review *</Label>
-                  <Textarea name="review" placeholder="" rows={6} />
+                  <Label>리뷰 내용 *</Label>
+                  <Textarea name="review" placeholder="상품에 대한 솔직한 후기를 작성해 주세요." rows={6} />
                 </Field>
               </Fieldset>
             </Form>
           </DialogBody>
           <DialogActions>
             <Button size="smaller" plain onClick={() => setIsOpen(false)}>
-              Cancel
+              취소
             </Button>
             <Button size="smaller" onClick={() => setIsOpen(false)} type="submit" form="review-form">
-              Submit review
+              등록하기
             </Button>
           </DialogActions>
         </Dialog>
