@@ -1,8 +1,6 @@
 /**
  * KN541 API 데이터 → Ciseco 컴포넌트 형식 변환 어댑터
- * fix: product_id(UUID) 사용, images/description 포함
- * fix: 카테고리 브레드크럼, 원산지, 과세유형, 공급사, 상품코드 등 전체 필드 추가
- * fix: handle 항상 UUID(product_id) 기반으로 통일 — product_code 혼용 제거
+ * fix: consumer_price, isSoldout, isDiscontinued 매핑 추가
  */
 
 import type { Category } from './api/categories'
@@ -72,8 +70,6 @@ export function adaptProduct(p: Product): TProductItem {
   return {
     id: pid,
     title: p.product_name,
-    // ★ handle = product_id(UUID) 고정
-    //    product_code는 DB에서 null인 경우 많고, 혼용 시 URL 불일치 발생
     handle: pid,
     price: p.sale_price,
     createdAt: p.created_at,
@@ -113,13 +109,17 @@ export function adaptProduct(p: Product): TProductItem {
     productCode: p.product_code ?? '',
     productNo: p.product_no ?? '',
     stockQty: p.stock_qty ?? 0,
-    /** DB 원본 product_status (ON_SALE, SOLDOUT 등) — 장바구니 검증용 */
     productStatus: p.product_status ?? '',
     minOrderQty: p.min_order_qty ?? 1,
     maxOrderQty: p.max_order_qty ?? null,
     supplierName: p.supplier_name ?? '',
     originalSupplyPrice: p.original_supply_price ?? 0,
     summary: p.summary ?? '',
+    // ★ 소비자가 — 할인율 계산 기준
+    consumerPrice: p.consumer_price ?? 0,
+    // ★ 품절/단종 플래그 — 구매 버튼 비활성화용
+    isSoldout: p.is_soldout ?? false,
+    isDiscontinued: p.is_discontinued ?? false,
   } as TProductItem & Record<string, any>
 }
 
