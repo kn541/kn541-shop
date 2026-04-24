@@ -1,9 +1,9 @@
 'use client'
 // KN541 주문완료 페이지 — 실 주문 데이터 연동
-// URL: /ko/order-successful?order_id={uuid}
+// fix: 전화번호 070-4436-0928, locale 동적화
 
 import { Suspense, useEffect, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import ButtonPrimary from '@/shared/Button/ButtonPrimary'
 import { Link } from '@/shared/link'
 import { CheckCircleIcon, HomeIcon, ShoppingBagIcon, ClipboardDocumentListIcon } from '@heroicons/react/24/outline'
@@ -41,11 +41,14 @@ interface OrderDetail {
 
 const METHOD_LABEL: Record<string, string> = {
   CARD: '신용카드', VIRTUAL_ACCOUNT: '가상계좌', TRANSFER: '계좌이체',
-  TOSS: '토스페이먼츠', KAKAO: '카카오페이',
+  TOSS: '토스페이먼츠', KAKAO: '카카오페이', EASY_PAY: '간편결제',
 }
 
 function OrderContent() {
-  const params  = useSearchParams()
+  const params   = useSearchParams()
+  const pathname = usePathname()
+  const locale   = pathname.split('/')[1] || 'ko'
+
   const orderId = params.get('order_id')
   const [order, setOrder]     = useState<OrderDetail | null>(null)
   const [loading, setLoading] = useState(true)
@@ -182,7 +185,8 @@ function OrderContent() {
           <ul className="space-y-1 text-neutral-500">
             <li>• 결제 확인 후 영업일 2~3일 내 출고 예정</li>
             <li>• 출고 시 등록하신 연락처로 송장번호 안내</li>
-            <li>• 배송 문의: 1588-0000</li>
+            {/* ★ 실제 고객센터 번호 */}
+            <li>• 배송 문의: 070-4436-0928</li>
           </ul>
         </div>
 
@@ -190,16 +194,16 @@ function OrderContent() {
         <div className={`mt-8 flex flex-col gap-3 sm:flex-row transition-all duration-700 delay-500 ${
           show ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
         }`}>
-          <ButtonPrimary href="/ko" className="flex-1">
+          <ButtonPrimary href={`/${locale}`} className="flex-1">
             <HomeIcon className="mr-2 h-5 w-5" />홈으로 가기
           </ButtonPrimary>
           {orderId && (
-            <Link href={`/ko/mypage/orders/${orderId}`}
+            <Link href={`/${locale}/mypage/orders/${orderId}`}
               className="flex flex-1 items-center justify-center gap-2 rounded-full border border-neutral-300 px-6 py-3 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50 dark:border-neutral-600 dark:text-neutral-300">
               <ClipboardDocumentListIcon className="h-5 w-5" />주문 상세 보기
             </Link>
           )}
-          <Link href="/ko/products"
+          <Link href={`/${locale}/products`}
             className="flex flex-1 items-center justify-center gap-2 rounded-full border border-neutral-300 px-6 py-3 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50 dark:border-neutral-600 dark:text-neutral-300">
             <ShoppingBagIcon className="h-5 w-5" />쇼핑 계속하기
           </Link>

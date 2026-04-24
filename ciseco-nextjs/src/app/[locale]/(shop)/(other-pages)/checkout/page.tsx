@@ -1,9 +1,11 @@
 'use client'
-// KN541 결제 페이지 — 토스페이먼츠 API 개별 연동 (payment.requestPayment 방식)
-// 흐름: 선택된 장바구니 → 배송지 → 결제수단 선택 → 주문생성 → 사전등록 → requestPayment
+// KN541 결제 페이지 — 토스페이먼츠 API 개별 연동
+// fix: 폐쇄몰 — 비로그인 시 메인 페이지로 이동
+// fix: hydration 전 redirect 방지 (mounted state)
+// fix: locale 동적화 (/ko/ 하드코딩 제거)
 
 import { useEffect, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import Image from 'next/image'
 import {
   LockClosedIcon,
@@ -51,8 +53,22 @@ interface SavedAddress {
 }
 
 export default function CheckoutPage() {
-  const router = useRouter()
+  const router   = useRouter()
+  const pathname = usePathname()
+  const locale   = pathname.split('/')[1] || 'ko'
   const { items, selectedIds, clearCart } = useCart()
+
+  // ★ hydration 완료 + 인증 확인
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+    const token = getToken()
+    // ★ 폐쇄몰: 비로그인 → 메인 페이지
+    if (!token) {
+      router.replace(`/${locale}`)
+    }
+  }, [locale, router])
 
   const orderableItems = items.filter(
     i => selectedIds.has(i.id) && i.productId?.includes('-')
@@ -76,11 +92,15 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const paymentRef = useRef<any>(null)
 
+  // ★ mounted + 인증 완료 후에만 장바구니 비어있으면 cart로 이동
   useEffect(() => {
-    if (orderableItems.length === 0) router.replace('/ko/cart')
-  }, [orderableItems.length, router])
+    if (!mounted) return
+    if (!getToken()) return  // 비로그인은 위 useEffect에서 처리
+    if (orderableItems.length === 0) router.replace(`/${locale}/cart`)
+  }, [mounted, orderableItems.length, locale, router])
 
   useEffect(() => {
+    if (!mounted) return
     const token = getToken()
     if (!token) { setShowNewForm(true); return }
     fetch(`${BASE}/my/addresses`, { headers: { Authorization: `Bearer ${token}` } })
@@ -97,11 +117,11 @@ export default function CheckoutPage() {
         }
       })
       .catch(() => setShowNewForm(true))
-  }, [])
+  }, [mounted])
 
   useEffect(() => {
-    if (orderableItems.length === 0) return
-    let mounted = true
+    if (!mounted || orderableItems.length === 0) return
+    let active = true
     async function initPayment() {
       try {
         const token = getToken()
@@ -125,14 +145,14 @@ export default function CheckoutPage() {
           } catch {}
         }
         const payment = tossPayments.payment({ customerKey })
-        if (mounted) paymentRef.current = payment
+        if (active) paymentRef.current = payment
       } catch (err: any) {
-        if (mounted) toast.error(err.message ?? '결제 초기화에 실패했습니다')
+        if (active) toast.error(err.message ?? '결제 초기화에 실패했습니다')
       }
     }
     initPayment()
-    return () => { mounted = false; paymentRef.current = null }
-  }, [orderableItems.length])
+    return () => { active = false; paymentRef.current = null }
+  }, [mounted, orderableItems.length])
 
   function applyAddress(addr: SavedAddress) {
     const savedMemo = addr.delivery_memo ?? ''
@@ -168,7 +188,7 @@ export default function CheckoutPage() {
     setIsSubmitting(true)
     try {
       const token = getToken()
-      if (!token) { toast.error('로그인이 필요합니다.'); router.push('/ko/login'); return }
+      if (!token) { toast.error('로그인이 필요합니다.'); router.push(`/${locale}`); return }
 
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
@@ -189,7 +209,6 @@ export default function CheckoutPage() {
         } catch {}
       }
 
-      // STEP 1: 주문 생성
       const orderBody = {
         items: orderableItems.map(i => ({ product_id: i.productId, option_id: null, quantity: Number(i.quantity)||1 })),
         recipient_name: form.name.trim(), recipient_phone: form.phone.trim(),
@@ -202,7 +221,6 @@ export default function CheckoutPage() {
       if (!orderRes.ok) throw new Error(orderData.detail ?? '주문 생성에 실패했습니다')
       const { order_id, order_no, total_amount } = orderData.data
 
-      // STEP 2: 결제 사전등록
       const orderName = orderableItems.length === 1
         ? orderableItems[0].name
         : `${orderableItems[0].name} 외 ${orderableItems.length - 1}건`
@@ -214,8 +232,6 @@ export default function CheckoutPage() {
       const prepareData = await prepareRes.json()
       if (!prepareRes.ok) throw new Error(prepareData.detail ?? '결제 사전등록에 실패했습니다')
 
-      // STEP 3: 토스 결제 요청
-      // successUrl + failUrl 모두 internal_order_id(UUID) 포함 → 어드민 연동 핵심
       const origin = window.location.origin
       const baseParams = {
         orderId:             order_no,
@@ -223,8 +239,8 @@ export default function CheckoutPage() {
         customerName:        form.name.trim(),
         customerEmail:       form.email.trim() || undefined,
         customerMobilePhone: form.phone.replace(/[^0-9]/g, ''),
-        successUrl: `${origin}/ko/payment/success?internal_order_id=${order_id}`,
-        failUrl:    `${origin}/ko/payment/fail?internal_order_id=${order_id}`,  // ← UUID 포함
+        successUrl: `${origin}/${locale}/payment/success?internal_order_id=${order_id}`,
+        failUrl:    `${origin}/${locale}/payment/fail?internal_order_id=${order_id}`,
         amount: { currency: 'KRW', value: Math.round(total_amount) } as const,
       }
 
@@ -248,6 +264,8 @@ export default function CheckoutPage() {
   const inputCls = 'w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100'
   const labelCls = 'mb-1.5 block text-sm font-medium text-neutral-700 dark:text-neutral-300'
 
+  // ★ 인증 확인 전 또는 장바구니 비어 있으면 빈 화면 (redirect 처리 중)
+  if (!mounted || !getToken()) return null
   if (orderableItems.length === 0) return null
 
   const PAY_METHODS: { key: PayMethod; label: string; desc: string; icon: React.ReactNode }[] = [
@@ -297,7 +315,6 @@ export default function CheckoutPage() {
 
       <div className="flex flex-col gap-10 lg:flex-row">
         <div className="flex-1 space-y-8">
-
           {/* STEP 1 — 배송지 */}
           <section className="rounded-3xl border border-neutral-200 p-6 dark:border-neutral-700">
             <h2 className="mb-5 flex items-center gap-2 text-lg font-bold text-neutral-900 dark:text-neutral-100">
@@ -422,7 +439,6 @@ export default function CheckoutPage() {
               ))}
             </div>
           </section>
-
         </div>
 
         <div className="hidden border-l border-neutral-200 lg:block dark:border-neutral-700" />

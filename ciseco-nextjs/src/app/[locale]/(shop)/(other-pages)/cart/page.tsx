@@ -1,17 +1,22 @@
 'use client'
-// KN541 장바구니 페이지 — 체크박스 부분선택 + 상품별 배송비 + 품절 처리 + 재고 max 연동
+// KN541 장바구니 페이지
+// fix: 폐쇄몰 — 비로그인 시 메인 페이지로 이동
+// fix: locale 동적화, NcInputNumber key 추가
 
 import NcInputNumber from '@/components/NcInputNumber'
 import ButtonPrimary from '@/shared/Button/ButtonPrimary'
 import { Link } from '@/shared/link'
 import { TrashIcon, ShoppingBagIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { useRouter, usePathname } from 'next/navigation'
 import { useCart, calcItemShipping } from '@/lib/cart-context'
 import toast from 'react-hot-toast'
 
 export default function CartPage() {
-  const router = useRouter()
+  const router   = useRouter()
+  const pathname = usePathname()
+  const locale   = pathname.split('/')[1] || 'ko'
   const {
     items, selectedIds,
     removeItem, removeSelected, updateQty,
@@ -19,29 +24,37 @@ export default function CartPage() {
     selectedPrice, selectedShipping, selectedTotal,
   } = useCart()
 
-  const selectedCount   = selectedIds.size
-  // 품절 상품: stockQty === 0
-  const soldOutIds      = new Set(items.filter(i => (i.stockQty ?? 99) <= 0).map(i => i.id))
-  // 선택 중 품절 포함 여부 — 주문하기 전 체크
+  // ★ 비로그인 가드 — 폐쇄몰: 로그인 없으면 메인으로
+  const [authChecked, setAuthChecked] = useState(false)
+  useEffect(() => {
+    const token = localStorage.getItem('access_token')
+    if (!token) {
+      router.replace(`/${locale}`)
+      return
+    }
+    setAuthChecked(true)
+  }, [locale, router])
+
+  // 인증 확인 전 로딩
+  if (!authChecked) {
+    return (
+      <div className="container flex min-h-[60vh] items-center justify-center">
+        <svg className="h-8 w-8 animate-spin text-primary-600" viewBox="0 0 24 24" fill="none">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+        </svg>
+      </div>
+    )
+  }
+
+  const selectedCount = selectedIds.size
+  const soldOutIds    = new Set(items.filter(i => (i.stockQty ?? 99) <= 0).map(i => i.id))
   const hasSelectedSoldOut = [...selectedIds].some(id => soldOutIds.has(id))
 
-  // 주문하기 버튼 클릭
   const handleCheckout = () => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
-    if (!token) {
-      toast.error('로그인 후 주문할 수 있습니다.')
-      router.push('/ko/login?redirect=/ko/cart')
-      return
-    }
-    if (selectedCount === 0) {
-      toast.error('상품을 선택해 주세요.')
-      return
-    }
-    if (hasSelectedSoldOut) {
-      toast.error('품절된 상품이 포함되어 있습니다. 선택을 해제해 주세요.')
-      return
-    }
-    router.push('/ko/checkout')
+    if (selectedCount === 0) { toast.error('상품을 선택해 주세요.'); return }
+    if (hasSelectedSoldOut) { toast.error('품절된 상품이 포함되어 있습니다. 선택을 해제해 주세요.'); return }
+    router.push(`/${locale}/checkout`)
   }
 
   if (items.length === 0) {
@@ -50,7 +63,7 @@ export default function CartPage() {
         <ShoppingBagIcon className="mx-auto mb-6 h-20 w-20 text-neutral-300" />
         <h2 className="text-2xl font-semibold text-neutral-700 dark:text-neutral-300">장바구니가 비어 있습니다</h2>
         <p className="mt-3 text-neutral-500">마음에 드는 상품을 담아보세요.</p>
-        <ButtonPrimary href="/ko/products" className="mt-8">쇼핑 계속하기</ButtonPrimary>
+        <ButtonPrimary href={`/${locale}/products`} className="mt-8">쇼핑 계속하기</ButtonPrimary>
       </div>
     )
   }
@@ -58,13 +71,11 @@ export default function CartPage() {
   return (
     <div className="bg-white dark:bg-neutral-900">
       <main className="container py-16 lg:pt-20 lg:pb-28">
-        {/* 헤더 */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100 lg:text-4xl">장바구니</h1>
           <p className="mt-2 text-sm text-neutral-500">총 {items.length}개 상품</p>
         </div>
 
-        {/* 품절 상품 포함 안내 */}
         {soldOutIds.size > 0 && (
           <div className="mb-4 flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300">
             <ExclamationCircleIcon className="h-4 w-4 shrink-0" />
@@ -73,7 +84,6 @@ export default function CartPage() {
         )}
 
         <div className="flex flex-col gap-10 lg:flex-row">
-          {/* 상품 목록 */}
           <div className="flex-1">
             {/* 전체선택 툴바 */}
             <div className="mb-4 flex items-center justify-between rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 dark:border-neutral-700 dark:bg-neutral-800">
@@ -91,7 +101,6 @@ export default function CartPage() {
               )}
             </div>
 
-            {/* 상품 목록 */}
             <div className="divide-y divide-neutral-200 dark:divide-neutral-700">
               {items.map(item => {
                 const price        = Number(item.price) || 0
@@ -99,7 +108,6 @@ export default function CartPage() {
                 const itemShipping = calcItemShipping(item)
                 const isSelected   = selectedIds.has(item.id)
                 const isSoldOut    = soldOutIds.has(item.id)
-                // 재고 기반 max (stockQty 없는 구형 아이템은 99)
                 const maxQty       = (item.stockQty && item.stockQty > 0) ? item.stockQty : 99
 
                 return (
@@ -107,14 +115,12 @@ export default function CartPage() {
                     className={`flex gap-4 py-6 transition-opacity ${
                       isSelected && !isSoldOut ? '' : 'opacity-50'
                     }`}>
-                    {/* 체크박스 — 품절 시 비활성 */}
                     <div className="flex items-center pt-1">
                       <input type="checkbox" checked={isSelected} onChange={() => !isSoldOut && toggleSelect(item.id)}
                         disabled={isSoldOut}
                         className="h-4 w-4 cursor-pointer rounded border-neutral-300 text-primary-600 focus:ring-primary-500 disabled:cursor-not-allowed" />
                     </div>
 
-                    {/* 이미지 */}
                     <div className="relative h-28 w-24 shrink-0 overflow-hidden rounded-2xl bg-neutral-100 sm:h-32 sm:w-28">
                       {item.image ? (
                         <Image src={item.image} alt={item.name} fill
@@ -124,7 +130,6 @@ export default function CartPage() {
                           <ShoppingBagIcon className="h-10 w-10" />
                         </div>
                       )}
-                      {/* 품절 오버레이 */}
                       {isSoldOut && (
                         <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/50">
                           <span className="text-xs font-bold text-white">품절</span>
@@ -132,7 +137,6 @@ export default function CartPage() {
                       )}
                     </div>
 
-                    {/* 상품 정보 */}
                     <div className="flex flex-1 flex-col">
                       <div className="flex items-start justify-between">
                         <div>
@@ -159,11 +163,11 @@ export default function CartPage() {
                       </div>
 
                       <div className="mt-auto flex items-center justify-between pt-4">
-                        {/* 수량 — 품절 시 비활성, max는 재고 기반 */}
+                        {/* ★ key={item.id}로 수량 컴포넌트 재마운트 보장 */}
                         {isSoldOut ? (
                           <span className="rounded-full border border-red-200 px-3 py-1.5 text-xs text-red-400">품절</span>
                         ) : (
-                          <NcInputNumber defaultValue={qty} min={1} max={maxQty}
+                          <NcInputNumber key={item.id} defaultValue={qty} min={1} max={maxQty}
                             onChange={val => updateQty(item.id, val)} />
                         )}
                         <div className="text-right">
@@ -182,7 +186,7 @@ export default function CartPage() {
             </div>
 
             <div className="mt-6">
-              <Link href="/ko/products"
+              <Link href={`/${locale}/products`}
                 className="inline-flex items-center gap-2 text-sm font-medium text-primary-600 hover:text-primary-500">
                 <span>←</span><span>쇼핑 계속하기</span>
               </Link>
