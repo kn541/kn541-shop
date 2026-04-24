@@ -1,7 +1,7 @@
 'use client'
 // KN541 장바구니 전역 Context
 // localStorage('kn541_cart')에 저장 → 새로고침 후에도 유지
-// CartProvider를 [locale]/layout.tsx에 감싸서 전역 사용
+// 구형 데모 데이터(productId 없음) 자동 정리
 
 import {
   createContext,
@@ -10,69 +10,85 @@ import {
   useEffect,
   useState,
 } from 'react'
-import toast from 'react-hot-toast'
 
 export interface CartItem {
-  id: string        // 장바구니 고유 ID (productId + option 조합)
-  productId: string // 상품 UUID
+  id: string
+  productId: string
   name: string
   price: number
   quantity: number
   image: string
-  option?: string   // 선택 옵션 (색상·사이즈 등)
-  // 상품별 배송비 정보 (product_shipping 테이블 기준)
-  // KN541 sc_type: 1=무료, 2=조건부무료, 3=유료건당, 4=유료수량별
-  shippingFee: number       // 배송비 (0이면 무료)
-  freeShippingOver: number  // sc_type=2 조건부무료 기준금액 (0이면 조건 없음)
+  option?: string
+  shippingFee: number
+  freeShippingOver: number
   scType: number
+  stockQty: number   // 재고 수량 — 장바구니 max 제한 + 품절 표시용
 }
 
 interface CartContextValue {
   items: CartItem[]
+  selectedIds: Set<string>
   addItem: (item: Omit<CartItem, 'id'>) => void
   removeItem: (id: string) => void
+  removeSelected: () => void
   updateQty: (id: string, qty: number) => void
   clearCart: () => void
-  totalCount: number    // 총 수량 (배지용)
-  totalPrice: number    // 총 상품 금액 (배송비 제외)
-  totalShipping: number // 총 배송비 (상품별 합산)
+  toggleSelect: (id: string) => void
+  toggleSelectAll: () => void
+  totalCount: number
+  totalPrice: number
+  totalShipping: number
+  selectedPrice: number
+  selectedShipping: number
+  selectedTotal: number
+  isAllSelected: boolean
 }
 
 const CartContext = createContext<CartContextValue | null>(null)
-
 const STORAGE_KEY = 'kn541_cart'
+
+/** KN541 정식 상품 여부 — productId(UUID)가 있어야 함 */
+function isValidItem(item: any): boolean {
+  return typeof item.productId === 'string' && item.productId.includes('-')
+}
 
 /**
  * 상품 1개의 배송비 계산
- * KN541 sc_type: 1=무료, 2=조건부무료, 3=유료건당, 4=유료수량별
- *
- * - sc_type=1 (무료) 또는 shippingFee=0 → 무료
- * - sc_type=2 (조건부무료): 상품 소계 >= freeShippingOver → 무료
- * - sc_type=3/4 (유료): shippingFee 적용
+ * 구형 아이템(shippingFee/scType 없음)도 0으로 안전하게 반환
  */
-export function calcItemShipping(item: CartItem): number {
-  const subtotal = item.price * item.quantity
-  // sc_type=1(무료배송) 또는 배송비=0이면 무료
-  if (item.scType === 1 || item.shippingFee === 0) return 0
-  // sc_type=2(조건부무료): 소계가 무료기준금액 이상이면 무료
-  if (item.scType === 2 && item.freeShippingOver > 0 && subtotal >= item.freeShippingOver) return 0
-  return item.shippingFee
+export function calcItemShipping(item: any): number {
+  const price    = Number(item.price ?? 0)
+  const qty      = Number(item.quantity ?? 1)
+  const subtotal = price * qty
+  const fee      = Number(item.shippingFee ?? 0)
+  const scType   = Number(item.scType ?? 1)
+  const freeOver = Number(item.freeShippingOver ?? 0)
+
+  if (scType === 1 || fee === 0) return 0
+  if (scType === 2 && freeOver > 0 && subtotal >= freeOver) return 0
+  return fee
 }
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [hydrated, setHydrated] = useState(false)
 
-  // 클라이언트 마운트 시 localStorage에서 복원 (SSR 하이드레이션 불일치 방지)
+  // localStorage 로드 — 구형 데모 데이터 자동 필터링
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY)
-      if (raw) setItems(JSON.parse(raw))
+      if (raw) {
+        const parsed: any[] = JSON.parse(raw)
+        const valid = parsed.filter(isValidItem)
+        setItems(valid)
+        setSelectedIds(new Set(valid.map((i: any) => i.id)))
+      }
     } catch {}
     setHydrated(true)
   }, [])
 
-  // items 변경 시 localStorage 동기화
+  // localStorage 저장
   useEffect(() => {
     if (!hydrated) return
     try {
@@ -80,45 +96,80 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     } catch {}
   }, [items, hydrated])
 
-  // 장바구니 담기 — 동일 상품+옵션이면 수량만 증가
   const addItem = useCallback((newItem: Omit<CartItem, 'id'>) => {
     const id = `${newItem.productId}__${newItem.option ?? ''}`
-    setItems((prev) => {
-      const existing = prev.find((i) => i.id === id)
+    setItems(prev => {
+      const existing = prev.find(i => i.id === id)
       if (existing) {
-        return prev.map((i) =>
-          i.id === id ? { ...i, quantity: i.quantity + newItem.quantity } : i
-        )
+        // 수량 합산 시 재고 초과 방지
+        const maxStock = newItem.stockQty > 0 ? newItem.stockQty : 99
+        const newQty   = Math.min(existing.quantity + newItem.quantity, maxStock)
+        return prev.map(i => i.id === id ? { ...i, quantity: newQty, stockQty: newItem.stockQty } : i)
       }
       return [...prev, { ...newItem, id }]
     })
+    setSelectedIds(prev => new Set([...prev, id]))
   }, [])
 
-  // 아이템 삭제
   const removeItem = useCallback((id: string) => {
-    setItems((prev) => prev.filter((i) => i.id !== id))
+    setItems(prev => prev.filter(i => i.id !== id))
+    setSelectedIds(prev => { const s = new Set(prev); s.delete(id); return s })
   }, [])
 
-  // 수량 변경
+  const removeSelected = useCallback(() => {
+    setItems(prev => prev.filter(i => !selectedIds.has(i.id)))
+    setSelectedIds(new Set())
+  }, [selectedIds])
+
   const updateQty = useCallback((id: string, qty: number) => {
-    setItems((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, quantity: Math.max(1, qty) } : i))
-    )
+    setItems(prev => prev.map(i => {
+      if (i.id !== id) return i
+      const maxStock = i.stockQty > 0 ? i.stockQty : 99
+      return { ...i, quantity: Math.min(Math.max(1, qty), maxStock) }
+    }))
   }, [])
 
-  // 장바구니 비우기
   const clearCart = useCallback(() => {
     setItems([])
+    setSelectedIds(new Set())
   }, [])
 
-  const totalCount    = items.reduce((sum, i) => sum + i.quantity, 0)
-  const totalPrice    = items.reduce((sum, i) => sum + i.price * i.quantity, 0)
-  const totalShipping = items.reduce((sum, i) => sum + calcItemShipping(i), 0)
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const s = new Set(prev)
+      s.has(id) ? s.delete(id) : s.add(id)
+      return s
+    })
+  }, [])
+
+  const isAllSelected = items.length > 0 && items.every(i => selectedIds.has(i.id))
+
+  const toggleSelectAll = useCallback(() => {
+    if (isAllSelected) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(items.map(i => i.id)))
+    }
+  }, [isAllSelected, items])
+
+  const totalCount    = items.reduce((s, i) => s + (Number(i.quantity) || 0), 0)
+  const totalPrice    = items.reduce((s, i) => s + (Number(i.price) || 0) * (Number(i.quantity) || 0), 0)
+  const totalShipping = items.reduce((s, i) => s + calcItemShipping(i), 0)
+
+  const selectedItems    = items.filter(i => selectedIds.has(i.id))
+  const selectedPrice    = selectedItems.reduce((s, i) => s + (Number(i.price) || 0) * (Number(i.quantity) || 0), 0)
+  const selectedShipping = selectedItems.reduce((s, i) => s + calcItemShipping(i), 0)
+  const selectedTotal    = selectedPrice + selectedShipping
 
   return (
-    <CartContext.Provider
-      value={{ items, addItem, removeItem, updateQty, clearCart, totalCount, totalPrice, totalShipping }}
-    >
+    <CartContext.Provider value={{
+      items, selectedIds,
+      addItem, removeItem, removeSelected, updateQty, clearCart,
+      toggleSelect, toggleSelectAll,
+      totalCount, totalPrice, totalShipping,
+      selectedPrice, selectedShipping, selectedTotal,
+      isAllSelected,
+    }}>
       {children}
     </CartContext.Provider>
   )

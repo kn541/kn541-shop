@@ -1,9 +1,9 @@
 // KN541 상품목록 페이지
 // fix: product_status 'ACTIVE' 필터 제거 (실제 DB는 ON_SALE)
-// fix: id/handle → product_id(UUID) 기반 (상세페이지 UUID 직접 조회)
+// fix: handle = product_id(UUID) 기반 (상세페이지 UUID 직접 조회)
 // fix: 백엔드 category_id OR 조건 지원으로 대/중/소분류 모두 매칭
 // fix: BASE URL fallback 추가 (env var 미설정 시에도 동작)
-// fix: console.error 로깅 추가 (Vercel 런타임 로그에서 원인 추적)
+// fix: 실제 페이지네이션 구현 (page/size 파라미터)
 
 import { Suspense } from 'react'
 import ProductsPageClient from './ProductsPageClient'
@@ -14,6 +14,9 @@ const BASE =
   process.env.NEXT_PUBLIC_API_URL ||
   process.env.API_URL ||
   'https://kn541-production.up.railway.app'
+
+// 페이지당 상품 수
+const PAGE_SIZE = 20
 
 export const metadata: Metadata = {
   title: '상품목록 | KN541',
@@ -52,7 +55,6 @@ function flattenCategories(items: any[]): CategoryInfo[] {
 async function fetchAllCategories(): Promise<CategoryInfo[]> {
   try {
     const url = `${BASE}/categories`
-    console.log('[products] fetchAllCategories URL:', url)
     const res = await fetch(url, { cache: 'no-store' })
     if (!res.ok) {
       console.error('[products] fetchAllCategories HTTP error:', res.status, res.statusText)
@@ -60,7 +62,7 @@ async function fetchAllCategories(): Promise<CategoryInfo[]> {
     }
     const data = await res.json()
     const raw = data?.data?.items ?? []
-    console.log('[products] fetchAllCategories count:', raw.length)
+    console.log('[products] 카테고리 수:', raw.length)
     return flattenCategories(raw)
   } catch (err) {
     console.error('[products] fetchAllCategories 예외:', err)
@@ -68,12 +70,12 @@ async function fetchAllCategories(): Promise<CategoryInfo[]> {
   }
 }
 
-/** 상품 매핑 — product_id(UUID) 기반 */
+/** 상품 매핑 — product_id(UUID) 기반, adapters.ts와 일치 */
 function mapProduct(p: any) {
   const pid = String(p.product_id || p.id || '')
   return {
     id: pid,
-    // ★ handle = UUID → 쇼핑몰 상세페이지에서 getProductById 직접 조회 (빠름)
+    // ★ handle = UUID → 쇼핑몰 상세페이지에서 getProductById 직접 조회
     handle: pid,
     title: p.product_name,
     price: p.sale_price,
@@ -85,50 +87,68 @@ function mapProduct(p: any) {
     images: [],
     reviewNumber: 0,
     rating: 0,
-    // ★ 실제 product_status 값 기반 (ON_SALE / SOLDOUT 등)
     status: (
-      p.product_status === 'SOLDOUT' || p.is_soldout ? 'Sold Out'
-      : p.is_new ? 'New in'
-      : 'In Stock'
+      p.product_status === 'SOLDOUT' || p.is_soldout
+        ? 'Sold Out'
+        : p.is_new
+          ? 'New in'
+          : 'In Stock'
     ),
     options: [],
     selectedOptions: [],
   }
 }
 
-async function fetchProducts(categoryId?: string): Promise<any[]> {
+interface FetchProductsResult {
+  products: any[]
+  total: number
+}
+
+async function fetchProducts(params: {
+  categoryId?: string
+  page: number
+  size: number
+}): Promise<FetchProductsResult> {
   try {
-    // ★ product_status 필터 제거: 실제 DB 값은 'ON_SALE'이므로 'ACTIVE' 필터 시 0개 반환
-    // ★ 백엔드가 category_id OR 조건 지원: category_id_1/category_id_2/category_id 모두 매칭
-    const qs = new URLSearchParams({ size: '40' })
-    if (categoryId) qs.set('category_id', categoryId)
+    const qs = new URLSearchParams({
+      size: String(params.size),
+      page: String(params.page),
+    })
+    if (params.categoryId) qs.set('category_id', params.categoryId)
     const url = `${BASE}/products?${qs}`
     console.log('[products] fetchProducts URL:', url)
     const res = await fetch(url, { cache: 'no-store' })
     if (!res.ok) {
       console.error('[products] fetchProducts HTTP error:', res.status, res.statusText)
-      return []
+      return { products: [], total: 0 }
     }
     const data = await res.json()
     const items = data?.data?.items ?? []
-    console.log('[products] fetchProducts count:', items.length, '| data keys:', Object.keys(data))
-    return items.map(mapProduct)
+    const total = data?.data?.total ?? 0
+    console.log('[products] 상품 수:', items.length, '/ 전체:', total)
+    return { products: items.map(mapProduct), total }
   } catch (err) {
     console.error('[products] fetchProducts 예외:', err)
-    return []
+    return { products: [], total: 0 }
   }
 }
 
 export default async function ProductsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ cid?: string }>
+  searchParams: Promise<{ cid?: string; page?: string }>
 }) {
-  const { cid } = await searchParams
-  const allCategories = await fetchAllCategories()
-  const products = await fetchProducts(cid)
+  const { cid, page: pageParam } = await searchParams
+  const currentPage = Math.max(1, Number(pageParam) || 1)
 
-  console.log('[products] 렌더링 — 카테고리:', allCategories.length, '| 상품:', products.length)
+  const [allCategories, { products, total }] = await Promise.all([
+    fetchAllCategories(),
+    fetchProducts({ categoryId: cid, page: currentPage, size: PAGE_SIZE }),
+  ])
+
+  console.log('[products] 렌더링 — 카테고리:', allCategories.length, '| 상품:', products.length, '| 전체:', total)
+
+  const totalPages = Math.ceil(total / PAGE_SIZE)
 
   const currentCategory = cid
     ? allCategories.find((c) => c.id === String(cid)) ?? null
@@ -139,9 +159,7 @@ export default async function ProductsPage({
     let cur: CategoryInfo | undefined = currentCategory
     while (cur) {
       breadcrumbs.unshift(cur)
-      cur = cur.parent_id
-        ? allCategories.find((c) => c.id === cur!.parent_id)
-        : undefined
+      cur = cur.parent_id ? allCategories.find((c) => c.id === cur!.parent_id) : undefined
     }
   }
 
@@ -166,6 +184,9 @@ export default async function ProductsPage({
         currentCategory={currentCategory}
         breadcrumbs={breadcrumbs}
         childCategories={childCategories}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        total={total}
       />
     </Suspense>
   )
