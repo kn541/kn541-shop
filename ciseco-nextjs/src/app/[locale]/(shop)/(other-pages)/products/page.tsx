@@ -1,7 +1,7 @@
 // KN541 상품목록 페이지
 // fix: sort URL 파라미터 → 백엔드 sort_by/sort_order 전달
-// fix: 상품 mapProduct에 delivery(배송비) 정보 포함 → 카드 무료배송 뱃지 표시
-// fix: is_new/is_best/is_sale/is_soldout 상태 정확히 매핑
+// fix: 상품 mapProduct 상태값 한국어화 (In Stock→판매중, Sold Out→품절)
+// fix: 배송비 정보 포함 → 카드 무료배송 뱃지
 
 import { Suspense } from 'react'
 import ProductsPageClient from './ProductsPageClient'
@@ -65,23 +65,24 @@ async function fetchAllCategories(): Promise<CategoryInfo[]> {
 // ★ sort 값 → 백엔드 파라미터 매핑
 function parseSortParam(sort?: string): { sort_by?: string; sort_order?: string } {
   switch (sort) {
-    case 'newest':   return { sort_by: 'created_at', sort_order: 'desc' }
-    case 'oldest':   return { sort_by: 'created_at', sort_order: 'asc' }
-    case 'price_asc':  return { sort_by: 'sale_price', sort_order: 'asc' }
-    case 'price_desc': return { sort_by: 'sale_price', sort_order: 'desc' }
-    case 'name_asc':   return { sort_by: 'product_name', sort_order: 'asc' }
-    case 'name_desc':  return { sort_by: 'product_name', sort_order: 'desc' }
+    case 'newest':    return { sort_by: 'created_at', sort_order: 'desc' }
+    case 'oldest':    return { sort_by: 'created_at', sort_order: 'asc' }
+    case 'price_asc': return { sort_by: 'sale_price', sort_order: 'asc' }
+    case 'price_desc':return { sort_by: 'sale_price', sort_order: 'desc' }
+    case 'name_asc':  return { sort_by: 'product_name', sort_order: 'asc' }
+    case 'name_desc': return { sort_by: 'product_name', sort_order: 'desc' }
     default: return {}
   }
 }
 
-/** 상품 매핑 — product_id(UUID) + 배송비 정보 포함 */
+/** 상품 매핑 — product_id(UUID) + 배송비 + 한국어 상태값 */
 function mapProduct(p: any) {
   const pid = String(p.product_id || p.id || '')
 
-  // 상태 결정
-  let status = 'In Stock'
-  if (p.product_status === 'SOLDOUT' || p.is_soldout) status = 'Sold Out'
+  // ★ 상태값 한국어화
+  let status = '판매중'
+  if (p.product_status === 'SOLDOUT' || p.is_soldout) status = '품절'
+  else if (p.product_status === 'DISCONTINUED' || p.is_discontinued) status = '판매종료'
   else if (p.is_new) status = '신상품'
   else if (p.is_best) status = '베스트'
   else if (p.is_sale) status = '할인'
@@ -129,7 +130,6 @@ async function fetchProducts(params: {
     })
     if (params.categoryId) qs.set('category_id', params.categoryId)
 
-    // ★ 정렬 파라미터 백엔드 전달
     const sortParams = parseSortParam(params.sort)
     if (sortParams.sort_by) qs.set('sort_by', sortParams.sort_by)
     if (sortParams.sort_order) qs.set('sort_order', sortParams.sort_order)
