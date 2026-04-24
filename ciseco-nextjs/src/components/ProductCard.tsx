@@ -1,5 +1,13 @@
 'use client'
 
+// KN541 상품 카드
+// fix: alt=UUID → alt=상품명
+// fix: "Add to bag" → "장바구니", "Quick view" → "빠른보기"
+// fix: 상품명 line-clamp-2 (카드 높이 균일화)
+// fix: 별점/리뷰 0이면 미표시
+// feat: 무료배송 뱃지
+// feat: 사전예약/신상품/베스트/할인 뱃지 정비
+
 import { TProductItem } from '@/data/data'
 import NcImage from '@/shared/NcImage/NcImage'
 import { Link } from '@/shared/link'
@@ -22,15 +30,32 @@ const ProductCard: FC<Props> = ({ className = '', data, isLiked }) => {
   const { title, price, status, rating, options, handle, selectedOptions, reviewNumber, images, featuredImage } = data
   const color = selectedOptions?.find((option) => option.name === 'Color')?.value
 
+  // 배송 정보 (adapters.ts에서 delivery 객체로 전달됨)
+  const delivery = (data as any).delivery as {
+    sc_type?: number
+    shipping_fee?: number
+    free_over?: number | null
+  } | undefined
+  const isFreeShipping = delivery?.sc_type === 1 || (delivery?.shipping_fee ?? 0) === 0
+
+  // 사전예약 여부 — 상품명에 [사전예약] 포함 시
+  const isPreOrder = typeof title === 'string' && title.includes('[사전예약]')
+
+  // 뱃지 결정 (우선순위: 사전예약 > 신상품 > 베스트 > 할인)
+  const getBadge = () => {
+    if (isPreOrder) return { label: '사전예약', className: 'bg-violet-100 text-violet-700' }
+    if (status === '신상품' || status === 'New in') return { label: 'NEW', className: 'bg-blue-100 text-blue-700' }
+    if (status === '베스트' || status === 'Best Seller') return { label: 'BEST', className: 'bg-amber-100 text-amber-700' }
+    if (status === '할인' || status === 'Sale') return { label: 'SALE', className: 'bg-red-100 text-red-600' }
+    return null
+  }
+  const badge = getBadge()
+
   const { open: openAside, setProductQuickViewHandle } = useAside()
 
   const renderColorOptions = () => {
     const optionColorValues = options?.find((option) => option.name === 'Color')?.optionValues
-
-    if (!optionColorValues?.length) {
-      return null
-    }
-
+    if (!optionColorValues?.length) return null
     return (
       <div className="flex gap-2">
         {optionColorValues.map((color) => (
@@ -62,7 +87,8 @@ const ProductCard: FC<Props> = ({ className = '', data, isLiked }) => {
           color={selectedOptions?.find((option) => option.name === 'Color')?.value}
         >
           <ShoppingBagIcon className="-ml-1 size-3.5" />
-          <span>Add to bag</span>
+          {/* ★ 한국어 버튼 */}
+          <span>장바구니</span>
         </AddToCardButton>
 
         <button
@@ -74,7 +100,8 @@ const ProductCard: FC<Props> = ({ className = '', data, isLiked }) => {
           }}
         >
           <ArrowsPointingOutIcon className="-ml-1 size-3.5" />
-          <span>Quick view</span>
+          {/* ★ 한국어 버튼 */}
+          <span>빠른보기</span>
         </button>
       </div>
     )
@@ -94,7 +121,8 @@ const ProductCard: FC<Props> = ({ className = '', data, isLiked }) => {
                 className="h-full w-full object-cover"
                 fill
                 sizes="(max-width: 640px) 100vw, (max-width: 1200px) 50vw, 40vw"
-                alt={handle}
+                {/* ★ alt = 상품명 (UUID 제거) */}
+                alt={title || '상품 이미지'}
               />
             )}
           </Link>
@@ -103,22 +131,44 @@ const ProductCard: FC<Props> = ({ className = '', data, isLiked }) => {
           {renderGroupButtons()}
         </div>
 
-        <div className="space-y-4 px-2.5 pt-5 pb-2.5">
+        <div className="space-y-3 px-2.5 pt-4 pb-2.5">
           {renderColorOptions()}
+
           <div>
-            <h2 className="nc-ProductCard__title text-base font-semibold transition-colors">{title}</h2>
-            <p className={`mt-1 text-sm text-neutral-500 dark:text-neutral-400`}>{color}</p>
+            {/* ★ 뱃지 (사전예약/NEW/BEST/SALE) */}
+            {badge && (
+              <span className={`mb-1.5 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${badge.className}`}>
+                {badge.label}
+              </span>
+            )}
+            {/* ★ 상품명 2줄 제한 */}
+            <h2 className="nc-ProductCard__title line-clamp-2 text-sm font-semibold leading-snug transition-colors text-neutral-900 dark:text-neutral-100">
+              {title}
+            </h2>
           </div>
 
-          <div className="flex items-end justify-between">
-            <Prices price={price ?? 1} />
-            <div className="mb-0.5 flex items-center">
-              <StarIcon className="h-5 w-5 pb-px text-amber-400" />
-              <span className="ms-1 text-sm text-neutral-500 dark:text-neutral-400">
-                {rating || ''} ({reviewNumber || 0} reviews)
+          <div className="flex items-center justify-between gap-2">
+            {/* ★ 가격 (원화) */}
+            <Prices price={price ?? 0} contentClass="py-0 text-sm" />
+
+            {/* ★ 무료배송 뱃지 */}
+            {isFreeShipping && (
+              <span className="rounded-full bg-teal-50 px-2 py-0.5 text-xs font-medium text-teal-700 dark:bg-teal-900/30 dark:text-teal-400 whitespace-nowrap">
+                무료배송
+              </span>
+            )}
+          </div>
+
+          {/* ★ 별점/리뷰 — 0이면 미표시 */}
+          {(rating ?? 0) > 0 && (
+            <div className="flex items-center gap-1">
+              <StarIcon className="h-4 w-4 text-amber-400" />
+              <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                {rating}
+                {(reviewNumber ?? 0) > 0 && ` (${reviewNumber})`}
               </span>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </>
