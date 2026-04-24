@@ -1,250 +1,360 @@
 'use client'
 
-import AccordionInfo from '@/components/AccordionInfo'
-import IconDiscount from '@/components/IconDiscount'
+// KN541 빠른보기(Quick View) — 전면 개편
+// fix: getProductById + adaptProduct 직접 사용 (불필요한 우회 제거)
+// fix: 이미지 src 불일치 수정 (images[0].src 사용)
+// fix: 장바구니 실제 연동 (useCart().addItem)
+// fix: 로딩 스켈레톤 추가
+// fix: 영문 텍스트 한국어화
+// fix: 더미 AccordionInfo → 실제 상품 설명 + 배송 정보
+// fix: 별점 0이면 숨기기
+// feat: 배송비 정보 표시
+// feat: KN541 옵션(add_price 기반) 선택 UI
+
 import LikeButton from '@/components/LikeButton'
 import NcInputNumber from '@/components/NcInputNumber'
 import Prices from '@/components/Prices'
-import { TProductDetail, getProductDetailByHandle } from '@/data/data'
-import ButtonPrimary from '@/shared/Button/ButtonPrimary'
+import { getProductById } from '@/lib/api/products'
+import { adaptProduct } from '@/lib/adapters'
+import { useCart } from '@/lib/cart-context'
 import { Link } from '@/shared/link'
-import { ClockIcon, NoSymbolIcon, SparklesIcon } from '@heroicons/react/24/outline'
+import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react'
+import { MinusIcon, PlusIcon } from '@heroicons/react/24/outline'
 import { StarIcon } from '@heroicons/react/24/solid'
 import { ShoppingBag03Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import Image from 'next/image'
-import { FC, useEffect, useState } from 'react'
-import { Divider } from './Divider'
-import ProductColorOptions from './ProductForm/ProductColorOptions'
-import ProductForm from './ProductForm/ProductForm'
-import ProductSizeOptions from './ProductForm/ProductSizeOptions'
+import { usePathname } from 'next/navigation'
+import { FC, useEffect, useMemo, useState } from 'react'
+import toast from 'react-hot-toast'
 import { useAside } from './aside'
 
 interface ProductQuickViewProps {
   className?: string
 }
 
+// ── 로딩 스켈레톤 ──────────────────────────────────────────
+function QuickViewSkeleton() {
+  return (
+    <div className="lg:flex animate-pulse gap-8">
+      <div className="w-full lg:w-[50%]">
+        <div className="aspect-square rounded-xl bg-neutral-200 dark:bg-neutral-700" />
+      </div>
+      <div className="w-full pt-6 lg:w-[50%] lg:pt-0 space-y-4">
+        <div className="h-7 rounded bg-neutral-200 dark:bg-neutral-700 w-3/4" />
+        <div className="h-5 rounded bg-neutral-200 dark:bg-neutral-700 w-1/3" />
+        <div className="h-10 rounded bg-neutral-200 dark:bg-neutral-700 w-1/4 mt-4" />
+        <div className="h-12 rounded-full bg-neutral-200 dark:bg-neutral-700 mt-6" />
+      </div>
+    </div>
+  )
+}
+
+// ── 배송비 텍스트 생성 ─────────────────────────────────────
+function getShippingText(scType: number, shippingFee: number, freeShippingOver: number): string {
+  if (scType === 1 || shippingFee === 0) return '무료배송'
+  const feeStr = shippingFee.toLocaleString('ko-KR')
+  if (freeShippingOver > 0) {
+    return `${feeStr}원 (${freeShippingOver.toLocaleString('ko-KR')}원 이상 무료)`
+  }
+  return `${feeStr}원`
+}
+
 const ProductQuickView: FC<ProductQuickViewProps> = ({ className }) => {
-  const { productQuickViewHandle: handle } = useAside()
+  const { productQuickViewHandle: handle, close } = useAside()
+  const { addItem } = useCart()
+  const pathname = usePathname()
 
-  const [product, setProduct] = useState<TProductDetail>()
+  const [product, setProduct] = useState<any>(null)
+  const [loading, setLoading] = useState(false)
+  const [qty, setQty] = useState(1)
+  const [selectedOption, setSelectedOption] = useState<string>('')
 
-  // Fetch product details by handle when the component mounts or when the handle changes
+  // ── 상품 데이터 조회 ─────────────────────────────────────
   useEffect(() => {
-    if (!handle) {
-      return
-    }
+    if (!handle) return
+    setLoading(true)
+    setProduct(null)
+    setQty(1)
+    setSelectedOption('')
 
-    const fetchProduct = async () => {
-      const response = await getProductDetailByHandle(handle)
-      if (!response) {
-        return
-      }
-      setProduct(response)
-    }
-    fetchProduct()
+    getProductById(handle)
+      .then((raw) => setProduct(adaptProduct(raw)))
+      .catch(() => setProduct(null))
+      .finally(() => setLoading(false))
   }, [handle])
 
-  if (!product) {
-    return null
+  if (loading) return <QuickViewSkeleton />
+  if (!product) return null
+
+  const {
+    id: productId,
+    title,
+    status,
+    featuredImage,
+    images,
+    rating,
+    reviewNumber,
+    price,
+    description,
+  } = product
+
+  // 배송 정보
+  const delivery = product.delivery || {}
+  const shippingFee = Number(delivery.shipping_fee ?? 0)
+  const freeShippingOver = Number(delivery.free_over ?? 0)
+  const scType = Number(delivery.sc_type ?? 1)
+  const returnFee = Number(delivery.return_fee ?? 0)
+  const deliveryDays = Number(delivery.delivery_days ?? 3)
+  const shippingText = getShippingText(scType, shippingFee, freeShippingOver)
+  const returnText = returnFee > 0 ? `반품 ${returnFee.toLocaleString('ko-KR')}원` : '반품 무료'
+  const isFreeShipping = scType === 1 || shippingFee === 0
+
+  const stockQty = Number(product.stockQty ?? 0)
+  const maxQty = Math.max(1, Math.min(99, stockQty || 1))
+
+  // KN541 옵션 — {id, option_name, add_price, stock_qty} 형태
+  const kn541Options: Array<{ id: string; option_name: string; add_price: number; stock_qty: number }> =
+    Array.isArray(product.options) ? product.options : []
+
+  // 현재 선택 옵션의 추가 금액
+  const selectedOptionObj = kn541Options.find((o) => o.id === selectedOption)
+  const addPrice = selectedOptionObj?.add_price ?? 0
+  const totalPrice = (price ?? 0) + addPrice
+
+  // 이미지 목록 (중복 제거)
+  const allImageSrcs: string[] = [
+    featuredImage?.src,
+    ...(images || []).map((i: any) => i?.src),
+  ]
+    .filter(Boolean)
+    .filter((src: string, idx: number, arr: string[]) => arr.indexOf(src) === idx)
+
+  const mainImageSrc = allImageSrcs[0] || '/placeholder-product.jpg'
+  const subImages = allImageSrcs.slice(1, 3)
+
+  // 상세 페이지 URL
+  const locale = pathname.split('/')[1] || 'ko'
+  const detailUrl = `/${locale}/products/${handle}`
+
+  // 구매 가능 여부
+  const isSoldOut = stockQty === 0 || status === '품절' || status === 'Sold Out'
+  const canBuy = !isSoldOut
+
+  // 장바구니 담기
+  const handleAddToCart = () => {
+    if (!canBuy) { toast.error('품절된 상품입니다.'); return }
+    if (kn541Options.length > 0 && !selectedOption) {
+      toast.error('옵션을 선택해 주세요.')
+      return
+    }
+    addItem({
+      productId: String(productId || handle),
+      name: title || '',
+      price: totalPrice,
+      quantity: qty,
+      image: mainImageSrc,
+      option: selectedOptionObj?.option_name,
+      shippingFee,
+      freeShippingOver,
+      scType,
+      stockQty,
+    })
+    toast.success('장바구니에 담겼습니다!', { duration: 2500 })
+    close('product-quick-view')
   }
 
-  const { title, status, featuredImage, rating, reviewNumber, options, price, selectedOptions, images } = product
-  const sizeSelected = selectedOptions?.find((option) => option.name === 'Size')?.value || ''
-  const colorSelected = selectedOptions?.find((option) => option.name === 'Color')?.value || ''
-
-  const renderStatus = () => {
-    if (!status) {
-      return null
-    }
-    const CLASSES =
-      'absolute top-3 start-3 px-2.5 py-1.5 text-xs bg-white dark:bg-neutral-900 nc-shadow-lg rounded-full flex items-center justify-center text-neutral-700 text-neutral-900 dark:text-neutral-300'
-    if (status === 'New in') {
-      return (
-        <div className={CLASSES}>
-          <SparklesIcon className="h-3.5 w-3.5" />
-          <span className="ms-1 leading-none">{status}</span>
-        </div>
-      )
-    }
-    if (status === '50% Discount') {
-      return (
-        <div className={CLASSES}>
-          <IconDiscount className="h-3.5 w-3.5" />
-          <span className="ms-1 leading-none">{status}</span>
-        </div>
-      )
-    }
-    if (status === 'Sold Out') {
-      return (
-        <div className={CLASSES}>
-          <NoSymbolIcon className="h-3.5 w-3.5" />
-          <span className="ms-1 leading-none">{status}</span>
-        </div>
-      )
-    }
-    if (status === 'limited edition') {
-      return (
-        <div className={CLASSES}>
-          <ClockIcon className="h-3.5 w-3.5" />
-          <span className="ms-1 leading-none">{status}</span>
-        </div>
-      )
-    }
-    return null
-  }
-
-  const renderSectionContent = () => {
-    return (
-      <div className="space-y-8">
-        {/* ---------- 1 HEADING ----------  */}
-        <div>
-          <h2 className="text-3xl font-semibold">
-            <Link href={`/products/${handle}`}>{title}</Link>
-          </h2>
-
-          <div className="mt-5 flex flex-wrap items-center justify-start gap-x-4 gap-y-1.5 sm:gap-x-5 rtl:justify-end">
-            <Prices contentClass="py-1 px-2 md:py-1.5 md:px-3 text-lg font-semibold" price={price || 1} />
-            <div className="h-6 border-s border-neutral-300 dark:border-neutral-700"></div>
-            <div className="flex items-center">
-              <Link href={'/products/' + handle} className="flex items-center text-sm font-medium">
-                <StarIcon className="h-5 w-5 pb-px text-yellow-400" />
-                <div className="ms-1.5 flex">
-                  <span>{rating}</span>
-                  <span className="mx-2 block">·</span>
-                  <span className="text-neutral-600 underline dark:text-neutral-400">{reviewNumber} reviews</span>
-                </div>
-              </Link>
-              <span className="mx-2.5 hidden sm:block">·</span>
-              <div className="hidden items-center text-sm sm:flex">
-                <SparklesIcon className="h-3.5 w-3.5" />
-                <span className="ms-1 leading-none">{status}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ---------- 3 VARIANTS AND SIZE LIST ----------  */}
-        <ProductForm product={product}>
-          <fieldset className="flex flex-col gap-y-10">
-            {/* ---------- 3 VARIANTS AND SIZE LIST ----------  */}
-            <div className="flex flex-col gap-y-8">
-              <ProductColorOptions options={options} defaultColor={colorSelected} />
-              <ProductSizeOptions options={options} defaultSize={sizeSelected} />
-            </div>
-
-            {/*  ---------- 4  QTY AND ADD TO CART BUTTON */}
-            <div className="flex gap-x-3.5">
-              <div className="flex items-center justify-center rounded-full bg-neutral-100/70 px-2 py-3 sm:p-3.5 dark:bg-neutral-800/70">
-                <NcInputNumber name="quantity" defaultValue={1} />
-              </div>
-
-              <ButtonPrimary className="flex-1" type="submit">
-                <HugeiconsIcon
-                  icon={ShoppingBag03Icon}
-                  size={20}
-                  color="currentColor"
-                  className="hidden sm:block"
-                  strokeWidth={1.5}
-                />
-                <span className="text-base/6 font-normal sm:ml-2.5">Add to cart</span>
-              </ButtonPrimary>
-            </div>
-          </fieldset>
-        </ProductForm>
-
-        <Divider />
-
-        {/* ---------- 5 ----------  */}
-        <AccordionInfo
-          data={[
-            {
-              name: 'Description',
-              content:
-                'Fashion is a form of self-expression and autonomy at a particular period and place and in a specific context, of clothing, footwear, lifestyle, accessories, makeup, hairstyle, and body posture.',
-            },
-            {
-              name: 'Features',
-              content: `<ul class="list-disc list-inside leading-7">
-                  <li>Material: 43% Sorona Yarn + 57% Stretch Polyester</li>
-                  <li>
-                  Casual pants waist with elastic elastic inside
-                  </li>
-                  <li>
-                    The pants are a bit tight so you always feel comfortable
-                  </li>
-                  <li>
-                    Excool technology application 4-way stretch
-                  </li>
-                </ul>`,
-            },
-            {
-              name: 'Shipping & Return',
-              content:
-                'We offer free shipping on all orders over $50. If you are not satisfied with your purchase, you can return it within 30 days for a full refund.',
-            },
-            {
-              name: 'Care Instructions',
-              content:
-                'Machine wash cold with like colors. Do not bleach. Tumble dry low. Iron low if needed. Do not dry clean.',
-            },
-          ]}
-        />
-
-        <div className="mt-6 flex text-sm text-neutral-500">
-          <p className="text-xs">
-            or{' '}
-            <Link href={'/products/' + handle} className="text-xs font-medium text-neutral-900 uppercase">
-              Go to product detail page <span aria-hidden="true"> →</span>
-            </Link>
-          </p>
-        </div>
-      </div>
-    )
-  }
+  // 아코디언 데이터 (실제 상품 데이터 기반)
+  const isHtmlDesc = /<[a-z][\s\S]*>/i.test(description || '')
+  const accordionData = [
+    ...(description ? [{
+      name: '상품 설명',
+      content: isHtmlDesc
+        ? description
+        : `<p class="whitespace-pre-wrap">${description}</p>`,
+    }] : []),
+    {
+      name: '배송 / 교환 / 반품',
+      content: `<div class="space-y-1.5 text-sm">
+        <div class="flex gap-3"><span class="w-20 shrink-0 font-medium">배송방법</span><span>일반택배 (${deliveryDays}일 이내 출발)</span></div>
+        <div class="flex gap-3"><span class="w-20 shrink-0 font-medium">배송비</span><span>${shippingText}</span></div>
+        <div class="flex gap-3"><span class="w-20 shrink-0 font-medium">반품비용</span><span>${returnText}</span></div>
+        <div class="flex gap-3"><span class="w-20 shrink-0 font-medium">반품기한</span><span>수령 후 30일 이내</span></div>
+      </div>`,
+    },
+  ]
 
   return (
     <div className={className}>
-      <div className="lg:flex">
+      <div className="lg:flex lg:gap-8">
+
+        {/* 이미지 영역 */}
         <div className="w-full lg:w-[50%]">
           <div className="relative">
-            <div className="aspect-w-16 aspect-h-16">
-              {images?.[0] && (
-                <Image
-                  src={images[0]}
-                  fill
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                  className="w-full rounded-xl object-cover"
-                  alt={images[0].alt}
-                />
+            <div className="aspect-square overflow-hidden rounded-2xl bg-neutral-100 dark:bg-neutral-800">
+              <Image
+                src={mainImageSrc}
+                fill
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="h-full w-full object-cover"
+                alt={title || '상품 이미지'}
+                priority
+              />
+            </div>
+            {/* 품절 오버레이 */}
+            {isSoldOut && (
+              <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/40">
+                <span className="rounded-full bg-white/90 px-4 py-2 text-sm font-bold text-neutral-800">품절</span>
+              </div>
+            )}
+            <LikeButton className="absolute end-3 top-3" />
+          </div>
+
+          {/* 서브 이미지 (최대 2장) */}
+          {subImages.length > 0 && (
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              {subImages.map((src, i) => (
+                <div key={i} className="aspect-square overflow-hidden rounded-xl bg-neutral-100 dark:bg-neutral-800">
+                  <Image
+                    src={src}
+                    fill
+                    sizes="25vw"
+                    className="h-full w-full object-cover"
+                    alt={`${title} 이미지 ${i + 2}`}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* 정보 영역 */}
+        <div className="w-full pt-6 lg:w-[50%] lg:pt-0">
+          <div className="flex flex-col gap-5">
+
+            {/* 상품명 */}
+            <h2 className="text-xl font-bold leading-snug text-neutral-900 dark:text-neutral-100 sm:text-2xl">
+              <Link href={detailUrl}>{title}</Link>
+            </h2>
+
+            {/* 가격 + 별점 */}
+            <div className="flex flex-wrap items-center gap-3">
+              <Prices price={totalPrice} contentClass="py-1 px-2 text-lg font-bold" />
+              {isFreeShipping && (
+                <span className="rounded-full bg-teal-50 px-2.5 py-0.5 text-xs font-medium text-teal-700 dark:bg-teal-900/30 dark:text-teal-400">
+                  무료배송
+                </span>
+              )}
+              {/* 별점 — 0이면 숨기기 */}
+              {(rating ?? 0) > 0 && (
+                <div className="flex items-center gap-1">
+                  <StarIcon className="h-4 w-4 text-amber-400" />
+                  <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                    {rating}
+                    {(reviewNumber ?? 0) > 0 && ` (${reviewNumber}개 리뷰)`}
+                  </span>
+                </div>
               )}
             </div>
 
-            {renderStatus()}
-            <LikeButton className="absolute end-3 top-3" />
-          </div>
-          <div className="mt-3 hidden grid-cols-2 gap-3 sm:mt-6 sm:gap-6 lg:grid xl:mt-5 xl:gap-5">
-            {[images?.[1], images?.[2]].map((image, index) => {
-              if (!image?.src) {
-                return null
-              }
-              return (
-                <div key={index} className="aspect-w-3 aspect-h-4">
-                  <Image
-                    fill
-                    src={image}
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    className="w-full rounded-xl object-cover"
-                    alt={image.alt}
-                  />
+            {/* 배송비 정보 */}
+            <div className="rounded-xl border border-neutral-100 dark:border-neutral-700 px-4 py-3 text-sm text-neutral-600 dark:text-neutral-400 space-y-1">
+              <div className="flex gap-2">
+                <span className="w-14 shrink-0 font-medium text-neutral-800 dark:text-neutral-200">배송비</span>
+                <span>{shippingText}</span>
+              </div>
+              <div className="flex gap-2">
+                <span className="w-14 shrink-0 font-medium text-neutral-800 dark:text-neutral-200">배송일</span>
+                <span>결제 후 {deliveryDays}일 이내 출발</span>
+              </div>
+            </div>
+
+            {/* KN541 옵션 선택 */}
+            {kn541Options.length > 0 && (
+              <div>
+                <p className="mb-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">옵션 선택</p>
+                <div className="flex flex-wrap gap-2">
+                  {kn541Options.map((opt) => (
+                    <button
+                      key={opt.id}
+                      onClick={() => setSelectedOption(opt.id === selectedOption ? '' : opt.id)}
+                      disabled={opt.stock_qty === 0}
+                      className={[
+                        'rounded-lg border px-3 py-2 text-xs font-medium transition-all',
+                        opt.id === selectedOption
+                          ? 'border-neutral-900 bg-neutral-900 text-white dark:border-white dark:bg-white dark:text-neutral-900'
+                          : 'border-neutral-200 text-neutral-700 hover:border-neutral-400 dark:border-neutral-600 dark:text-neutral-300',
+                        opt.stock_qty === 0 ? 'cursor-not-allowed opacity-40 line-through' : '',
+                      ].join(' ')}
+                    >
+                      {opt.option_name}
+                      {opt.add_price > 0 && ` (+${opt.add_price.toLocaleString('ko-KR')}원)`}
+                    </button>
+                  ))}
                 </div>
-              )
-            })}
+                {kn541Options.length > 0 && !selectedOption && (
+                  <p className="mt-1.5 text-xs text-amber-600 dark:text-amber-400">옵션을 선택해 주세요.</p>
+                )}
+              </div>
+            )}
+
+            {/* 수량 */}
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-neutral-600 dark:text-neutral-400 w-8">수량</span>
+              <div className="flex items-center justify-center rounded-full bg-neutral-100 px-2 py-1.5 dark:bg-neutral-800">
+                <NcInputNumber defaultValue={1} min={1} max={maxQty} onChange={(val) => setQty(val)} />
+              </div>
+              {stockQty > 0 && stockQty <= 10 && (
+                <span className="text-xs text-orange-600 dark:text-orange-400">재고 {stockQty}개</span>
+              )}
+            </div>
+
+            {/* 장바구니 버튼 */}
+            <button
+              type="button"
+              onClick={handleAddToCart}
+              disabled={!canBuy}
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-neutral-900 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
+            >
+              <HugeiconsIcon icon={ShoppingBag03Icon} size={18} color="currentColor" strokeWidth={1.5} />
+              <span>장바구니에 담기</span>
+            </button>
+
+            {/* 상세 페이지 이동 */}
+            <Link
+              href={detailUrl}
+              onClick={() => close('product-quick-view')}
+              className="text-center text-sm font-medium text-neutral-700 underline underline-offset-2 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-neutral-100"
+            >
+              상세 페이지에서 보기 →
+            </Link>
+
+            {/* 아코디언 — 실제 상품 설명 + 배송 정보 */}
+            {accordionData.length > 0 && (
+              <div className="w-full space-y-2 pt-2">
+                {accordionData.map((item, index) => (
+                  <Disclosure key={index} defaultOpen={index === 0}>
+                    {({ open }) => (
+                      <div>
+                        <DisclosureButton className="flex w-full items-center justify-between rounded-lg bg-neutral-100/80 px-4 py-2.5 text-left text-sm font-medium hover:bg-neutral-200/60 focus:outline-none dark:bg-neutral-800 dark:hover:bg-neutral-700">
+                          <span>{item.name}</span>
+                          {open
+                            ? <MinusIcon className="h-4 w-4 shrink-0 text-neutral-500" />
+                            : <PlusIcon className="h-4 w-4 shrink-0 text-neutral-500" />
+                          }
+                        </DisclosureButton>
+                        <DisclosurePanel className="p-4 pt-3 text-sm text-neutral-600 dark:text-neutral-300 leading-6">
+                          <div dangerouslySetInnerHTML={{ __html: item.content }} />
+                        </DisclosurePanel>
+                      </div>
+                    )}
+                  </Disclosure>
+                ))}
+              </div>
+            )}
+
           </div>
         </div>
-
-        {/* SIDEBAR */}
-        <div className="w-full pt-6 lg:w-[50%] lg:ps-7 lg:pt-0 xl:ps-8">{renderSectionContent()}</div>
       </div>
     </div>
   )
