@@ -22,7 +22,6 @@ import toast from 'react-hot-toast'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
 
-// 배송메모 드롭다운 옵션
 const MEMO_OPTIONS = [
   { value: '',            label: '선택해 주세요' },
   { value: '문앞에 두고 가주세요', label: '문앞에 두고 가주세요' },
@@ -37,7 +36,6 @@ function getToken(): string | null {
   return localStorage.getItem('access_token')
 }
 
-// 결제수단 타입 — EASY_PAY 추가
 type PayMethod = 'CARD' | 'EASY_PAY' | 'VIRTUAL_ACCOUNT' | 'TRANSFER'
 
 interface SavedAddress {
@@ -74,7 +72,7 @@ export default function CheckoutPage() {
   const [address, setAddress]       = useState<AddressValue>({ zipcode: '', address1: '', address2: '' })
   const [memoSelect, setMemoSelect] = useState('')
 
-  const [payMethod, setPayMethod] = useState<PayMethod>('CARD')
+  const [payMethod, setPayMethod]       = useState<PayMethod>('CARD')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const paymentRef = useRef<any>(null)
 
@@ -217,6 +215,7 @@ export default function CheckoutPage() {
       if (!prepareRes.ok) throw new Error(prepareData.detail ?? '결제 사전등록에 실패했습니다')
 
       // STEP 3: 토스 결제 요청
+      // successUrl + failUrl 모두 internal_order_id(UUID) 포함 → 어드민 연동 핵심
       const origin = window.location.origin
       const baseParams = {
         orderId:             order_no,
@@ -225,12 +224,11 @@ export default function CheckoutPage() {
         customerEmail:       form.email.trim() || undefined,
         customerMobilePhone: form.phone.replace(/[^0-9]/g, ''),
         successUrl: `${origin}/ko/payment/success?internal_order_id=${order_id}`,
-        failUrl:    `${origin}/ko/payment/fail`,
+        failUrl:    `${origin}/ko/payment/fail?internal_order_id=${order_id}`,  // ← UUID 포함
         amount: { currency: 'KRW', value: Math.round(total_amount) } as const,
       }
 
       if (payMethod === 'EASY_PAY') {
-        // 간편결제: easyPayType 미지정 → 토스 팝업에서 카카오페이/토스페이/네이버페이 등 선택
         await paymentRef.current.requestPayment({ method: 'EASY_PAY', ...baseParams })
       } else if (payMethod === 'CARD') {
         await paymentRef.current.requestPayment({ method: 'CARD', ...baseParams })
@@ -252,35 +250,13 @@ export default function CheckoutPage() {
 
   if (orderableItems.length === 0) return null
 
-  // 결제수단 목록 — 간편결제 첫 번째 배치
   const PAY_METHODS: { key: PayMethod; label: string; desc: string; icon: React.ReactNode }[] = [
-    {
-      key: 'EASY_PAY',
-      label: '간편결제',
-      desc: '카카오페이·토스페이·네이버페이 등',
-      icon: <DevicePhoneMobileIcon className="h-5 w-5" />,
-    },
-    {
-      key: 'CARD',
-      label: '신용카드',
-      desc: '비자카드, 마스터카드 등',
-      icon: <CreditCardIcon className="h-5 w-5" />,
-    },
-    {
-      key: 'VIRTUAL_ACCOUNT',
-      label: '가상계좌',
-      desc: '무통장 입금',
-      icon: <BuildingLibraryIcon className="h-5 w-5" />,
-    },
-    {
-      key: 'TRANSFER',
-      label: '계좌이체',
-      desc: '실시간 계좌이체',
-      icon: <BuildingLibraryIcon className="h-5 w-5" />,
-    },
+    { key: 'EASY_PAY',        label: '간편결제', desc: '카카오페이·토스페이·네이버페이 등', icon: <DevicePhoneMobileIcon className="h-5 w-5" /> },
+    { key: 'CARD',            label: '신용카드', desc: '비자카드, 마스터카드 등',            icon: <CreditCardIcon className="h-5 w-5" /> },
+    { key: 'VIRTUAL_ACCOUNT', label: '가상계좌', desc: '무통장 입금',                        icon: <BuildingLibraryIcon className="h-5 w-5" /> },
+    { key: 'TRANSFER',        label: '계좌이체', desc: '실시간 계좌이체',                    icon: <BuildingLibraryIcon className="h-5 w-5" /> },
   ]
 
-  // 배송메모 입력 UI
   const MemoInput = () => (
     <div className="sm:col-span-2">
       <label className={labelCls}>배송 메모 (선택)</label>
@@ -421,7 +397,6 @@ export default function CheckoutPage() {
               결제 수단
             </h2>
 
-            {/* 간편결제 안내 (EASY_PAY 선택 시) */}
             {payMethod === 'EASY_PAY' && (
               <div className="mb-4 flex items-center gap-2 rounded-2xl bg-blue-50 px-4 py-3 text-sm text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
                 <DevicePhoneMobileIcon className="h-4 w-4 shrink-0" />
@@ -439,14 +414,10 @@ export default function CheckoutPage() {
                   }`}>
                   <span className={payMethod === m.key ? 'text-primary-600' : 'text-neutral-400'}>{m.icon}</span>
                   <div>
-                    <p className={`text-sm font-semibold ${
-                      payMethod === m.key ? 'text-primary-700 dark:text-primary-400' : 'text-neutral-800 dark:text-neutral-200'
-                    }`}>{m.label}</p>
+                    <p className={`text-sm font-semibold ${payMethod === m.key ? 'text-primary-700 dark:text-primary-400' : 'text-neutral-800 dark:text-neutral-200'}`}>{m.label}</p>
                     <p className="mt-0.5 text-xs text-neutral-400 leading-tight">{m.desc}</p>
                   </div>
-                  {payMethod === m.key && (
-                    <CheckCircleIcon className="h-4 w-4 text-primary-600" />
-                  )}
+                  {payMethod === m.key && <CheckCircleIcon className="h-4 w-4 text-primary-600" />}
                 </button>
               ))}
             </div>
