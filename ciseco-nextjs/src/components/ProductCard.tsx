@@ -87,7 +87,6 @@ const ProductCard: FC<Props> = ({ className = '', data, isLiked }) => {
           color={selectedOptions?.find((option) => option.name === 'Color')?.value}
         >
           <ShoppingBagIcon className="-ml-1 size-3.5" />
-          {/* ★ 한국어 버튼 */}
           <span>장바구니</span>
         </AddToCardButton>
 
@@ -100,7 +99,6 @@ const ProductCard: FC<Props> = ({ className = '', data, isLiked }) => {
           }}
         >
           <ArrowsPointingOutIcon className="-ml-1 size-3.5" />
-          {/* ★ 한국어 버튼 */}
           <span>빠른보기</span>
         </button>
       </div>
@@ -121,7 +119,6 @@ const ProductCard: FC<Props> = ({ className = '', data, isLiked }) => {
                 className="h-full w-full object-cover"
                 fill
                 sizes="(max-width: 640px) 100vw, (max-width: 1200px) 50vw, 40vw"
-                {/* ★ alt = 상품명 (UUID 제거) */}
                 alt={title || '상품 이미지'}
               />
             )}
@@ -135,23 +132,18 @@ const ProductCard: FC<Props> = ({ className = '', data, isLiked }) => {
           {renderColorOptions()}
 
           <div>
-            {/* ★ 뱃지 (사전예약/NEW/BEST/SALE) */}
             {badge && (
               <span className={`mb-1.5 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${badge.className}`}>
                 {badge.label}
               </span>
             )}
-            {/* ★ 상품명 2줄 제한 */}
             <h2 className="nc-ProductCard__title line-clamp-2 text-sm font-semibold leading-snug transition-colors text-neutral-900 dark:text-neutral-100">
               {title}
             </h2>
           </div>
 
           <div className="flex items-center justify-between gap-2">
-            {/* ★ 가격 (원화) */}
             <Prices price={price ?? 0} contentClass="py-0 text-sm" />
-
-            {/* ★ 무료배송 뱃지 */}
             {isFreeShipping && (
               <span className="rounded-full bg-teal-50 px-2 py-0.5 text-xs font-medium text-teal-700 dark:bg-teal-900/30 dark:text-teal-400 whitespace-nowrap">
                 무료배송
@@ -159,7 +151,6 @@ const ProductCard: FC<Props> = ({ className = '', data, isLiked }) => {
             )}
           </div>
 
-          {/* ★ 별점/리뷰 — 0이면 미표시 */}
           {(rating ?? 0) > 0 && (
             <div className="flex items-center gap-1">
               <StarIcon className="h-4 w-4 text-amber-400" />
