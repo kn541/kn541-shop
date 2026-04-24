@@ -1,6 +1,7 @@
 /**
  * KN541 API 데이터 → Ciseco 컴포넌트 형식 변환 어댑터
- * fix v4: status 기본값 한국어화 ('In Stock' → '판매중')
+ * fix: thumbnailImageSrcs / detailImageSrcs 분리 필드 추가
+ * fix: status 기본값 '판매중'
  */
 
 import type { Category } from './api/categories'
@@ -17,7 +18,6 @@ const BG_COLORS = [
 export function adaptProduct(p: Product): TProductItem {
   const pid = p.product_id || p.id || ''
 
-  // ★ 기본값 '판매중' (한국어)
   let status = '판매중'
   if (p.stock_qty === 0) status = '품절'
   else if (p.is_soldout || p.product_status === 'SOLDOUT') status = '품절'
@@ -30,16 +30,19 @@ export function adaptProduct(p: Product): TProductItem {
     ? { src: p.thumbnail_url, width: 600, height: 600, alt: p.product_name }
     : { src: PLACEHOLDER_IMG, width: 600, height: 600, alt: p.product_name }
 
+  // ★ THUMBNAIL 타입 이미지 (걤러리 사이드바 용)
   const thumbImgs = (p.images || [])
     .filter(img => img?.image_url && img.image_type === 'THUMBNAIL')
     .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
     .map(img => ({ src: img.image_url, width: 800, height: 800, alt: p.product_name }))
 
+  // ★ DETAIL 타입 이미지 (상품상세 스크롤 영역용)
   const detailImgs = (p.images || [])
     .filter(img => img?.image_url && img.image_type !== 'THUMBNAIL')
     .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
     .map(img => ({ src: img.image_url, width: 800, height: 800, alt: p.product_name }))
 
+  // 전체 images 배열 (Ciseco TProductItem 호환)
   let allImages: typeof thumbImg[]
   if (thumbImgs.length > 0) {
     allImages = [...thumbImgs, ...detailImgs]
@@ -107,6 +110,9 @@ export function adaptProduct(p: Product): TProductItem {
     consumerPrice: p.consumer_price ?? 0,
     isSoldout: p.is_soldout ?? false,
     isDiscontinued: p.is_discontinued ?? false,
+    // ★ 갤러리 / 상세이미지 분리
+    thumbnailImageSrcs: thumbImgs.map(i => i.src),    // THUMBNAIL 타입만 (좌측 사이드바)
+    detailImageSrcs: detailImgs.map(i => i.src),      // DETAIL 타입만 (하단 스크롤)
   } as TProductItem & Record<string, any>
 }
 

@@ -1,7 +1,6 @@
 // KN541 상품 상세 페이지
-// fix: 탭 앵커 링크 전환 (클릭 시 해당 섹션으로 스크롤)
-// fix: 연관 상품에서 현재 상품 제외
-// fix: isSoldout prop 전달 (ProductActions Props 반영)
+// fix: 갤러리 = THUMBNAIL 타입만, 하단 = DETAIL 타입만
+//   (이전: THUMBNAIL+DETAIL 혼합 → 클릭 시 상세이미지가 메인으로 표시되는 버그)
 
 import { Divider } from '@/components/Divider'
 import Prices from '@/components/Prices'
@@ -60,38 +59,35 @@ export default async function Page({
 
   const p = adaptProduct(rawProduct) as any
 
-  // ★ 연관 상품 — 현재 상품 제외
+  // 연관 상품 — 현재 상품 제외
   const allRelated = await getProducts({ size: 9 })
   const relatedProducts = allRelated.filter((r: any) => r.id !== p.id && r.handle !== handle).slice(0, 8)
 
   const reviews: any[] = []
 
-  const {
-    id: productId,
-    title,
-    status,
-    featuredImage,
-    rating,
-    reviewNumber,
-    price,
-    images,
-    description,
-  } = p
+  const { id: productId, title, status, featuredImage, rating, reviewNumber, price, images, description } = p
 
   const deliveryInfo = p.delivery || {}
-  const shippingFee = Number(deliveryInfo.shipping_fee ?? 0)
+  const shippingFee      = Number(deliveryInfo.shipping_fee ?? 0)
   const freeShippingOver = Number(deliveryInfo.free_over ?? 0)
-  const scType = Number(deliveryInfo.sc_type ?? 1)
-  const returnFee = Number(deliveryInfo.return_fee ?? 0)
-  const deliveryDays = Number(deliveryInfo.delivery_days ?? 3)
-  const deliveryCompany = deliveryInfo.delivery_company ?? null
+  const scType           = Number(deliveryInfo.sc_type ?? 1)
+  const returnFee        = Number(deliveryInfo.return_fee ?? 0)
+  const deliveryDays     = Number(deliveryInfo.delivery_days ?? 3)
+  const deliveryCompany  = deliveryInfo.delivery_company ?? null
 
-  const allImages: string[] = [featuredImage, ...(images || [])]
-    .map((i: any) => i?.src)
-    .filter(Boolean)
-    .filter((src: string, idx: number, arr: string[]) => arr.indexOf(src) === idx)
+  // ★ THUMBNAIL 타입 이미지 — 갤러리 사이드바 전용
+  const thumbnailSrcs: string[] = (() => {
+    const srcs: string[] = p.thumbnailImageSrcs ?? []
+    // 어댑터에서 키가 없으면 thumbnail_url로 폴백
+    if (srcs.length > 0) return srcs
+    const thumb = featuredImage?.src
+    return thumb ? [thumb] : []
+  })()
 
-  const thumbImage = allImages[0] || ''
+  // ★ DETAIL 타입 이미지 — 하단 상세 영역 전용
+  const detailSrcs: string[] = p.detailImageSrcs ?? []
+
+  const thumbImage = thumbnailSrcs[0] || ''
 
   const isHtmlDesc = /<[a-z][\s\S]*>/i.test(description || '')
 
@@ -113,8 +109,8 @@ export default async function Page({
   if (p.categoryName) breadcrumbs.push({ name: p.categoryName })
 
   const consumerPrice = Number(p.consumerPrice ?? p.consumer_price ?? 0)
-  const salePrice = Number(price || 0)
-  const discountRate = consumerPrice > 0 && consumerPrice > salePrice
+  const salePrice     = Number(price || 0)
+  const discountRate  = consumerPrice > 0 && consumerPrice > salePrice
     ? Math.round((consumerPrice - salePrice) / consumerPrice * 100)
     : 0
 
@@ -126,14 +122,10 @@ export default async function Page({
     ['SOLDOUT', 'SOLD_OUT', 'DISCONTINUED', 'INACTIVE'].includes(productStatus.toUpperCase()) ||
     status === '품절' || status === 'Sold Out' || status === '판매종료'
 
-  const rawOpts = ((p as { options?: unknown[] }).options ?? []) as Array<{
-    name?: string
-    optionValues?: unknown[]
-  }>
+  const rawOpts = ((p as { options?: unknown[] }).options ?? []) as Array<{ name?: string; optionValues?: unknown[] }>
   const hasColorOption = rawOpts.some(o => o?.name === 'Color' && Array.isArray(o?.optionValues) && o.optionValues.length > 0)
   const hasSizeOption  = rawOpts.some(o => o?.name === 'Size'  && Array.isArray(o?.optionValues) && o.optionValues.length > 0)
 
-  // ★ 탭 목록 — id 기반 앵커 링크
   const TABS = [
     { label: '상품상세', href: '#product-detail' },
     { label: '리뷰',     href: '#reviews' },
@@ -148,9 +140,7 @@ export default async function Page({
           <span key={i} className="flex items-center gap-1">
             {i > 0 && <span className="text-neutral-300">/</span>}
             {bc.href ? (
-              <Link href={bc.href} className="hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors">
-                {bc.name}
-              </Link>
+              <Link href={bc.href} className="hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors">{bc.name}</Link>
             ) : (
               <span className="text-neutral-900 dark:text-neutral-100 font-medium">{bc.name}</span>
             )}
@@ -160,17 +150,16 @@ export default async function Page({
 
       {/* 2단 레이아웃 */}
       <div className="flex flex-col gap-8 lg:flex-row lg:gap-10">
+        {/* ★ 갤러리 — THUMBNAIL 타입만 전달 */}
         <div className="w-full lg:w-[55%]">
-          <KoreanProductGallery images={allImages} />
+          <KoreanProductGallery images={thumbnailSrcs} />
         </div>
 
         <div className="w-full lg:w-[45%]">
           <div className="sticky top-8 flex flex-col gap-4">
             {(p.vendor || p.supplierName) && (
               <div className="flex items-center gap-2 flex-wrap">
-                {p.vendor && (
-                  <span className="text-sm font-semibold uppercase tracking-widest text-primary-600">{p.vendor}</span>
-                )}
+                {p.vendor && <span className="text-sm font-semibold uppercase tracking-widest text-primary-600">{p.vendor}</span>}
                 {p.supplierName && p.supplierName !== p.vendor && (
                   <span className="text-xs text-neutral-400 border border-neutral-200 rounded px-2 py-0.5">{p.supplierName}</span>
                 )}
@@ -207,9 +196,7 @@ export default async function Page({
             </div>
 
             <div className="flex items-end gap-3">
-              {discountRate > 0 && (
-                <span className="text-2xl font-bold text-red-500">{discountRate}%</span>
-              )}
+              {discountRate > 0 && <span className="text-2xl font-bold text-red-500">{discountRate}%</span>}
               <Prices contentClass="text-3xl font-bold" price={salePrice} />
               {consumerPrice > 0 && consumerPrice > salePrice && (
                 <span className="text-base text-neutral-400 line-through mb-0.5">
@@ -247,7 +234,6 @@ export default async function Page({
               </table>
             </div>
 
-            {/* ★ isSoldout prop 정상 전달 */}
             <ProductActions
               productId={String(productId || handle)}
               options={p.options}
@@ -291,38 +277,32 @@ export default async function Page({
         </div>
       </div>
 
-      {/* ★ 탭 — 앵커 링크 방식 (클릭 시 해당 섹션으로 스크롤) */}
+      {/* 하단: 탭 + 상세설명 + 리뷰 + 배송 */}
       <div className="mt-16 flex flex-col gap-0 sm:mt-20">
         <nav className="flex gap-8 border-b border-neutral-200 dark:border-neutral-700 mb-10">
           {TABS.map((tab) => (
-            <a
-              key={tab.label}
-              href={tab.href}
-              className="pb-3 text-sm font-semibold text-neutral-400 hover:text-neutral-700 hover:border-b-2 hover:border-neutral-400 transition-colors dark:hover:text-neutral-300"
-            >
+            <a key={tab.label} href={tab.href}
+              className="pb-3 text-sm font-semibold text-neutral-400 hover:text-neutral-700 hover:border-b-2 hover:border-neutral-400 transition-colors dark:hover:text-neutral-300">
               {tab.label}
             </a>
           ))}
         </nav>
 
-        {/* 상품상세 섹션 */}
+        {/* ★ 상품상세 섹션 */}
         <div id="product-detail">
           {isHtmlDesc ? (
-            <div
-              className="prose prose-sm sm:prose max-w-none dark:prose-invert mx-auto w-full"
-              dangerouslySetInnerHTML={{ __html: description }}
-            />
+            <div className="prose prose-sm sm:prose max-w-none dark:prose-invert mx-auto w-full"
+              dangerouslySetInnerHTML={{ __html: description }} />
           ) : description ? (
             <div className="mx-auto w-full max-w-3xl">
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
-                {description}
-              </p>
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">{description}</p>
             </div>
           ) : null}
 
-          {allImages.length > 1 && (
+          {/* ★ DETAIL 타입 이미지만 하단에 표시 */}
+          {detailSrcs.length > 0 && (
             <div className="mt-8 flex flex-col items-center gap-0">
-              {allImages.slice(1).map((src, idx) => (
+              {detailSrcs.map((src, idx) => (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img key={idx} src={src} alt={`상세 이미지 ${idx + 1}`}
                   className="w-full max-w-3xl object-cover" loading="lazy" />
@@ -333,7 +313,7 @@ export default async function Page({
 
         <Divider className="mt-12 mb-12" />
 
-        {/* 배송/교환/반품 섹션 */}
+        {/* 배송/교환/반품 안내 */}
         <div id="delivery-info" className="mx-auto w-full max-w-3xl rounded-2xl bg-neutral-50 dark:bg-neutral-800 p-6 mb-12">
           <h3 className="mb-4 text-base font-bold">배송 / 교환 / 반품 안내</h3>
           <div className="flex flex-col gap-3 text-sm text-neutral-600 dark:text-neutral-400">
@@ -361,7 +341,7 @@ export default async function Page({
           </div>
         </div>
 
-        {/* 리뷰 섹션 */}
+        {/* 리뷰 */}
         <div id="reviews" className="mb-12">
           <ProductReviews reviewNumber={reviewNumber || 0} rating={rating || 0} reviews={reviews} />
         </div>
