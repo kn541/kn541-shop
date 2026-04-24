@@ -22,6 +22,7 @@ export interface CartItem {
   shippingFee: number
   freeShippingOver: number
   scType: number
+  stockQty: number   // 재고 수량 — 장바구니 max 제한 + 품절 표시용
 }
 
 interface CartContextValue {
@@ -81,7 +82,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         const parsed: any[] = JSON.parse(raw)
         const valid = parsed.filter(isValidItem)
         setItems(valid)
-        // 전체 선택 상태로 초기화
         setSelectedIds(new Set(valid.map((i: any) => i.id)))
       }
     } catch {}
@@ -101,11 +101,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setItems(prev => {
       const existing = prev.find(i => i.id === id)
       if (existing) {
-        return prev.map(i => i.id === id ? { ...i, quantity: i.quantity + newItem.quantity } : i)
+        // 수량 합산 시 재고 초과 방지
+        const maxStock = newItem.stockQty > 0 ? newItem.stockQty : 99
+        const newQty   = Math.min(existing.quantity + newItem.quantity, maxStock)
+        return prev.map(i => i.id === id ? { ...i, quantity: newQty, stockQty: newItem.stockQty } : i)
       }
       return [...prev, { ...newItem, id }]
     })
-    // 새로 추가된 아이템은 자동 선택
     setSelectedIds(prev => new Set([...prev, id]))
   }, [])
 
@@ -120,7 +122,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [selectedIds])
 
   const updateQty = useCallback((id: string, qty: number) => {
-    setItems(prev => prev.map(i => i.id === id ? { ...i, quantity: Math.max(1, qty) } : i))
+    setItems(prev => prev.map(i => {
+      if (i.id !== id) return i
+      const maxStock = i.stockQty > 0 ? i.stockQty : 99
+      return { ...i, quantity: Math.min(Math.max(1, qty), maxStock) }
+    }))
   }, [])
 
   const clearCart = useCallback(() => {
@@ -150,10 +156,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const totalPrice    = items.reduce((s, i) => s + (Number(i.price) || 0) * (Number(i.quantity) || 0), 0)
   const totalShipping = items.reduce((s, i) => s + calcItemShipping(i), 0)
 
-  const selectedItems   = items.filter(i => selectedIds.has(i.id))
-  const selectedPrice   = selectedItems.reduce((s, i) => s + (Number(i.price) || 0) * (Number(i.quantity) || 0), 0)
+  const selectedItems    = items.filter(i => selectedIds.has(i.id))
+  const selectedPrice    = selectedItems.reduce((s, i) => s + (Number(i.price) || 0) * (Number(i.quantity) || 0), 0)
   const selectedShipping = selectedItems.reduce((s, i) => s + calcItemShipping(i), 0)
-  const selectedTotal   = selectedPrice + selectedShipping
+  const selectedTotal    = selectedPrice + selectedShipping
 
   return (
     <CartContext.Provider value={{
