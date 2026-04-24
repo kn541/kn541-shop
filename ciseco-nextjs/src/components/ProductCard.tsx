@@ -1,11 +1,10 @@
 'use client'
 
 // KN541 상품 카드
-// fix: 장바구니 버튼 클릭 버블링 방지 (e.stopPropagation)
-// fix: useCart().addItem() 실제 연동 (toast만 띄우던 버그 수정)
-// fix: 폐쇄몰 — 비로그인 시 메인 페이지로 이동
-// fix: locale 동적화 (하드코딩 /products/ → /${locale}/products/)
-// fix: 별점/리뷰 0이면 미표시, 무료배송 뱃지, 뱃지 정비
+// fix: next-intl Link는 locale 자동 추가 → href에 locale 포함 금지 (/products/UUID만)
+// fix: router.push는 next/navigation → locale 명시 필요 (/${locale}/cart 등)
+// fix: 장바구니 버튼 버블링 방지 + useCart 실제 연동
+// fix: 폐쇄몰 비로그인 → 메인페이지
 
 import { TProductItem } from '@/data/data'
 import { useCart } from '@/lib/cart-context'
@@ -28,7 +27,7 @@ interface Props {
 }
 
 const ProductCard: FC<Props> = ({ className = '', data, isLiked }) => {
-  const { title, price, status, rating, options, handle, selectedOptions, reviewNumber, images, featuredImage } = data
+  const { title, price, status, rating, options, handle, selectedOptions, reviewNumber, featuredImage } = data
 
   const pathname = usePathname()
   const locale   = pathname.split('/')[1] || 'ko'
@@ -44,11 +43,8 @@ const ProductCard: FC<Props> = ({ className = '', data, isLiked }) => {
   } | undefined
   const isFreeShipping = delivery?.sc_type === 1 || (delivery?.shipping_fee ?? 0) === 0
 
-  // 품절 여부
-  const stockQty  = Number((data as any).stockQty ?? 0)
-  const isSoldOut = stockQty === 0 && stockQty !== undefined && (data as any).stockQty !== undefined
-    ? false  // stockQty 없는 경우(목록 API) 일단 구매 가능으로 처리
-    : status === '품절'
+  // 품절 여부 (status 기반 — 목록 API는 stockQty 없을 수 있음)
+  const isSoldOut = status === '품절' || status === '판매종료'
 
   // 사전예약
   const isPreOrder = typeof title === 'string' && title.includes('[사전예약]')
@@ -56,16 +52,19 @@ const ProductCard: FC<Props> = ({ className = '', data, isLiked }) => {
   // 뱃지
   const getBadge = () => {
     if (isPreOrder) return { label: '사전예약', className: 'bg-violet-100 text-violet-700' }
-    if (status === '신상품' || status === 'New in') return { label: 'NEW', className: 'bg-blue-100 text-blue-700' }
-    if (status === '베스트' || status === 'Best Seller') return { label: 'BEST', className: 'bg-amber-100 text-amber-700' }
-    if (status === '할인' || status === 'Sale') return { label: 'SALE', className: 'bg-red-100 text-red-600' }
+    if (status === '신상품') return { label: 'NEW', className: 'bg-blue-100 text-blue-700' }
+    if (status === '베스트') return { label: 'BEST', className: 'bg-amber-100 text-amber-700' }
+    if (status === '할인')   return { label: 'SALE', className: 'bg-red-100 text-red-600' }
     return null
   }
   const badge = getBadge()
 
-  const productUrl = `/${locale}/products/${handle}`
+  // ★ next-intl Link는 locale 자동 추가 → href에 locale 포함 금지
+  //   /products/UUID  →  next-intl →  /ko/products/UUID  (정상)
+  //   /ko/products/UUID  →  next-intl →  /ko/ko/products/UUID  (404!)
+  const productPath = `/products/${handle}`
 
-  // ★ 장바구니 담기 — 클릭 버블링 방지 + useCart 실제 연동
+  // ★ 장바구니 담기
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -76,7 +75,6 @@ const ProductCard: FC<Props> = ({ className = '', data, isLiked }) => {
       router.push(`/${locale}`)
       return
     }
-
     if (isSoldOut) {
       toast.error('품절된 상품입니다.')
       return
@@ -84,11 +82,7 @@ const ProductCard: FC<Props> = ({ className = '', data, isLiked }) => {
 
     const deliveryData = (data as any).delivery || {}
     const pid = String(data.id || data.handle || '')
-
-    if (!pid) {
-      toast.error('상품 정보를 불러올 수 없습니다.')
-      return
-    }
+    if (!pid) { toast.error('상품 정보를 불러올 수 없습니다.'); return }
 
     addItem({
       productId: pid,
@@ -117,7 +111,7 @@ const ProductCard: FC<Props> = ({ className = '', data, isLiked }) => {
     )
   }
 
-  // ★ 빠른보기 — 클릭 버블링 방지
+  // ★ 빠른보기
   const handleQuickView = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -126,7 +120,7 @@ const ProductCard: FC<Props> = ({ className = '', data, isLiked }) => {
   }
 
   const renderColorOptions = () => {
-    const optionColorValues = options?.find((option) => option.name === 'Color')?.optionValues
+    const optionColorValues = options?.find((o) => o.name === 'Color')?.optionValues
     if (!optionColorValues?.length) return null
     return (
       <div className="flex gap-2">
@@ -145,38 +139,14 @@ const ProductCard: FC<Props> = ({ className = '', data, isLiked }) => {
     )
   }
 
-  const renderGroupButtons = () => (
-    <div className="invisible absolute inset-x-1 bottom-0 flex justify-center gap-1.5 opacity-0 transition-all group-hover:visible group-hover:bottom-4 group-hover:opacity-100">
-      {/* ★ 장바구니 버튼 — e.stopPropagation + useCart.addItem */}
-      <button
-        type="button"
-        onClick={handleAddToCart}
-        disabled={isSoldOut}
-        className="flex cursor-pointer items-center justify-center gap-2 rounded-full bg-neutral-900 px-4 py-2 text-xs/normal text-white shadow-lg hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        <ShoppingBagIcon className="-ml-1 size-3.5" />
-        <span>{isSoldOut ? '품절' : '장바구니'}</span>
-      </button>
-
-      {/* ★ 빠른보기 버튼 — e.stopPropagation */}
-      <button
-        type="button"
-        onClick={handleQuickView}
-        className="flex cursor-pointer items-center justify-center gap-2 rounded-full bg-white px-4 py-2 text-xs/normal text-neutral-950 shadow-lg hover:bg-neutral-50"
-      >
-        <ArrowsPointingOutIcon className="-ml-1 size-3.5" />
-        <span>빠른보기</span>
-      </button>
-    </div>
-  )
-
   return (
     <div className={`product-card relative flex flex-col bg-transparent ${className}`}>
-      {/* ★ 상품 상세 링크 — locale 포함 */}
-      <Link href={productUrl} className="absolute inset-0 z-0" />
+      {/* ★ 카드 전체 클릭 링크 — next-intl Link이므로 locale 없이 */}
+      <Link href={productPath} className="absolute inset-0 z-0" />
 
       <div className="group relative z-1 shrink-0 overflow-hidden rounded-3xl bg-neutral-50 dark:bg-neutral-300">
-        <Link href={productUrl} className="block">
+        {/* ★ 이미지 클릭 링크 — 동일하게 locale 없이 */}
+        <Link href={productPath} className="block">
           {featuredImage?.src && (
             <NcImage
               containerClassName="flex aspect-w-11 aspect-h-12 w-full h-0"
@@ -198,7 +168,28 @@ const ProductCard: FC<Props> = ({ className = '', data, isLiked }) => {
 
         <ProductStatus status={status} />
         <LikeButton liked={isLiked} className="absolute end-3 top-3 z-10" />
-        {renderGroupButtons()}
+
+        {/* 호버 버튼 */}
+        <div className="invisible absolute inset-x-1 bottom-0 flex justify-center gap-1.5 opacity-0 transition-all group-hover:visible group-hover:bottom-4 group-hover:opacity-100">
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            disabled={isSoldOut}
+            className="flex cursor-pointer items-center justify-center gap-2 rounded-full bg-neutral-900 px-4 py-2 text-xs/normal text-white shadow-lg hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <ShoppingBagIcon className="-ml-1 size-3.5" />
+            <span>{isSoldOut ? '품절' : '장바구니'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleQuickView}
+            className="flex cursor-pointer items-center justify-center gap-2 rounded-full bg-white px-4 py-2 text-xs/normal text-neutral-950 shadow-lg hover:bg-neutral-50"
+          >
+            <ArrowsPointingOutIcon className="-ml-1 size-3.5" />
+            <span>빠른보기</span>
+          </button>
+        </div>
       </div>
 
       <div className="space-y-3 px-2.5 pt-4 pb-2.5">
@@ -228,8 +219,7 @@ const ProductCard: FC<Props> = ({ className = '', data, isLiked }) => {
           <div className="flex items-center gap-1">
             <StarIcon className="h-4 w-4 text-amber-400" />
             <span className="text-xs text-neutral-500 dark:text-neutral-400">
-              {rating}
-              {(reviewNumber ?? 0) > 0 && ` (${reviewNumber})`}
+              {rating}{(reviewNumber ?? 0) > 0 && ` (${reviewNumber})`}
             </span>
           </div>
         )}
