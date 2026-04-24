@@ -8,6 +8,7 @@
 // fix: 영문 텍스트 한국어화
 // fix: 더미 AccordionInfo → 실제 상품 설명 + 배송 정보
 // fix: 별점 0이면 숨기기
+// fix: close() 인수 없이 호출 (aside API 맞춤)
 // feat: 배송비 정보 표시
 // feat: KN541 옵션(add_price 기반) 선택 UI
 
@@ -25,7 +26,7 @@ import { ShoppingBag03Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
-import { FC, useEffect, useMemo, useState } from 'react'
+import { FC, useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useAside } from './aside'
 
@@ -61,6 +62,7 @@ function getShippingText(scType: number, shippingFee: number, freeShippingOver: 
 }
 
 const ProductQuickView: FC<ProductQuickViewProps> = ({ className }) => {
+  // ★ close()는 인수 없이 호출 (aside API 스펙)
   const { productQuickViewHandle: handle, close } = useAside()
   const { addItem } = useCart()
   const pathname = usePathname()
@@ -161,7 +163,8 @@ const ProductQuickView: FC<ProductQuickViewProps> = ({ className }) => {
       stockQty,
     })
     toast.success('장바구니에 담겼습니다!', { duration: 2500 })
-    close('product-quick-view')
+    // ★ close() — 인수 없음
+    close()
   }
 
   // 아코디언 데이터 (실제 상품 데이터 기반)
@@ -191,7 +194,7 @@ const ProductQuickView: FC<ProductQuickViewProps> = ({ className }) => {
         {/* 이미지 영역 */}
         <div className="w-full lg:w-[50%]">
           <div className="relative">
-            <div className="aspect-square overflow-hidden rounded-2xl bg-neutral-100 dark:bg-neutral-800">
+            <div className="aspect-square overflow-hidden rounded-2xl bg-neutral-100 dark:bg-neutral-800 relative">
               <Image
                 src={mainImageSrc}
                 fill
@@ -207,14 +210,14 @@ const ProductQuickView: FC<ProductQuickViewProps> = ({ className }) => {
                 <span className="rounded-full bg-white/90 px-4 py-2 text-sm font-bold text-neutral-800">품절</span>
               </div>
             )}
-            <LikeButton className="absolute end-3 top-3" />
+            <LikeButton className="absolute end-3 top-3 z-10" />
           </div>
 
           {/* 서브 이미지 (최대 2장) */}
           {subImages.length > 0 && (
             <div className="mt-3 grid grid-cols-2 gap-3">
               {subImages.map((src, i) => (
-                <div key={i} className="aspect-square overflow-hidden rounded-xl bg-neutral-100 dark:bg-neutral-800">
+                <div key={i} className="relative aspect-square overflow-hidden rounded-xl bg-neutral-100 dark:bg-neutral-800">
                   <Image
                     src={src}
                     fill
@@ -237,7 +240,7 @@ const ProductQuickView: FC<ProductQuickViewProps> = ({ className }) => {
               <Link href={detailUrl}>{title}</Link>
             </h2>
 
-            {/* 가격 + 별점 */}
+            {/* 가격 + 무료배송 + 별점 */}
             <div className="flex flex-wrap items-center gap-3">
               <Prices price={totalPrice} contentClass="py-1 px-2 text-lg font-bold" />
               {isFreeShipping && (
@@ -245,7 +248,6 @@ const ProductQuickView: FC<ProductQuickViewProps> = ({ className }) => {
                   무료배송
                 </span>
               )}
-              {/* 별점 — 0이면 숨기기 */}
               {(rating ?? 0) > 0 && (
                 <div className="flex items-center gap-1">
                   <StarIcon className="h-4 w-4 text-amber-400" />
@@ -257,8 +259,8 @@ const ProductQuickView: FC<ProductQuickViewProps> = ({ className }) => {
               )}
             </div>
 
-            {/* 배송비 정보 */}
-            <div className="rounded-xl border border-neutral-100 dark:border-neutral-700 px-4 py-3 text-sm text-neutral-600 dark:text-neutral-400 space-y-1">
+            {/* 배송비 / 배송일 */}
+            <div className="rounded-xl border border-neutral-100 dark:border-neutral-700 px-4 py-3 text-sm text-neutral-600 dark:text-neutral-400 space-y-1.5">
               <div className="flex gap-2">
                 <span className="w-14 shrink-0 font-medium text-neutral-800 dark:text-neutral-200">배송비</span>
                 <span>{shippingText}</span>
@@ -277,6 +279,7 @@ const ProductQuickView: FC<ProductQuickViewProps> = ({ className }) => {
                   {kn541Options.map((opt) => (
                     <button
                       key={opt.id}
+                      type="button"
                       onClick={() => setSelectedOption(opt.id === selectedOption ? '' : opt.id)}
                       disabled={opt.stock_qty === 0}
                       className={[
@@ -292,7 +295,7 @@ const ProductQuickView: FC<ProductQuickViewProps> = ({ className }) => {
                     </button>
                   ))}
                 </div>
-                {kn541Options.length > 0 && !selectedOption && (
+                {!selectedOption && (
                   <p className="mt-1.5 text-xs text-amber-600 dark:text-amber-400">옵션을 선택해 주세요.</p>
                 )}
               </div>
@@ -309,7 +312,7 @@ const ProductQuickView: FC<ProductQuickViewProps> = ({ className }) => {
               )}
             </div>
 
-            {/* 장바구니 버튼 */}
+            {/* 장바구니 담기 버튼 */}
             <button
               type="button"
               onClick={handleAddToCart}
@@ -317,19 +320,19 @@ const ProductQuickView: FC<ProductQuickViewProps> = ({ className }) => {
               className="flex w-full items-center justify-center gap-2 rounded-full bg-neutral-900 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
             >
               <HugeiconsIcon icon={ShoppingBag03Icon} size={18} color="currentColor" strokeWidth={1.5} />
-              <span>장바구니에 담기</span>
+              <span>{isSoldOut ? '품절' : '장바구니에 담기'}</span>
             </button>
 
             {/* 상세 페이지 이동 */}
             <Link
               href={detailUrl}
-              onClick={() => close('product-quick-view')}
+              onClick={() => close()}
               className="text-center text-sm font-medium text-neutral-700 underline underline-offset-2 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-neutral-100"
             >
               상세 페이지에서 보기 →
             </Link>
 
-            {/* 아코디언 — 실제 상품 설명 + 배송 정보 */}
+            {/* 아코디언 — 실제 상품 설명 + 배송/반품 정보 */}
             {accordionData.length > 0 && (
               <div className="w-full space-y-2 pt-2">
                 {accordionData.map((item, index) => (
