@@ -1,6 +1,7 @@
 'use client'
 // KN541 쇼핑몰 — 헤더 우측 유저 액션 영역
 // fix: hydration mismatch 방지 — isMounted 패턴으로 SSR/CSR 불일치 해소
+// fix: 로그아웃 시 메인 페이지로 이동
 
 import { useEffect, useState, useRef } from 'react'
 import { useLocale } from 'next-intl'
@@ -41,7 +42,6 @@ function UserIcon() {
 
 export default function HeaderUserActions() {
   const locale = useLocale()
-  // ✅ isMounted: SSR에서는 null 렌더링 → 클라이언트 마운트 후 실제 상태 렌더링
   const [isMounted, setIsMounted] = useState(false)
   const [user, setUser] = useState<UserInfo | null>(null)
   const [loading, setLoading] = useState(true)
@@ -75,13 +75,13 @@ export default function HeaderUserActions() {
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
+  // 로그아웃 → 토큰 삭제 + 메인 페이지로 이동
   const handleLogout = () => {
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
-    window.location.href = '/ko/login'
+    window.location.href = `/${locale}`
   }
 
-  // ✅ 마운트 전에는 아무것도 렌더링하지 않음 (SSR hydration 불일치 방지)
   if (!isMounted) {
     return <div className="h-9 w-36" />
   }
@@ -94,12 +94,12 @@ export default function HeaderUserActions() {
   if (!user) {
     return (
       <div className="flex items-center gap-1 text-sm font-medium">
-        <a href="/ko/login"
+        <a href={`/${locale}/login`}
           className="rounded-full px-3 py-1.5 text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-white transition-colors">
           로그인
         </a>
         <span className="text-neutral-200 dark:text-neutral-700">|</span>
-        <a href="/ko/signup"
+        <a href={`/${locale}/signup`}
           className="rounded-full px-3 py-1.5 bg-neutral-900 text-white hover:bg-neutral-700 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100 transition-colors">
           회원가입
         </a>
