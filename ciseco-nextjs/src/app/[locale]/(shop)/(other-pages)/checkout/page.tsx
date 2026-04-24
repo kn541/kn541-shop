@@ -21,6 +21,16 @@ import toast from 'react-hot-toast'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
 
+// 배송메모 드롭다운 옵션
+const MEMO_OPTIONS = [
+  { value: '',       label: '선택해 주세요' },
+  { value: '문앞에 두고 가주세요',    label: '문앞에 두고 가주세요' },
+  { value: '경비실에 맡겨주세요',     label: '경비실에 맡겨주세요' },
+  { value: '택배함에 넣어주세요',     label: '택배함에 넣어주세요' },
+  { value: '직접 수령하겠습니다',     label: '직접 수령하겠습니다' },
+  { value: '__DIRECT__',             label: '직접 입력' },
+]
+
 function getToken(): string | null {
   if (typeof window === 'undefined') return null
   return localStorage.getItem('access_token')
@@ -61,14 +71,16 @@ export default function CheckoutPage() {
   const [saveNewAddress, setSaveNewAddress]       = useState(false)
 
   // 폼
-  const [form, setForm]       = useState({ name: '', phone: '', email: '', memo: '' })
-  const [address, setAddress] = useState<AddressValue>({ zipcode: '', address1: '', address2: '' })
+  const [form, setForm]         = useState({ name: '', phone: '', email: '', memo: '' })
+  const [address, setAddress]   = useState<AddressValue>({ zipcode: '', address1: '', address2: '' })
+  // 배송메모 드롭다운 선택값 ('__DIRECT__' 이면 직접입력 활성화)
+  const [memoSelect, setMemoSelect] = useState('')
 
   // 결제수단 선택
   const [payMethod, setPayMethod] = useState<PayMethod>('CARD')
 
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const paymentRef = useRef<any>(null)  // tossPayments.payment() 인스턴스
+  const paymentRef = useRef<any>(null)
 
   // 주문 가능 상품 없으면 cart로
   useEffect(() => {
@@ -97,7 +109,7 @@ export default function CheckoutPage() {
       .catch(() => setShowNewForm(true))
   }, [])
 
-  // 토스 SDK 초기화 (payment 인스턴스)
+  // 토스 SDK 초기화
   useEffect(() => {
     if (orderableItems.length === 0) return
     let mounted = true
@@ -114,7 +126,6 @@ export default function CheckoutPage() {
         const { loadTossPayments, ANONYMOUS } = await import('@tosspayments/tosspayments-sdk')
         const tossPayments = await loadTossPayments(client_key)
 
-        // customerKey: 로그인 사용자 UUID, 비로그인시 ANONYMOUS
         let customerKey = ANONYMOUS
         if (token) {
           try {
@@ -138,7 +149,11 @@ export default function CheckoutPage() {
   }, [orderableItems.length])
 
   function applyAddress(addr: SavedAddress) {
-    setForm(f => ({ ...f, name: addr.recipient_name, phone: addr.recipient_phone, memo: addr.delivery_memo ?? '' }))
+    const savedMemo = addr.delivery_memo ?? ''
+    // 저장된 메모가 preset 목록에 있으면 드롭다운 선택, 없으면 직접입력으로
+    const isPreset = MEMO_OPTIONS.some(o => o.value === savedMemo && o.value !== '__DIRECT__' && o.value !== '')
+    setMemoSelect(isPreset ? savedMemo : (savedMemo ? '__DIRECT__' : ''))
+    setForm(f => ({ ...f, name: addr.recipient_name, phone: addr.recipient_phone, memo: savedMemo }))
     setAddress({ zipcode: addr.zip_code, address1: addr.address1, address2: addr.address2 ?? '' })
   }
 
@@ -150,9 +165,20 @@ export default function CheckoutPage() {
 
   function handleNewAddress() {
     setSelectedAddressId(null)
+    setMemoSelect('')
     setForm(f => ({ ...f, name: '', phone: '', memo: '' }))
     setAddress({ zipcode: '', address1: '', address2: '' })
     setShowNewForm(true)
+  }
+
+  // 배송메모 드롭다운 변경 핸들러
+  function handleMemoSelect(val: string) {
+    setMemoSelect(val)
+    if (val !== '__DIRECT__') {
+      setForm(f => ({ ...f, memo: val }))
+    } else {
+      setForm(f => ({ ...f, memo: '' })) // 직접입력 선택 시 텍스트 초기화
+    }
   }
 
   const handlePay = async () => {
@@ -212,7 +238,7 @@ export default function CheckoutPage() {
       const prepareData = await prepareRes.json()
       if (!prepareRes.ok) throw new Error(prepareData.detail ?? '결제 사전등록에 실패했습니다')
 
-      // STEP 3: 토스 결제 요청 (API 개별 연동)
+      // STEP 3: 토스 결제 요청
       const origin = window.location.origin
       const baseParams = {
         orderId:             order_no,
@@ -228,11 +254,7 @@ export default function CheckoutPage() {
       if (payMethod === 'CARD') {
         await paymentRef.current.requestPayment({ method: 'CARD', ...baseParams })
       } else if (payMethod === 'VIRTUAL_ACCOUNT') {
-        // 가상계좌: 은행 선택은 토스 결제창에서 직접 처리
-        await paymentRef.current.requestPayment({
-          method: 'VIRTUAL_ACCOUNT',
-          ...baseParams,
-        })
+        await paymentRef.current.requestPayment({ method: 'VIRTUAL_ACCOUNT', ...baseParams })
       } else {
         await paymentRef.current.requestPayment({ method: 'TRANSFER', ...baseParams })
       }
@@ -250,10 +272,33 @@ export default function CheckoutPage() {
   if (orderableItems.length === 0) return null
 
   const PAY_METHODS: { key: PayMethod; label: string; desc: string; icon: React.ReactNode }[] = [
-    { key: 'CARD',            label: '신용카드',   desc: '바이스카드, 마스터카드 등',  icon: <CreditCardIcon className="h-5 w-5" /> },
-    { key: 'VIRTUAL_ACCOUNT', label: '가상계좌', desc: '무통장 입금',                   icon: <BuildingLibraryIcon className="h-5 w-5" /> },
-    { key: 'TRANSFER',        label: '계좌이체',   desc: '실시간 계좌이체',              icon: <BuildingLibraryIcon className="h-5 w-5" /> },
+    { key: 'CARD',            label: '신용카드', desc: '바이스카드, 마스터카드 등', icon: <CreditCardIcon className="h-5 w-5" /> },
+    { key: 'VIRTUAL_ACCOUNT', label: '가상계좌', desc: '무통장 입금',               icon: <BuildingLibraryIcon className="h-5 w-5" /> },
+    { key: 'TRANSFER',        label: '계좌이체', desc: '실시간 계좌이체',           icon: <BuildingLibraryIcon className="h-5 w-5" /> },
   ]
+
+  // 배송메모 입력 UI (드롭다운 + 직접입력)
+  const MemoInput = () => (
+    <div className="sm:col-span-2">
+      <label className={labelCls}>배송 메모 (선택)</label>
+      <select className={inputCls} value={memoSelect} onChange={e => handleMemoSelect(e.target.value)}>
+        {MEMO_OPTIONS.map(o => (
+          <option key={o.value} value={o.value}>{o.label}</option>
+        ))}
+      </select>
+      {/* 직접 입력 선택 시 텍스트 입력창 표시 */}
+      {memoSelect === '__DIRECT__' && (
+        <input
+          className={`${inputCls} mt-2`}
+          placeholder="배송 메모를 직접 입력해 주세요"
+          type="text"
+          maxLength={100}
+          value={form.memo}
+          onChange={e => setForm({ ...form, memo: e.target.value })}
+        />
+      )}
+    </div>
+  )
 
   return (
     <main className="container py-16 lg:pt-20 lg:pb-28">
@@ -294,9 +339,7 @@ export default function CheckoutPage() {
                     }`}>
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-2">
-                        <MapPinIcon className={`h-4 w-4 shrink-0 mt-0.5 ${
-                          selectedAddressId === addr.id ? 'text-primary-600' : 'text-neutral-400'
-                        }`} />
+                        <MapPinIcon className={`h-4 w-4 shrink-0 mt-0.5 ${selectedAddressId === addr.id ? 'text-primary-600' : 'text-neutral-400'}`} />
                         <div>
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{addr.recipient_name}</span>
@@ -350,16 +393,7 @@ export default function CheckoutPage() {
                     <KakaoAddressInput value={address} onChange={setAddress} label="주소 *"
                       inputClassName={inputCls} labelClassName={labelCls} />
                   </div>
-                  <div className="sm:col-span-2">
-                    <label className={labelCls}>배송 메모 (선택)</label>
-                    <select className={inputCls} value={form.memo} onChange={e => setForm({ ...form, memo: e.target.value })}>
-                      <option value="">선택해 주세요</option>
-                      <option>문앞에 두고 가주세요</option>
-                      <option>경비실에 맡겨주세요</option>
-                      <option>택배함에 넣어주세요</option>
-                      <option>직접 수령하겠습니다</option>
-                    </select>
-                  </div>
+                  <MemoInput />
                 </div>
                 {getToken() && (
                   <label className="flex cursor-pointer items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
@@ -371,11 +405,15 @@ export default function CheckoutPage() {
               </div>
             )}
 
+            {/* 저장된 배송지 선택 시 이메일 + 배송메모 노출 */}
             {!showNewForm && selectedAddressId && (
-              <div className="mt-4">
-                <label className={labelCls}>이메일 (선택)</label>
-                <input className={inputCls} placeholder="example@email.com" type="email"
-                  value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
+              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <label className={labelCls}>이메일 (선택)</label>
+                  <input className={inputCls} placeholder="example@email.com" type="email"
+                    value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
+                </div>
+                <MemoInput />
               </div>
             )}
           </section>
