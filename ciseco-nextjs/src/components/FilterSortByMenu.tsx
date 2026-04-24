@@ -1,19 +1,25 @@
 'use client'
 
+// 정렬 메뉴 — 한국어 + URL 쿼리 파라미터 연동
+// fix: 영어 정렬 옵션 → 한국어
+// feat: useRouter로 ?sort=xxx URL 파라미터 업데이트 → page.tsx에서 백엔드 전달
+
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions, Transition } from '@headlessui/react'
 import { CheckIcon, ChevronDownIcon } from '@heroicons/react/24/solid'
 import { ArrangeByLettersAZIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import clsx from 'clsx'
-import { FC, Fragment, useState } from 'react'
+import { FC, Fragment, useEffect, useState } from 'react'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 
-const sortByOptions = [
-  { name: 'Newest', value: 'newest' },
-  { name: 'Oldest', value: 'oldest' },
-  { name: 'Price: low to high', value: 'price-low-to-high' },
-  { name: 'Price: high to low', value: 'price-high-to-low' },
-  { name: 'A to Z', value: 'a-to-z' },
-  { name: 'Z to A', value: 'z-to-a' },
+// ★ 한국어 정렬 옵션
+export const SORT_OPTIONS = [
+  { name: '최신순', value: 'newest' },
+  { name: '가격 낮은순', value: 'price_asc' },
+  { name: '가격 높은순', value: 'price_desc' },
+  { name: '오래된순', value: 'oldest' },
+  { name: '상품명 ㄱ-ㅎ', value: 'name_asc' },
+  { name: '상품명 ㅎ-ㄱ', value: 'name_desc' },
 ]
 
 type Props = {
@@ -21,12 +27,31 @@ type Props = {
   filterOptions?: { name: string; value: string }[]
 }
 
-export const FilterSortByMenuListBox: FC<Props> = ({ className, filterOptions = sortByOptions }) => {
-  const [selectedOption, setSelectedOption] = useState(filterOptions[0].value)
+export const FilterSortByMenuListBox: FC<Props> = ({ className, filterOptions = SORT_OPTIONS }) => {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  // URL의 sort 파라미터와 동기화
+  const currentSort = searchParams.get('sort') || filterOptions[0].value
+  const [selectedOption, setSelectedOption] = useState(currentSort)
+
+  useEffect(() => {
+    setSelectedOption(currentSort)
+  }, [currentSort])
+
+  const handleChange = (value: string) => {
+    setSelectedOption(value)
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('sort', value)
+    // ★ 정렬 변경 시 page=1로 초기화
+    params.delete('page')
+    router.push(`${pathname}?${params.toString()}`)
+  }
 
   return (
     <div className={clsx('product-sort-by-list-box flex shrink-0', className)}>
-      <Listbox value={selectedOption} onChange={setSelectedOption}>
+      <Listbox value={selectedOption} onChange={handleChange}>
         <div className="relative">
           <ListboxButton
             className={clsx(
@@ -35,7 +60,7 @@ export const FilterSortByMenuListBox: FC<Props> = ({ className, filterOptions = 
             )}
           >
             <HugeiconsIcon icon={ArrangeByLettersAZIcon} size={18} />
-            <span className="ms-2">{filterOptions.find((item) => item.value === selectedOption)?.name}</span>
+            <span className="ms-2">{filterOptions.find((item) => item.value === selectedOption)?.name ?? filterOptions[0].name}</span>
             <ChevronDownIcon className="ml-3 size-4" aria-hidden="true" />
           </ListboxButton>
           <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
