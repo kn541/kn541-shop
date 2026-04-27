@@ -1,12 +1,12 @@
 'use client'
 // KN541 결제 실패 페이지
-// fix: locale 동적화 (/ko/ 하드코딩 제거)
+// fix: 주문취소 API /mypage/orders/{id}/cancel 통일
+// fix: 직접 fetch → mypageFetch (토큰·envelope 일관 처리)
 
 import { Suspense, useEffect, useRef } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline'
-
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
+import { mypageFetch } from '@/lib/mypage/api'
 
 const ERROR_MESSAGES: Record<string, string> = {
   PAY_PROCESS_CANCELED:                            '결제를 취소했습니다.',
@@ -46,15 +46,9 @@ function FailContent() {
     if (isCanceled || !orderId || cancelCalled.current) return
     cancelCalled.current = true
 
-    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
-    if (!token) return
-
-    fetch(`${BASE}/orders/${orderId}/cancel`, {
+    // ★ /mypage/orders/{id}/cancel 으로 통일 + mypageFetch 사용
+    mypageFetch(`/mypage/orders/${orderId}/cancel`, {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization:  `Bearer ${token}`,
-      },
       body: JSON.stringify({
         cancel_reason: `결제 실패: ${errorCode || errorMessage}`,
       }),
