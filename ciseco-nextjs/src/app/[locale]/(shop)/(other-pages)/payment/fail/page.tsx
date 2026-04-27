@@ -1,6 +1,7 @@
 'use client'
 // KN541 결제 실패 페이지
-// fix: locale 동적화 (/ko/ 하드코딩 제거)
+// fix: 주문취소 API /mypage/orders/{id}/cancel 통일
+// fix: 직접 fetch → mypageFetch (토큰·envelope 일관 처리)
 
 import { Suspense, useEffect, useRef } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'

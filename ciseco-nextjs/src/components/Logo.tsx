@@ -5,8 +5,8 @@ import { Link } from '@/components/Link'
 import Image from 'next/image'
 import React from 'react'
 
-// ★ 새 로고 URL (Supabase Storage logos 버킷)
-const LOGO_URL = 'https://qxmcbdqmmiyrrhenufaj.supabase.co/storage/v1/object/public/logos/logo1.svg'
+// ★ 서울 리전 로고 URL
+const LOGO_URL = 'https://ghtkropmnrelkxivzpim.supabase.co/storage/v1/object/public/logos/logo1.svg'
 
 export interface LogoProps {
   className?: string
