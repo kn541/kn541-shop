@@ -1,7 +1,6 @@
 'use client'
 // KN541 쇼핑몰 — 회원가입 페이지
-// 로고: Supabase Storage white_logo.png (가로 400px, 비율 유지)
-// 창업회원: 아지트 선택(필수) + 계좌정보(선택)
+// fix: 로고·로그인 링크 href locale 수정 (/ → /ko, /login → /ko/login)
 
 import { useState, useTransition, useCallback, useRef } from 'react'
 import Image from 'next/image'
@@ -149,7 +148,7 @@ export default function SignupPage() {
         if (access_token) {
           localStorage.setItem('access_token', access_token)
           if (refresh_token) localStorage.setItem('refresh_token', refresh_token)
-          router.push('/')
+          router.push('/ko')
         } else {
           setGlobalError('가입 처리 중 오류가 발생했습니다.')
         }
@@ -176,9 +175,9 @@ export default function SignupPage() {
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex items-start justify-center px-4 py-12">
       <div className="w-full max-w-[420px]">
 
-        {/* ── 회사 로고 (가로 400px 기준, 비율 유지) ── */}
+        {/* ★ 로고 링크 /ko로 수정 */}
         <div className="flex justify-center mb-8">
-          <a href="/" className="block">
+          <a href="/ko" className="block">
             <Image
               src={LOGO_URL}
               alt="KN541"
@@ -211,7 +210,6 @@ export default function SignupPage() {
           </button>
         </div>
 
-        {/* 창업회원 홍보 */}
         {memberType === 'startup' && (
           <div className="mb-5 rounded-2xl border border-amber-200 dark:border-amber-800 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/40 p-5">
             <div className="flex items-center gap-2 mb-3">
@@ -227,7 +225,6 @@ export default function SignupPage() {
           </div>
         )}
 
-        {/* 일반회원 안내 */}
         {memberType === 'normal' && (
           <div className="mb-5 rounded-2xl border border-blue-100 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/30 px-5 py-4">
             <p className="text-sm text-blue-700 dark:text-blue-300">
@@ -236,7 +233,6 @@ export default function SignupPage() {
           </div>
         )}
 
-        {/* 카드 */}
         <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-sm border border-neutral-100 dark:border-neutral-800 px-8 py-8">
           <h1 className="text-[20px] font-bold text-neutral-900 dark:text-white mb-6 text-center">
             {memberType === 'startup' ? '창업 회원 가입' : '일반 회원 가입'}
@@ -300,13 +296,12 @@ export default function SignupPage() {
               <input type="text" value={recommenderCode} onChange={e => setRecommenderCode(e.target.value)} placeholder="추천인 아이디 또는 회원번호" className={inputCls} />
             </div>
 
-            {/* 창업회원 전용 */}
             {memberType === 'startup' && (
               <>
                 <div className="border-t border-amber-100 dark:border-amber-900/40 pt-4">
                   <p className="text-xs font-bold text-amber-600 dark:text-amber-400 mb-3 uppercase tracking-wide">⭐ 창업회원 추가 정보</p>
                   <div>
-                    <label className={labelCls}>소속 아지트 <span className="text-red-400">*</span> <span className="text-neutral-400 font-normal normal-case ml-1">(필수 선택)</span></label>
+                    <label className={labelCls}>소속 아지트 <span className="text-red-400">*</span></label>
                     <select value={agitCode} onChange={e => setAgitCode(e.target.value)}
                       className={`${inputCls} ${!agitCode ? 'text-neutral-400' : ''}`}>
                       <option value="">아지트를 선택해주세요</option>
@@ -350,15 +345,14 @@ export default function SignupPage() {
               </>
             )}
 
-            {/* 약관 */}
             <div className="border-t border-neutral-100 dark:border-neutral-800 pt-4 space-y-2.5">
               <label className="flex items-start gap-3 cursor-pointer">
                 <input type="checkbox" checked={agreeTerms} onChange={e => setAgreeTerms(e.target.checked)} className="mt-0.5 accent-neutral-900" />
-                <span className="text-sm text-neutral-700 dark:text-neutral-300"><strong>(필수)</strong> 이용약관에 동의합니다. <a href="/terms" className="text-primary-600 underline text-xs">약관 보기</a></span>
+                <span className="text-sm text-neutral-700 dark:text-neutral-300"><strong>(필수)</strong> 이용약관에 동의합니다. <a href="/ko/terms" className="text-primary-600 underline text-xs">약관 보기</a></span>
               </label>
               <label className="flex items-start gap-3 cursor-pointer">
                 <input type="checkbox" checked={agreePrivacy} onChange={e => setAgreePrivacy(e.target.checked)} className="mt-0.5 accent-neutral-900" />
-                <span className="text-sm text-neutral-700 dark:text-neutral-300"><strong>(필수)</strong> 개인정보 수집·이용에 동의합니다. <a href="/privacy" className="text-primary-600 underline text-xs">약관 보기</a></span>
+                <span className="text-sm text-neutral-700 dark:text-neutral-300"><strong>(필수)</strong> 개인정보 수집·이용에 동의합니다. <a href="/ko/privacy" className="text-primary-600 underline text-xs">약관 보기</a></span>
               </label>
             </div>
 
@@ -377,9 +371,10 @@ export default function SignupPage() {
           </form>
         </div>
 
+        {/* ★ 로그인 링크 /ko/login으로 수정 */}
         <p className="text-center text-sm text-neutral-500 dark:text-neutral-400 mt-6">
           이미 계정이 있으신가요?{' '}
-          <a href="/login" className="font-semibold text-neutral-900 dark:text-white hover:underline">로그인</a>
+          <a href="/ko/login" className="font-semibold text-neutral-900 dark:text-white hover:underline">로그인</a>
         </p>
       </div>
     </div>
