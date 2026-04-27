@@ -1,11 +1,15 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
-import { useState, useEffect } from 'react'
+import { useRouter } from '@/i18n/navigation'
+import { useLocale } from 'next-intl'
+import { useEffect, useState } from 'react'
 import ButtonPrimary from '@/shared/Button/ButtonPrimary'
 import { ChatBubbleLeftEllipsisIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
+import { mypageFetch, MypageApiError } from '@/lib/mypage/api'
+import { useInquiries } from '@/lib/mypage/useInquiries'
+import type { InquiryStatus } from '@/lib/mypage/types'
+import BigTabs from '@/components/mypage/BigTabs'
 
-// 문의 유형 목록 (system_codes cs_inquiry_type)
 const INQUIRY_TYPES = [
   { code: '001', label: '주문/결제' },
   { code: '002', label: '배송' },
@@ -20,56 +24,58 @@ type Step = 'form' | 'done'
 
 export default function InquiryClient() {
   const router = useRouter()
-  const [step, setStep]       = useState<Step>('form')
-  const [token, setToken]     = useState<string | null>(null)
-  const [type, setType]       = useState('007')
-  const [title, setTitle]     = useState('')
-  const [content, setContent] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState('')
-  const [inquiryId, setInquiryId] = useState('')
+  const locale = useLocale()
+  const [tab, setTab] = useState<InquiryStatus | 'ALL'>('ALL')
+  const { data, loading, refetch } = useInquiries(tab)
 
-  // 로그인 체크 — 토큰 없으면 로그인 페이지로
+  const [step, setStep] = useState<Step>('form')
+  const [type, setType] = useState('007')
+  const [title, setTitle] = useState('')
+  const [content, setContent] = useState('')
+  const [submitLoading, setSubmitLoading] = useState(false)
+  const [error, setError] = useState('')
+
   useEffect(() => {
     const t = localStorage.getItem('access_token')
     if (!t) {
-      router.replace('/ko/login?redirect=/ko/cs/inquiry')
-    } else {
-      setToken(t)
+      router.replace(`/login?redirect=/${locale}/cs/inquiry`)
     }
-  }, [router])
+  }, [router, locale])
 
   const handleSubmit = async () => {
     setError('')
-    if (!title.trim()) { setError('제목을 입력해 주세요.'); return }
-    if (!content.trim()) { setError('내용을 입력해 주세요.'); return }
+    if (!title.trim()) {
+      setError('제목을 입력해 주세요.')
+      return
+    }
+    if (!content.trim()) {
+      setError('내용을 입력해 주세요.')
+      return
+    }
 
-    const BASE = process.env.NEXT_PUBLIC_API_URL || ''
-    setLoading(true)
+    setSubmitLoading(true)
     try {
-      const res = await fetch(`${BASE}/cs/inquiries`, {
+      await mypageFetch<unknown>('/cs/inquiries', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ inquiry_type: type, title: title.trim(), content: content.trim() }),
+        body: JSON.stringify({
+          inquiry_type: type,
+          title: title.trim(),
+          content: content.trim(),
+        }),
       })
-      const data = await res.json()
-      if (res.ok && data.status === 'success') {
-        setInquiryId(data.data?.inquiry_id || '')
-        setStep('done')
+      setStep('done')
+      refetch()
+    } catch (e) {
+      if (e instanceof MypageApiError) {
+        setError(e.message)
       } else {
-        setError(data.detail || '문의 접수 중 오류가 발생했습니다.')
+        setError('문의 접수 중 오류가 발생했습니다.')
       }
-    } catch {
-      setError('네트워크 오류가 발생했습니다.')
     } finally {
-      setLoading(false)
+      setSubmitLoading(false)
     }
   }
 
-  // 완료 화면
   if (step === 'done') {
     return (
       <div className="container mx-auto max-w-2xl py-20 text-center">
@@ -80,34 +86,35 @@ export default function InquiryClient() {
         </p>
         <div className="mt-8 flex justify-center gap-3">
           <button
-            onClick={() => { setStep('form'); setTitle(''); setContent(''); setType('007') }}
+            type="button"
+            onClick={() => {
+              setStep('form')
+              setTitle('')
+              setContent('')
+              setType('007')
+            }}
             className="rounded-full border border-neutral-300 px-6 py-2.5 text-sm font-medium hover:bg-neutral-50 dark:border-neutral-600 dark:hover:bg-neutral-800"
           >
             추가 문의 작성
           </button>
-          <ButtonPrimary onClick={() => router.push('/ko')} className="px-6">
+          <ButtonPrimary onClick={() => router.push('/')} className="px-6">
             홈으로
           </ButtonPrimary>
         </div>
 
-        {/* 하단 안내 */}
         <div className="mt-12 rounded-2xl bg-neutral-50 px-6 py-6 text-left text-sm text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
           <p className="font-semibold text-neutral-900 dark:text-neutral-100">고객센터 안내</p>
           <ul className="mt-3 space-y-1">
-            <li>• 영업시간: 평일 09:00 ~ 18:00 (토일, 일요일, 공휴일 휴무)</li>
-            <li>• 답변은 문의 내용에 따라 지연될 수 있습니다.</li>
-            <li>• 긴급 문의: <a href="tel:1588-0000" className="text-primary-600 underline">1588-0000</a></li>
+            <li>• 영업시간: 평일 09:00 ~ 18:00 (토·일, 공휴일 휴무)</li>
+            <li>• 긴급 문의: <a href="tel:070-4436-0928" className="text-primary-600 underline">070-4436-0928</a> (KN541)</li>
           </ul>
         </div>
       </div>
     )
   }
 
-  // 문의 폼
   return (
-    <div className="container mx-auto max-w-2xl py-12 lg:py-20">
-
-      {/* 헤더 */}
+    <div className="container mx-auto max-w-3xl py-12 lg:py-20">
       <div className="mb-10 text-center">
         <div className="mb-4 flex justify-center">
           <ChatBubbleLeftEllipsisIcon className="h-12 w-12 text-primary-600" />
@@ -118,18 +125,16 @@ export default function InquiryClient() {
         </p>
       </div>
 
-      {/* 폼 */}
-      <div className="flex flex-col gap-6 rounded-3xl border border-neutral-100 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-neutral-800 sm:p-8">
-
-        {/* 문의 유형 */}
+      <div className="mb-10 flex flex-col gap-6 rounded-3xl border border-neutral-100 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-neutral-800 sm:p-8">
         <div>
           <label className="mb-2 block text-sm font-semibold text-neutral-900 dark:text-neutral-100">
             문의 유형 <span className="text-red-500">*</span>
           </label>
           <div className="flex flex-wrap gap-2">
-            {INQUIRY_TYPES.map((t) => (
+            {INQUIRY_TYPES.map(t => (
               <button
                 key={t.code}
+                type="button"
                 onClick={() => setType(t.code)}
                 className={`rounded-full border px-4 py-1.5 text-sm font-medium transition ${
                   type === t.code
@@ -143,7 +148,6 @@ export default function InquiryClient() {
           </div>
         </div>
 
-        {/* 제목 */}
         <div>
           <label className="mb-2 block text-sm font-semibold text-neutral-900 dark:text-neutral-100">
             제목 <span className="text-red-500">*</span>
@@ -151,55 +155,89 @@ export default function InquiryClient() {
           <input
             type="text"
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={e => setTitle(e.target.value)}
             placeholder="문의 제목을 입력하세요"
             maxLength={100}
             className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm outline-none placeholder:text-neutral-400 focus:border-primary-400 focus:ring-2 focus:ring-primary-100 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100"
           />
         </div>
 
-        {/* 내용 */}
         <div>
           <label className="mb-2 block text-sm font-semibold text-neutral-900 dark:text-neutral-100">
             문의 내용 <span className="text-red-500">*</span>
           </label>
           <textarea
             value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="문의 내용을 상세히 입력해 주세요.&#10;(주문번호, 상품명 등을 함께 작성하시면 빠른 답변이 가능합니다)"
-            rows={8}
+            onChange={e => setContent(e.target.value)}
+            placeholder="문의 내용을 상세히 입력해 주세요. (주문번호, 상품명 등)"
+            rows={6}
             maxLength={2000}
             className="w-full resize-none rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm outline-none placeholder:text-neutral-400 focus:border-primary-400 focus:ring-2 focus:ring-primary-100 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100"
           />
           <div className="mt-1 text-right text-xs text-neutral-400">{content.length} / 2,000</div>
         </div>
 
-        {/* 에러 */}
         {error && (
           <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
             {error}
           </div>
         )}
 
-        {/* 제출 버튼 */}
         <ButtonPrimary
-          onClick={handleSubmit}
-          disabled={loading || !title.trim() || !content.trim()}
+          onClick={() => void handleSubmit()}
+          disabled={submitLoading || !title.trim() || !content.trim()}
           className="w-full py-3.5 text-base"
         >
-          {loading ? '접수 중...' : '문의 접수하기'}
+          {submitLoading ? '접수 중...' : '문의 접수하기'}
         </ButtonPrimary>
       </div>
 
-      {/* 안내 사항 */}
-      <div className="mt-8 rounded-2xl bg-neutral-50 px-6 py-5 text-sm text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
-        <p className="font-semibold text-neutral-900 dark:text-neutral-100">유의사항</p>
-        <ul className="mt-2 space-y-1">
-          <li>• 답변 시간: 영업일 기준 1~2일 (토일·일요일·공휴일 제외)</li>
-          <li>• 개인정보 보호를 위해 주문번호, 제품명 등 관련 정보를 함께 작성해 주세요.</li>
-          <li>• 반품/교환 문의시 구매 사진 또는 영수증을 먿붙여 주시면 빠른 처리가 가능합니다.</li>
-          <li>• FAQ에서 답변을 찾으실 수 있습니다: <a href="/ko/faq" className="text-primary-600 underline">자주묻는질문 보기</a></li>
-        </ul>
+      <h2 className="mb-4 text-lg font-semibold text-neutral-900 dark:text-neutral-100">내 문의</h2>
+      <BigTabs
+        value={tab}
+        onChange={v => setTab(v as InquiryStatus | 'ALL')}
+        tabs={[
+          { value: 'ALL', label: '전체' },
+          { value: 'WAITING', label: '답변 대기' },
+          { value: 'ANSWERED', label: '답변 완료' },
+        ]}
+      />
+
+      <div className="mt-4 space-y-3">
+        {loading && <p className="py-8 text-center text-sm text-neutral-500">불러오는 중…</p>}
+        {!loading && data?.items.length === 0 && (
+          <p className="py-8 text-center text-sm text-neutral-500">등록된 문의가 없습니다.</p>
+        )}
+        {!loading &&
+          data?.items.map(item => (
+            <div
+              key={item.inquiry_id}
+              className="rounded-2xl border border-neutral-200 p-4 dark:border-neutral-700"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="font-semibold text-neutral-900 dark:text-neutral-100">{item.subject}</span>
+                <span
+                  className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                    item.status === 'ANSWERED'
+                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200'
+                      : 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200'
+                  }`}
+                >
+                  {item.status_label}
+                </span>
+              </div>
+              <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">{item.content}</p>
+              <p className="mt-2 text-xs text-neutral-400">
+                {new Date(item.created_at).toLocaleString('ko-KR')}
+              </p>
+              {item.status === 'ANSWERED' && item.answer && (
+                <div className="mt-3 rounded-xl bg-neutral-50 p-3 text-sm dark:bg-neutral-900/60">
+                  <span className="font-medium text-primary-600">답변</span>
+                  <p className="mt-1 whitespace-pre-wrap text-neutral-700 dark:text-neutral-200">{item.answer}</p>
+                </div>
+              )}
+            </div>
+          ))}
       </div>
     </div>
   )

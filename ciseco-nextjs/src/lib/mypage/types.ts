@@ -58,6 +58,66 @@ export interface OrderListResponse {
   status_counts: Record<OrderStatus | 'ALL', number>
 }
 
+/** GET /mypage/orders/{id} — 백엔드 필드 유연 매핑 */
+export interface OrderDetailLineItem {
+  product_id?: string
+  product_name?: string
+  name?: string
+  thumbnail_url?: string | null
+  image_url?: string | null
+  quantity?: number
+  qty?: number
+  unit_price?: number
+  price?: number
+  line_amount?: number
+  amount?: number
+}
+
+export interface OrderDetail {
+  order_id: string
+  order_no?: string
+  order_status?: string
+  status?: string
+  created_at?: string
+  ordered_at?: string
+  total_amount?: number
+  payment_method?: string | null
+  tracking_number?: string | null
+  invoice_no?: string | null
+  shipping_address?: {
+    recipient_name?: string
+    recipient_phone?: string
+    zip_code?: string
+    address1?: string
+    address2?: string | null
+  } | null
+  recipient_name?: string
+  recipient_phone?: string
+  zip_code?: string
+  address1?: string
+  address2?: string | null
+  items?: OrderDetailLineItem[]
+}
+
+/** GET /my/commissions?month=YYYY-MM */
+export interface CommissionMonthRow {
+  id?: string
+  amount?: number | string
+  status?: string
+  created_at?: string
+  rule_name?: string
+  from_member_name?: string
+  [key: string]: unknown
+}
+
+export interface CommissionMonthResponse {
+  month_total?: number
+  cumulative_total?: number
+  items?: CommissionMonthRow[]
+  total?: number
+  rows?: CommissionMonthRow[]
+}
+
 // ──── Phase 5-2 ────────────────────────────────────────────────────────────
 
 export type InquiryStatus = 'WAITING' | 'ANSWERED'
@@ -92,6 +152,8 @@ export interface MypageProfile {
   zip_code: string | null
   address1: string | null
   address2: string | null
+  /** 시스템 회원유형 코드 (창업회원: 006) */
+  user_type?: string | null
 }
 
 // ──── Phase 5-4 ────────────────────────────────────────────────────────────

@@ -5,8 +5,7 @@
 import { Suspense, useEffect, useRef } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline'
-
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
+import { mypageFetch } from '@/lib/mypage/api'
 
 const ERROR_MESSAGES: Record<string, string> = {
   PAY_PROCESS_CANCELED:                            '결제를 취소했습니다.',
@@ -49,12 +48,8 @@ function FailContent() {
     const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
     if (!token) return
 
-    fetch(`${BASE}/orders/${orderId}/cancel`, {
+    mypageFetch<unknown>(`/mypage/orders/${encodeURIComponent(orderId)}/cancel`, {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization:  `Bearer ${token}`,
-      },
       body: JSON.stringify({
         cancel_reason: `결제 실패: ${errorCode || errorMessage}`,
       }),

@@ -40,6 +40,7 @@ export function useProfile() {
           zip_code:   d.zip_code  ? String(d.zip_code)   : null,
           address1:   d.address1  ? String(d.address1)   : null,
           address2:   d.address2  ? String(d.address2)   : null,
+          user_type:  d.user_type != null && d.user_type !== '' ? String(d.user_type) : null,
         })
         setError(null)
       })

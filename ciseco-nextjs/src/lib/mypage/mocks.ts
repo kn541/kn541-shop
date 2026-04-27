@@ -78,6 +78,7 @@ export const MOCK_PROFILE: MypageProfile = {
   user_id: 'user-001', username: 'hong123', email: 'hong@example.com', phone: '01012345678',
   name: '홍길동', birth_date: '1960-01-01', gender: 'M',
   zip_code: '06000', address1: '서울특별시 강남구 테헄란로', address2: '101동 202호',
+  user_type: '002',
 }
 
 export const MOCK_POINTS: PointsResponse = {

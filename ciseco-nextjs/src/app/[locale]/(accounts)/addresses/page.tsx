@@ -1,180 +1,201 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from '@/i18n/navigation'
+import { useTranslations } from 'next-intl'
 import ButtonPrimary from '@/shared/Button/ButtonPrimary'
 import ButtonSecondary from '@/shared/Button/ButtonSecondary'
 import { toast } from 'react-hot-toast'
-import KakaoAddressInput, { AddressValue } from '@/components/common/KakaoAddressSearch'
+import KakaoAddressInput, { type AddressValue } from '@/components/common/KakaoAddressSearch'
+import { mypageFetch, MypageApiError } from '@/lib/mypage/api'
 
-const BASE = process.env.NEXT_PUBLIC_API_URL || 'https://kn541-production.up.railway.app'
+const MAX_ADDRESSES = 5
 
-function getHeaders() {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
-  return { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
-}
-
-interface Address {
+interface MyAddress {
   id: string
   recipient_name: string
-  phone: string
-  zipcode: string
+  recipient_phone: string
+  zip_code: string
   address1: string
   address2: string | null
+  delivery_memo?: string | null
   is_default: boolean
 }
 
-const EMPTY_FORM = {
-  recipient_name: '', phone: '', is_default: false,
+function normalizeRow(raw: Record<string, unknown>): MyAddress | null {
+  const id = String(raw.id ?? raw.address_id ?? '')
+  if (!id) return null
+  return {
+    id,
+    recipient_name: String(raw.recipient_name ?? ''),
+    recipient_phone: String(raw.recipient_phone ?? raw.phone ?? ''),
+    zip_code: String(raw.zip_code ?? raw.zipcode ?? ''),
+    address1: String(raw.address1 ?? ''),
+    address2: raw.address2 != null ? String(raw.address2) : null,
+    delivery_memo: raw.delivery_memo != null ? String(raw.delivery_memo) : null,
+    is_default: Boolean(raw.is_default),
+  }
 }
+
+const EMPTY_FORM = { recipient_name: '', recipient_phone: '', delivery_memo: '', is_default: false }
 const EMPTY_ADDR: AddressValue = { zipcode: '', address1: '', address2: '' }
 
 export default function AddressesPage() {
   const router = useRouter()
-  const [addresses, setAddresses] = useState<Address[]>([])
+  const t = useTranslations('Account')
+  const [addresses, setAddresses] = useState<MyAddress[]>([])
   const [loading, setLoading] = useState(true)
-  const [userId, setUserId] = useState('')
   const [showForm, setShowForm] = useState(false)
-  const [editId, setEditId] = useState<string | null>(null)
   const [form, setForm] = useState(EMPTY_FORM)
   const [address, setAddress] = useState<AddressValue>(EMPTY_ADDR)
 
-  useEffect(() => { fetchMe() }, [])
-
-  async function fetchMe() {
+  const load = useCallback(async () => {
+    setLoading(true)
     try {
-      const token = localStorage.getItem('access_token')
-      if (!token) { router.push('/login'); return }
-      const me = await fetch(`${BASE}/auth/me`, { headers: getHeaders() })
-      if (me.status === 401) { router.push('/login'); return }
-      const data = await me.json()
-      const uid = data.data?.user_id
-      setUserId(uid)
-      fetchAddresses(uid)
-    } catch {}
-  }
-
-  async function fetchAddresses(uid: string) {
-    try {
-      const r = await fetch(`${BASE}/members/${uid}/addresses`, { headers: getHeaders() })
-      const data = await r.json()
-      setAddresses(data.data?.items || [])
-    } catch {
-      toast.error('배송지 목록을 불러오지 못했습니다')
+      const data = await mypageFetch<{ items?: unknown[] } | unknown[]>('/my/addresses')
+      const rows = Array.isArray(data) ? data : data?.items ?? []
+      const next: MyAddress[] = []
+      for (const r of rows) {
+        if (r && typeof r === 'object') {
+          const n = normalizeRow(r as Record<string, unknown>)
+          if (n) next.push(n)
+        }
+      }
+      setAddresses(next)
+    } catch (e) {
+      if (e instanceof MypageApiError && e.status === 401) {
+        router.replace('/login')
+        return
+      }
+      toast.error('배송지 목록을 불러오지 못했습니다.')
+      setAddresses([])
     } finally {
       setLoading(false)
     }
-  }
+  }, [router])
+
+  useEffect(() => {
+    void load()
+  }, [load])
 
   async function saveAddress() {
-    if (!form.recipient_name || !form.phone || !address.address1) {
-      toast.error('필수 항목을 입력해주세요'); return
+    if (addresses.length >= MAX_ADDRESSES && !showForm) {
+      toast.error(`배송지는 최대 ${MAX_ADDRESSES}개까지 등록할 수 있습니다.`)
+      return
+    }
+    if (!form.recipient_name || !form.recipient_phone || !address.address1) {
+      toast.error('필수 항목을 입력해 주세요.')
+      return
     }
     try {
-      const body = {
-        recipient_name: form.recipient_name,
-        phone: form.phone,
-        zipcode: address.zipcode,
-        address1: address.address1,
-        address2: address.address2 || '',
-        is_default: form.is_default,
-      }
-      const url = editId
-        ? `${BASE}/members/${userId}/addresses/${editId}`
-        : `${BASE}/members/${userId}/addresses`
-      const r = await fetch(url, {
-        method: editId ? 'PATCH' : 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify(body),
+      await mypageFetch<unknown>('/my/addresses', {
+        method: 'POST',
+        body: JSON.stringify({
+          recipient_name: form.recipient_name,
+          recipient_phone: form.recipient_phone,
+          zip_code: address.zipcode,
+          address1: address.address1,
+          address2: address.address2 || undefined,
+          delivery_memo: form.delivery_memo || undefined,
+          is_default: form.is_default,
+        }),
       })
-      if (r.ok) {
-        toast.success(editId ? '배송지가 수정됐습니다' : '배송지가 추가됐습니다')
-        closeForm()
-        fetchAddresses(userId)
-      } else {
-        toast.error('저장에 실패했습니다')
-      }
-    } catch {
-      toast.error('오류가 발생했습니다')
+      toast.success('배송지가 추가되었습니다.')
+      closeForm()
+      await load()
+    } catch (e) {
+      const msg = e instanceof MypageApiError ? e.message : '저장에 실패했습니다.'
+      toast.error(msg)
     }
   }
 
   async function deleteAddress(id: string) {
     if (!confirm('이 배송지를 삭제할까요?')) return
     try {
-      await fetch(`${BASE}/members/${userId}/addresses/${id}`, { method: 'DELETE', headers: getHeaders() })
-      toast.success('배송지가 삭제됐습니다')
-      fetchAddresses(userId)
-    } catch { toast.error('오류가 발생했습니다') }
+      await mypageFetch<unknown>(`/my/addresses/${encodeURIComponent(id)}`, { method: 'DELETE' })
+      toast.success('배송지가 삭제되었습니다.')
+      await load()
+    } catch (e) {
+      const msg = e instanceof MypageApiError ? e.message : '삭제에 실패했습니다.'
+      toast.error(msg)
+    }
   }
 
   async function setDefault(id: string) {
     try {
-      await fetch(`${BASE}/members/${userId}/addresses/${id}/default`, { method: 'PATCH', headers: getHeaders() })
-      toast.success('기본 배송지로 설정됐습니다')
-      fetchAddresses(userId)
-    } catch { toast.error('오류가 발생했습니다') }
+      await mypageFetch<unknown>(`/my/addresses/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ is_default: true }),
+      })
+      toast.success('기본 배송지로 설정되었습니다.')
+      await load()
+    } catch (e) {
+      const msg = e instanceof MypageApiError ? e.message : '설정에 실패했습니다.'
+      toast.error(msg)
+    }
   }
 
   function openAddForm() {
-    setEditId(null)
+    if (addresses.length >= MAX_ADDRESSES) {
+      toast.error(`배송지는 최대 ${MAX_ADDRESSES}개까지 등록할 수 있습니다.`)
+      return
+    }
     setForm(EMPTY_FORM)
     setAddress(EMPTY_ADDR)
-    setShowForm(true)
-  }
-
-  function startEdit(addr: Address) {
-    setEditId(addr.id)
-    setForm({ recipient_name: addr.recipient_name, phone: addr.phone, is_default: addr.is_default })
-    setAddress({ zipcode: addr.zipcode, address1: addr.address1, address2: addr.address2 || '' })
     setShowForm(true)
   }
 
   function closeForm() {
     setShowForm(false)
-    setEditId(null)
     setForm(EMPTY_FORM)
     setAddress(EMPTY_ADDR)
   }
 
-  const inp = 'w-full rounded-xl border border-neutral-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-900'
+  const inp =
+    'w-full rounded-xl border border-neutral-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-900'
   const lbl = 'mb-1 block text-sm font-medium'
 
-  if (loading) return (
-    <div className="flex items-center justify-center py-20">
-      <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary-500 border-t-transparent" />
-    </div>
-  )
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary-500 border-t-transparent" />
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-y-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold sm:text-3xl">배송지 관리</h1>
+        <h1 className="text-2xl font-semibold sm:text-3xl">{t('addresses')}</h1>
         <ButtonPrimary onClick={openAddForm}>+ 배송지 추가</ButtonPrimary>
       </div>
+      <p className="text-sm text-neutral-500 dark:text-neutral-400">
+        배송지는 최대 {MAX_ADDRESSES}개까지 저장할 수 있습니다.
+      </p>
 
-      {/* 추가/수정 폼 */}
       {showForm && (
         <div className="space-y-4 rounded-2xl border border-neutral-200 p-6 dark:border-neutral-700">
-          <h3 className="font-semibold">{editId ? '배송지 수정' : '새 배송지'}</h3>
-
-          {/* 받는 분 */}
+          <h3 className="font-semibold">새 배송지</h3>
           <div>
             <label className={lbl}>받는 분 *</label>
-            <input type="text" className={inp} placeholder="이름"
+            <input
+              type="text"
+              className={inp}
+              placeholder="이름"
               value={form.recipient_name}
-              onChange={(e) => setForm((p) => ({ ...p, recipient_name: e.target.value }))} />
+              onChange={e => setForm(p => ({ ...p, recipient_name: e.target.value }))}
+            />
           </div>
-
-          {/* 연락처 */}
           <div>
             <label className={lbl}>연락처 *</label>
-            <input type="tel" className={inp} placeholder="010-0000-0000"
-              value={form.phone}
-              onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))} />
+            <input
+              type="tel"
+              className={inp}
+              placeholder="010-0000-0000"
+              value={form.recipient_phone}
+              onChange={e => setForm(p => ({ ...p, recipient_phone: e.target.value }))}
+            />
           </div>
-
-          {/* ★ 카카오 주소 검색 */}
           <KakaoAddressInput
             value={address}
             onChange={setAddress}
@@ -182,33 +203,45 @@ export default function AddressesPage() {
             inputClassName={inp}
             labelClassName={lbl}
           />
-
-          {/* 기본 배송지 */}
+          <div>
+            <label className={lbl}>배송 메모</label>
+            <input
+              type="text"
+              className={inp}
+              placeholder="택배 기사님께 전달할 메모"
+              value={form.delivery_memo}
+              onChange={e => setForm(p => ({ ...p, delivery_memo: e.target.value }))}
+            />
+          </div>
           <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={form.is_default}
-              onChange={(e) => setForm((p) => ({ ...p, is_default: e.target.checked }))} />
+            <input
+              type="checkbox"
+              checked={form.is_default}
+              onChange={e => setForm(p => ({ ...p, is_default: e.target.checked }))}
+            />
             기본 배송지로 설정
           </label>
-
           <div className="flex gap-3">
-            <ButtonPrimary onClick={saveAddress}>저장</ButtonPrimary>
+            <ButtonPrimary onClick={() => void saveAddress()}>저장</ButtonPrimary>
             <ButtonSecondary onClick={closeForm}>취소</ButtonSecondary>
           </div>
         </div>
       )}
 
-      {/* 배송지 목록 */}
       {addresses.length === 0 ? (
-        <div className="py-12 text-center text-sm text-neutral-500">등록된 배송지가 없습니다</div>
+        <div className="py-12 text-center text-sm text-neutral-500">등록된 배송지가 없습니다.</div>
       ) : (
         <div className="space-y-3">
-          {addresses.map((addr) => (
-            <div key={addr.id} className={`rounded-2xl border p-5 dark:border-neutral-700 ${
-              addr.is_default
-                ? 'border-primary-300 bg-primary-50/30 dark:border-primary-700'
-                : 'border-neutral-200'
-            }`}>
-              <div className="flex items-start justify-between">
+          {addresses.map(addr => (
+            <div
+              key={addr.id}
+              className={`rounded-2xl border p-5 dark:border-neutral-700 ${
+                addr.is_default
+                  ? 'border-primary-300 bg-primary-50/30 dark:border-primary-700'
+                  : 'border-neutral-200'
+              }`}
+            >
+              <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2">
                     <p className="font-semibold">{addr.recipient_name}</p>
@@ -216,23 +249,30 @@ export default function AddressesPage() {
                       <span className="rounded-full bg-primary-500 px-2 py-0.5 text-xs text-white">기본</span>
                     )}
                   </div>
-                  <p className="text-sm text-neutral-500">{addr.phone}</p>
-                  <p className="text-sm">[{addr.zipcode}] {addr.address1}</p>
+                  <p className="text-sm text-neutral-500">{addr.recipient_phone}</p>
+                  <p className="text-sm">
+                    [{addr.zip_code}] {addr.address1}
+                  </p>
                   {addr.address2 && <p className="text-sm text-neutral-500">{addr.address2}</p>}
+                  {addr.delivery_memo && (
+                    <p className="mt-1 text-xs text-neutral-400">메모: {addr.delivery_memo}</p>
+                  )}
                 </div>
-                <div className="flex flex-wrap gap-2 justify-end">
+                <div className="flex flex-wrap justify-end gap-2">
                   {!addr.is_default && (
-                    <button onClick={() => setDefault(addr.id)}
-                      className="rounded-lg bg-neutral-100 px-3 py-1.5 text-xs hover:bg-neutral-200 dark:bg-neutral-800">
+                    <button
+                      type="button"
+                      onClick={() => void setDefault(addr.id)}
+                      className="rounded-lg bg-neutral-100 px-3 py-1.5 text-xs hover:bg-neutral-200 dark:bg-neutral-800"
+                    >
                       기본 설정
                     </button>
                   )}
-                  <button onClick={() => startEdit(addr)}
-                    className="rounded-lg bg-blue-50 px-3 py-1.5 text-xs text-blue-600 hover:bg-blue-100 dark:bg-blue-900/30">
-                    수정
-                  </button>
-                  <button onClick={() => deleteAddress(addr.id)}
-                    className="rounded-lg bg-red-50 px-3 py-1.5 text-xs text-red-600 hover:bg-red-100 dark:bg-red-900/30">
+                  <button
+                    type="button"
+                    onClick={() => void deleteAddress(addr.id)}
+                    className="rounded-lg bg-red-50 px-3 py-1.5 text-xs text-red-600 hover:bg-red-100 dark:bg-red-900/30"
+                  >
                     삭제
                   </button>
                 </div>
