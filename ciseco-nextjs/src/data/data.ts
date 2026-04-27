@@ -3,6 +3,7 @@
  * - NEXT_PUBLIC_API_URL 설정 시 실제 KN541 API 호출
  * - 미설정 또는 API 오류 시 더미데이터로 자동 폴백
  * fix v2: product_id(UUID) 사용, product_status 필터 제거, description 실제값 사용
+ * fix v3: getGroupCollections 카테고리 한국어화
  */
 
 import collectionImage1 from '@/images/collections/1.png'
@@ -154,21 +155,21 @@ function getDummyProducts() {
 // ─── 더미 컬렉션 데이터 (폴백용) ─────────────────────────────────
 function getDummyCollections() {
   return [
-    { id: 'gid://1', title: 'Jackets', handle: 'jackets', description: 'Explore our collection of trendy jackets.', sortDescription: 'Newest arrivals', color: 'bg-indigo-50', count: 77, image: { src: collectionImage1.src, width: collectionImage1.width, height: collectionImage1.height, alt: 'Explore new arrivals' } },
-    { id: 'gid://2', title: 'T-Shirts', handle: 't-shirts', sortDescription: 'Best sellers', description: 'Casual t-shirts for everyday wear.', image: { src: collectionImage2.src, width: collectionImage2.width, height: collectionImage2.height, alt: 'Explore new arrivals' }, color: 'bg-indigo-50', count: 155 },
-    { id: 'gid://3', title: 'Jeans', handle: 'jeans', sortDescription: 'Best sellers', description: 'Trendy jeans for a casual yet stylish look.', image: { src: collectionImage3.src, width: collectionImage3.width, height: collectionImage3.height, alt: 'Explore new arrivals' }, color: 'bg-indigo-50', count: 35 },
-    { id: 'gid://4', title: 'Coats', handle: 'coats', sortDescription: 'Best seasonal', description: 'Elegant coats for every season.', image: { src: collectionImage4.src, width: collectionImage4.width, height: collectionImage4.height, alt: 'Explore new arrivals' }, color: 'bg-indigo-50', count: 87 },
-    { id: 'gid://5', title: 'Shoes', handle: 'shoes', sortDescription: 'Top rated', description: 'Trendy shoes for every occasion.', image: { src: collectionImage5.src, width: collectionImage5.width, height: collectionImage5.height, alt: 'Explore new arrivals' }, color: 'bg-indigo-50', count: 114 },
-    { id: 'gid://6', title: 'Accessories', handle: 'accessories', sortDescription: 'Top transparent', description: 'Stylish accessories to complete your look.', image: { src: collectionImage6.src, width: collectionImage6.width, height: collectionImage6.height, alt: 'Explore new arrivals' }, color: 'bg-indigo-50', count: 55 },
-    { id: 'gid://7', title: 'Bags', handle: 'bags', sortDescription: 'Best trends', description: 'Stylish bags for every occasion.', image: { src: collectionImage7.src, width: collectionImage7.width, height: collectionImage7.height, alt: 'Explore new arrivals' }, color: 'bg-indigo-50', count: 55 },
-    { id: 'gid://8', title: 'Explore new arrivals', handle: 'explore-new-arrivals', sortDescription: 'Shop the latest <br /> from top brands', description: 'Explore our collection.', color: 'bg-orange-50', count: 77, image: { src: collectionImage5.src, width: collectionImage5.width, height: collectionImage5.height, alt: 'Explore new arrivals' } },
-    { id: 'gid://9', title: 'Sale collection', handle: 'sale-collection', sortDescription: 'Up to <br /> 80% off retail', description: 'Explore our collection.', color: 'bg-green-50', count: 85, image: { src: collectionImage4.src, width: collectionImage4.width, height: collectionImage4.height, alt: 'Explore new arrivals' } },
-    { id: 'gid://10', title: 'Sale collection', handle: 'sale-collection-2', sortDescription: 'Up to <br /> 90% off retail', description: 'Explore our collection.', color: 'bg-blue-50', count: 77, image: { src: collectionImage3.src, width: collectionImage3.width, height: collectionImage3.height, alt: 'Explore new arrivals' } },
-    { id: 'gid://11', title: 'Digital gift cards', handle: 'digital-gift-cards', sortDescription: 'Give the gift <br /> of choice', description: 'Explore our collection.', color: 'bg-red-50', count: 112, image: { src: collectionImage2.src, width: collectionImage2.width, height: collectionImage2.height, alt: 'Explore new arrivals' } },
-    { id: 'gid://12', title: 'Sport Kits', handle: 'sport-kits', sortDescription: '20+ categories', description: 'Explore our collection.', color: 'bg-neutral-100', count: 77, image: { src: boothImage1.src, width: boothImage1.width, height: boothImage1.height, alt: 'Explore new arrivals' } },
-    { id: 'gid://13', title: 'Beauty Products', handle: 'beauty-products', color: 'bg-neutral-100', sortDescription: '20+ categories', description: 'Explore our collection.', count: 77, image: { src: boothImage2.src, width: boothImage2.width, height: boothImage2.height, alt: 'Explore new arrivals' } },
-    { id: 'gid://14', title: 'Travel Kits', handle: 'travel-kits', sortDescription: '20+ categories', description: 'Explore our collection.', color: 'bg-neutral-100', count: 77, image: { src: boothImage3.src, width: boothImage3.width, height: boothImage3.height, alt: 'Explore new arrivals' } },
-    { id: 'gid://15', title: 'Pets Food', handle: 'pets-food', sortDescription: '44+ categories', description: 'Explore our collection.', color: 'bg-neutral-100', count: 99, image: { src: boothImage4.src, width: boothImage4.width, height: boothImage4.height, alt: 'Explore new arrivals' } },
+    { id: 'gid://1', title: '아우터', handle: 'jackets', description: '트렌디한 아우터 컬렉션', sortDescription: '최신 입고', color: 'bg-indigo-50', count: 77, image: { src: collectionImage1.src, width: collectionImage1.width, height: collectionImage1.height, alt: '아우터' } },
+    { id: 'gid://2', title: '티셔츠', handle: 't-shirts', sortDescription: '베스트셀러', description: '데일리 캐주얼 티셔츠', image: { src: collectionImage2.src, width: collectionImage2.width, height: collectionImage2.height, alt: '티셔츠' }, color: 'bg-indigo-50', count: 155 },
+    { id: 'gid://3', title: '청바지', handle: 'jeans', sortDescription: '베스트셀러', description: '트렌디한 청바지 컬렉션', image: { src: collectionImage3.src, width: collectionImage3.width, height: collectionImage3.height, alt: '청바지' }, color: 'bg-indigo-50', count: 35 },
+    { id: 'gid://4', title: '코트', handle: 'coats', sortDescription: '시즌 베스트', description: '우아한 코트 컬렉션', image: { src: collectionImage4.src, width: collectionImage4.width, height: collectionImage4.height, alt: '코트' }, color: 'bg-indigo-50', count: 87 },
+    { id: 'gid://5', title: '신발', handle: 'shoes', sortDescription: '인기 상품', description: '다양한 스타일의 신발', image: { src: collectionImage5.src, width: collectionImage5.width, height: collectionImage5.height, alt: '신발' }, color: 'bg-indigo-50', count: 114 },
+    { id: 'gid://6', title: '액세서리', handle: 'accessories', sortDescription: '트렌드 아이템', description: '스타일을 완성하는 액세서리', image: { src: collectionImage6.src, width: collectionImage6.width, height: collectionImage6.height, alt: '액세서리' }, color: 'bg-indigo-50', count: 55 },
+    { id: 'gid://7', title: '가방', handle: 'bags', sortDescription: '트렌드 베스트', description: '다양한 스타일의 가방', image: { src: collectionImage7.src, width: collectionImage7.width, height: collectionImage7.height, alt: '가방' }, color: 'bg-indigo-50', count: 55 },
+    { id: 'gid://8', title: '신상품', handle: 'explore-new-arrivals', sortDescription: '최신 상품 <br /> 탐색하기', description: '새로 입고된 상품들', color: 'bg-orange-50', count: 77, image: { src: collectionImage5.src, width: collectionImage5.width, height: collectionImage5.height, alt: '신상품' } },
+    { id: 'gid://9', title: '세일 컬렉션', handle: 'sale-collection', sortDescription: '최대 <br /> 80% 할인', description: '특별 세일 상품', color: 'bg-green-50', count: 85, image: { src: collectionImage4.src, width: collectionImage4.width, height: collectionImage4.height, alt: '세일 컬렉션' } },
+    { id: 'gid://10', title: '특가 세일', handle: 'sale-collection-2', sortDescription: '최대 <br /> 90% 할인', description: '특가 할인 상품', color: 'bg-blue-50', count: 77, image: { src: collectionImage3.src, width: collectionImage3.width, height: collectionImage3.height, alt: '특가 세일' } },
+    { id: 'gid://11', title: '기프트카드', handle: 'digital-gift-cards', sortDescription: '원하는 선물을 <br /> 직접 고르세요', description: '디지털 기프트카드', color: 'bg-red-50', count: 112, image: { src: collectionImage2.src, width: collectionImage2.width, height: collectionImage2.height, alt: '기프트카드' } },
+    { id: 'gid://12', title: '스포츠', handle: 'sport-kits', sortDescription: '20+ 카테고리', description: '스포츠 용품', color: 'bg-neutral-100', count: 77, image: { src: boothImage1.src, width: boothImage1.width, height: boothImage1.height, alt: '스포츠' } },
+    { id: 'gid://13', title: '뷰티', handle: 'beauty-products', color: 'bg-neutral-100', sortDescription: '20+ 카테고리', description: '뷰티 제품', count: 77, image: { src: boothImage2.src, width: boothImage2.width, height: boothImage2.height, alt: '뷰티' } },
+    { id: 'gid://14', title: '여행', handle: 'travel-kits', sortDescription: '20+ 카테고리', description: '여행 용품', color: 'bg-neutral-100', count: 77, image: { src: boothImage3.src, width: boothImage3.width, height: boothImage3.height, alt: '여행' } },
+    { id: 'gid://15', title: '반려동물', handle: 'pets-food', sortDescription: '44+ 카테고리', description: '반려동물 용품', color: 'bg-neutral-100', count: 99, image: { src: boothImage4.src, width: boothImage4.width, height: boothImage4.height, alt: '반려동물' } },
   ]
 }
 
@@ -227,10 +228,10 @@ export async function getShopData() {
 
 export async function getProductReviews(_handle: string) {
   return [
-    { id: '1', title: "Can't say enough good things", rating: 5, content: '<p>정말 만족스러운 쇼핑 경험이었습니다.</p>', author: 'S. Walkinshaw', authorAvatar: avatarImage1, date: 'May 16, 2025', datetime: '2025-01-06' },
-    { id: '2', title: 'Perfect for going out when you want to stay comfy', rating: 4, content: '<p>품질이 정말 좋습니다.</p>', author: 'Risako M', authorAvatar: avatarImage2, date: 'May 16, 2025', datetime: '2025-01-06' },
-    { id: '3', title: 'Very nice feeling sweater!', rating: 4, content: '<p>친구들에게 적극 추천합니다.</p>', author: 'Eden Birch', authorAvatar: avatarImage3, date: 'May 16, 2025', datetime: '2025-01-06' },
-    { id: '4', title: 'Very nice feeling sweater!', rating: 5, content: '<p>정말 훌륭한 제품입니다!</p>', author: 'Jonathan Edwards', authorAvatar: avatarImage4, date: 'May 16, 2025', datetime: '2025-01-06' },
+    { id: '1', title: '정말 만족스러운 쇼핑', rating: 5, content: '<p>정말 만족스러운 쇼핑 경험이었습니다.</p>', author: 'S. Walkinshaw', authorAvatar: avatarImage1, date: '2025년 5월 16일', datetime: '2025-05-16' },
+    { id: '2', title: '편하고 스타일리시해요', rating: 4, content: '<p>품질이 정말 좋습니다.</p>', author: 'Risako M', authorAvatar: avatarImage2, date: '2025년 5월 16일', datetime: '2025-05-16' },
+    { id: '3', title: '추천합니다', rating: 4, content: '<p>친구들에게 적극 추천합니다.</p>', author: 'Eden Birch', authorAvatar: avatarImage3, date: '2025년 5월 16일', datetime: '2025-05-16' },
+    { id: '4', title: '훌륭한 제품!', rating: 5, content: '<p>정말 훌륭한 제품입니다!</p>', author: 'Jonathan Edwards', authorAvatar: avatarImage4, date: '2025년 5월 16일', datetime: '2025-05-16' },
   ]
 }
 
@@ -288,13 +289,14 @@ export async function getCollections() {
 export async function getGroupCollections() {
   const allCollections = await getCollections()
   const collections = allCollections.slice(0, 6)
+  // ★ 카테고리 탭 한국어화
   return [
-    { id: '1', title: 'Women', handle: 'women', description: 'lorem ipsum', iconSvg: `<svg class="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 16C15.866 16 19 12.866 19 9C19 5.13401 15.866 2 12 2C8.13401 2 5 5.13401 5 9C5 12.866 8.13401 16 12 16Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 16V22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 19H9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`, collections },
-    { id: '2', title: 'Man', handle: 'man', description: 'lorem ipsum', iconSvg: `<svg class="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.25 21.5C14.5302 21.5 18 18.0302 18 13.75C18 9.46979 14.5302 6 10.25 6C5.96979 6 2.5 9.46979 2.5 13.75C2.5 18.0302 5.96979 21.5 10.25 21.5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M21.5 2.5L16 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 2.5H21.5V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`, collections: shuffleArray(collections) },
-    { id: '3', title: 'Accessories', handle: 'accessories', description: 'lorem ipsum', iconSvg: `<svg class="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21.08 8.58003V15.42C21.08 16.54 20.48 17.58 19.51 18.15L13.57 21.58C12.6 22.14 11.4 22.14 10.42 21.58L4.48003 18.15C3.51003 17.59 2.91003 16.55 2.91003 15.42V8.58003C2.91003 7.46003 3.51003 6.41999 4.48003 5.84999L10.42 2.42C11.39 1.86 12.59 1.86 13.57 2.42L19.51 5.84999C20.48 6.41999 21.08 7.45003 21.08 8.58003Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`, collections: shuffleArray(collections) },
-    { id: '4', title: 'Footwear', handle: 'footwear', description: 'lorem ipsum', iconSvg: `<svg class="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M17.1801 18C19.5801 18 20.1801 16.65 20.1801 15V9C20.1801 7.35 19.5801 6 17.1801 6C14.7801 6 14.1801 7.35 14.1801 9V15C14.1801 16.65 14.7801 18 17.1801 18Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.81995 18C4.41995 18 3.81995 16.65 3.81995 15V9C3.81995 7.35 4.41995 6 6.81995 6C9.21995 6 9.81995 7.35 9.81995 9V15C9.81995 16.65 9.21995 18 6.81995 18Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`, collections: shuffleArray(collections) },
-    { id: '5', title: 'Jewelry', handle: 'jewelry', description: 'lorem ipsum', iconSvg: `<svg class="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.7 18.98H7.30002C6.88002 18.98 6.41002 18.65 6.27002 18.25L2.13002 6.66999C1.54002 5.00999 2.23002 4.49999 3.65002 5.51999L7.55002 8.30999C8.20002 8.75999 8.94002 8.52999 9.22002 7.79999L10.98 3.10999C11.54 1.60999 12.47 1.60999 13.03 3.10999L14.79 7.79999C15.07 8.52999 15.81 8.75999 16.45 8.30999L20.11 5.69999C21.67 4.57999 22.42 5.14999 21.78 6.95999L17.74 18.27C17.59 18.65 17.12 18.98 16.7 18.98Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`, collections: shuffleArray(collections) },
-    { id: '6', title: 'Beauty', handle: 'beauty', description: 'lorem ipsum', iconSvg: `<svg class="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.7 18.98H7.30002C6.88002 18.98 6.41002 18.65 6.27002 18.25L2.13002 6.66999C1.54002 5.00999 2.23002 4.49999 3.65002 5.51999L7.55002 8.30999C8.20002 8.75999 8.94002 8.52999 9.22002 7.79999L10.98 3.10999C11.54 1.60999 12.47 1.60999 13.03 3.10999L14.79 7.79999C15.07 8.52999 15.81 8.75999 16.45 8.30999L20.11 5.69999C21.67 4.57999 22.42 5.14999 21.78 6.95999L17.74 18.27C17.59 18.65 17.12 18.98 16.7 18.98Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`, collections: shuffleArray(collections) },
+    { id: '1', title: '전체', handle: 'all', description: '', iconSvg: `<svg class="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 16C15.866 16 19 12.866 19 9C19 5.13401 15.866 2 12 2C8.13401 2 5 5.13401 5 9C5 12.866 8.13401 16 12 16Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 16V22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 19H9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`, collections },
+    { id: '2', title: '식품/건강', handle: 'food-health', description: '', iconSvg: `<svg class="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.25 21.5C14.5302 21.5 18 18.0302 18 13.75C18 9.46979 14.5302 6 10.25 6C5.96979 6 2.5 9.46979 2.5 13.75C2.5 18.0302 5.96979 21.5 10.25 21.5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M21.5 2.5L16 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 2.5H21.5V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`, collections: shuffleArray(collections) },
+    { id: '3', title: '뷰티', handle: 'beauty', description: '', iconSvg: `<svg class="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21.08 8.58003V15.42C21.08 16.54 20.48 17.58 19.51 18.15L13.57 21.58C12.6 22.14 11.4 22.14 10.42 21.58L4.48003 18.15C3.51003 17.59 2.91003 16.55 2.91003 15.42V8.58003C2.91003 7.46003 3.51003 6.41999 4.48003 5.84999L10.42 2.42C11.39 1.86 12.59 1.86 13.57 2.42L19.51 5.84999C20.48 6.41999 21.08 7.45003 21.08 8.58003Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`, collections: shuffleArray(collections) },
+    { id: '4', title: '생활용품', handle: 'household', description: '', iconSvg: `<svg class="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M17.1801 18C19.5801 18 20.1801 16.65 20.1801 15V9C20.1801 7.35 19.5801 6 17.1801 6C14.7801 6 14.1801 7.35 14.1801 9V15C14.1801 16.65 14.7801 18 17.1801 18Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.81995 18C4.41995 18 3.81995 16.65 3.81995 15V9C3.81995 7.35 4.41995 6 6.81995 6C9.21995 6 9.81995 7.35 9.81995 9V15C9.81995 16.65 9.21995 18 6.81995 18Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`, collections: shuffleArray(collections) },
+    { id: '5', title: '패션/잡화', handle: 'fashion', description: '', iconSvg: `<svg class="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.7 18.98H7.30002C6.88002 18.98 6.41002 18.65 6.27002 18.25L2.13002 6.66999C1.54002 5.00999 2.23002 4.49999 3.65002 5.51999L7.55002 8.30999C8.20002 8.75999 8.94002 8.52999 9.22002 7.79999L10.98 3.10999C11.54 1.60999 12.47 1.60999 13.03 3.10999L14.79 7.79999C15.07 8.52999 15.81 8.75999 16.45 8.30999L20.11 5.69999C21.67 4.57999 22.42 5.14999 21.78 6.95999L17.74 18.27C17.59 18.65 17.12 18.98 16.7 18.98Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`, collections: shuffleArray(collections) },
+    { id: '6', title: '스포츠/레저', handle: 'sports', description: '', iconSvg: `<svg class="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.7 18.98H7.30002C6.88002 18.98 6.41002 18.65 6.27002 18.25L2.13002 6.66999C1.54002 5.00999 2.23002 4.49999 3.65002 5.51999L7.55002 8.30999C8.20002 8.75999 8.94002 8.52999 9.22002 7.79999L10.98 3.10999C11.54 1.60999 12.47 1.60999 13.03 3.10999L14.79 7.79999C15.07 8.52999 15.81 8.75999 16.45 8.30999L20.11 5.69999C21.67 4.57999 22.42 5.14999 21.78 6.95999L17.74 18.27C17.59 18.65 17.12 18.98 16.7 18.98Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`, collections: shuffleArray(collections) },
   ]
 }
 
@@ -302,10 +304,10 @@ export async function getCollectionByHandle(handle: string) {
   handle = handle.toLowerCase()
   if (handle === 'all') {
     return {
-      id: 'gid://all', title: 'All products', handle: 'all',
-      description: 'Explore our entire collection of products.',
-      sortDescription: 'All products', color: 'bg-indigo-50', count: 0,
-      image: { src: collectionImage1.src, width: collectionImage1.width, height: collectionImage1.height, alt: 'All products' },
+      id: 'gid://all', title: '전체 상품', handle: 'all',
+      description: '모든 상품을 한눈에 둘러보세요.',
+      sortDescription: '전체 상품', color: 'bg-indigo-50', count: 0,
+      image: { src: collectionImage1.src, width: collectionImage1.width, height: collectionImage1.height, alt: '전체 상품' },
     }
   }
   try {
@@ -348,7 +350,6 @@ export async function getProducts(params?: {
  * 2. 실패 시 더미 데이터로 폴백 (단, notFound를 위해 null 반환 가능)
  */
 export async function getProductByHandle(handle: string) {
-  const originalHandle = handle
   handle = handle.toLowerCase()
 
   try {

@@ -1,9 +1,10 @@
 'use client'
 // KN541 결제 성공 페이지
-// 토스 successUrl 도착 → POST /payments/confirm → clearCart → order-successful?order_id=
+// fix: StrictMode 중복 confirm 방지 (confirmCalled useRef)
+// fix: locale 동적화 (/ko/ 하드코딩 제거)
 
-import { Suspense, useEffect, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { Suspense, useEffect, useRef, useState } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { CheckCircleIcon } from '@heroicons/react/24/outline'
 import { useCart } from '@/lib/cart-context'
 
@@ -19,17 +20,24 @@ function Spinner() {
 }
 
 function SuccessContent() {
-  const router = useRouter()
+  const router       = useRouter()
+  const pathname     = usePathname()
+  const locale       = pathname.split('/')[1] || 'ko'
   const searchParams = useSearchParams()
   const { clearCart } = useCart()
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
   const [errorMsg, setErrorMsg] = useState('')
+  // ★ StrictMode 중복 실행 방지
+  const confirmCalled = useRef(false)
 
   useEffect(() => {
+    if (confirmCalled.current) return
+    confirmCalled.current = true
+
     const paymentKey      = searchParams.get('paymentKey')
     const orderId         = searchParams.get('orderId')
     const amount          = searchParams.get('amount')
-    const internalOrderId = searchParams.get('internal_order_id') // UUID
+    const internalOrderId = searchParams.get('internal_order_id')
 
     if (!paymentKey || !orderId || !amount) {
       setStatus('error')
@@ -58,10 +66,9 @@ function SuccessContent() {
         clearCart()
         setStatus('success')
 
-        // 주문완료 페이지로 이동 — order_id(UUID) 전달
         const targetOrderId = internalOrderId ?? data?.data?.order_id ?? ''
         setTimeout(() => {
-          router.replace(`/ko/order-successful${targetOrderId ? `?order_id=${targetOrderId}` : ''}`)
+          router.replace(`/${locale}/order-successful${targetOrderId ? `?order_id=${targetOrderId}` : ''}`)
         }, 2000)
       } catch (err: any) {
         setStatus('error')
@@ -88,7 +95,7 @@ function SuccessContent() {
         <div className="text-5xl">⚠️</div>
         <h2 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">결제 승인 실패</h2>
         <p className="max-w-sm text-sm text-neutral-500">{errorMsg}</p>
-        <button onClick={() => router.push('/ko/checkout')}
+        <button onClick={() => router.push(`/${locale}/checkout`)}
           className="mt-4 rounded-xl bg-primary-600 px-6 py-3 text-sm font-medium text-white transition hover:bg-primary-700">
           다시 시도하기
         </button>

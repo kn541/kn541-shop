@@ -1,8 +1,7 @@
 /**
  * KN541 API 데이터 → Ciseco 컴포넌트 형식 변환 어댑터
- * fix: product_id(UUID) 사용, images/description 포함
- * fix: 카테고리 브레드크럼, 원산지, 과세유형, 공급사, 상품코드 등 전체 필드 추가
- * fix: handle 항상 UUID(product_id) 기반으로 통일 — product_code 혼용 제거
+ * fix: thumbnailImageSrcs / detailImageSrcs 분리 필드 추가
+ * fix: status 기본값 '판매중'
  */
 
 import type { Category } from './api/categories'
@@ -16,13 +15,10 @@ const BG_COLORS = [
   'bg-red-50', 'bg-yellow-50', 'bg-purple-50', 'bg-pink-50',
 ]
 
-// ─── 상품 어댑터 ──────────────────────────────────────────────
-
 export function adaptProduct(p: Product): TProductItem {
-  // ★ product_id 우선, 없으면 id(하위호환)
   const pid = p.product_id || p.id || ''
 
-  let status = 'In Stock'
+  let status = '판매중'
   if (p.stock_qty === 0) status = '품절'
   else if (p.is_soldout || p.product_status === 'SOLDOUT') status = '품절'
   else if (p.is_discontinued || p.product_status === 'DISCONTINUED') status = '판매종료'
@@ -34,18 +30,19 @@ export function adaptProduct(p: Product): TProductItem {
     ? { src: p.thumbnail_url, width: 600, height: 600, alt: p.product_name }
     : { src: PLACEHOLDER_IMG, width: 600, height: 600, alt: p.product_name }
 
-  // 이미지 배열 — THUMBNAIL 타입을 맨 앞에, 나머지(DETAIL 등) 뒤에
+  // ★ THUMBNAIL 타입 이미지 (걤러리 사이드바 용)
   const thumbImgs = (p.images || [])
     .filter(img => img?.image_url && img.image_type === 'THUMBNAIL')
     .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
     .map(img => ({ src: img.image_url, width: 800, height: 800, alt: p.product_name }))
 
+  // ★ DETAIL 타입 이미지 (상품상세 스크롤 영역용)
   const detailImgs = (p.images || [])
     .filter(img => img?.image_url && img.image_type !== 'THUMBNAIL')
     .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
     .map(img => ({ src: img.image_url, width: 800, height: 800, alt: p.product_name }))
 
-  // 썸네일 우선 → 상세이미지 → 없으면 thumbnail_url
+  // 전체 images 배열 (Ciseco TProductItem 호환)
   let allImages: typeof thumbImg[]
   if (thumbImgs.length > 0) {
     allImages = [...thumbImgs, ...detailImgs]
@@ -56,14 +53,10 @@ export function adaptProduct(p: Product): TProductItem {
   }
 
   const vendor = p.brand || p.supplier_name || p.category_name_1 || 'KN541'
-
   const shippingFee = p.shipping_fee ?? 0
   const freeOver = p.free_shipping_over ?? null
-
-  // 과세유형
   const taxLabel = p.tax_type === 1 ? '비과세' : p.tax_type === 2 ? '면세' : '과세 (10%)'
 
-  // 카테고리 브레드크럼 구성
   const categoryBreadcrumbs: { name: string }[] = []
   if (p.category_name_1) categoryBreadcrumbs.push({ name: p.category_name_1 })
   if (p.category_name_2) categoryBreadcrumbs.push({ name: p.category_name_2 })
@@ -72,8 +65,6 @@ export function adaptProduct(p: Product): TProductItem {
   return {
     id: pid,
     title: p.product_name,
-    // ★ handle = product_id(UUID) 고정
-    //    product_code는 DB에서 null인 경우 많고, 혼용 시 URL 불일치 발생
     handle: pid,
     price: p.sale_price,
     createdAt: p.created_at,
@@ -90,7 +81,6 @@ export function adaptProduct(p: Product): TProductItem {
       stock_qty: opt.stock_qty,
     })),
     selectedOptions: [],
-    // 추가 필드 (상세 페이지 전체 정보용)
     description: p.description || p.summary || '',
     delivery: {
       sc_type: p.sc_type ?? 1,
@@ -101,33 +91,34 @@ export function adaptProduct(p: Product): TProductItem {
       delivery_days: p.delivery_days ?? 3,
       delivery_company: (p as any).delivery_company ?? null,
     },
-    // 카테고리 정보
     categoryBreadcrumbs,
     categoryName: p.category_name ?? '',
     categoryName1: p.category_name_1 ?? '',
     categoryName2: p.category_name_2 ?? '',
-    // 상품 상세 정보
     origin: (p as any).origin ?? '',
     taxLabel,
     taxType: p.tax_type ?? 0,
     productCode: p.product_code ?? '',
     productNo: p.product_no ?? '',
     stockQty: p.stock_qty ?? 0,
-    /** DB 원본 product_status (ON_SALE, SOLDOUT 등) — 장바구니 검증용 */
     productStatus: p.product_status ?? '',
     minOrderQty: p.min_order_qty ?? 1,
     maxOrderQty: p.max_order_qty ?? null,
     supplierName: p.supplier_name ?? '',
     originalSupplyPrice: p.original_supply_price ?? 0,
     summary: p.summary ?? '',
+    consumerPrice: p.consumer_price ?? 0,
+    isSoldout: p.is_soldout ?? false,
+    isDiscontinued: p.is_discontinued ?? false,
+    // ★ 갤러리 / 상세이미지 분리
+    thumbnailImageSrcs: thumbImgs.map(i => i.src),    // THUMBNAIL 타입만 (좌측 사이드바)
+    detailImageSrcs: detailImgs.map(i => i.src),      // DETAIL 타입만 (하단 스크롤)
   } as TProductItem & Record<string, any>
 }
 
 export function adaptProducts(items: Product[]): TProductItem[] {
   return items.map(adaptProduct)
 }
-
-// ─── 카테고리 어댑터 ──────────────────────────────────────────
 
 export function adaptCategory(c: Category, index = 0): TCollection {
   return {

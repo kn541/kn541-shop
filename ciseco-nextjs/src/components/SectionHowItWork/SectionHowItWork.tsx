@@ -1,3 +1,4 @@
+// KN541 쇼핑 안내 섹션 — 한국어화
 import HIW1img from '@/images/HIW1img.png'
 import HIW2img from '@/images/HIW2img.png'
 import HIW3img from '@/images/HIW3img.png'
@@ -18,29 +19,29 @@ const DEMO_DATA = [
     id: 1,
     img: HIW1img,
     imgDark: HIW1img,
-    title: 'Filter & Discover',
-    desc: 'Smart filtering and suggestions make it easy to find',
+    title: '상품 탐색',
+    desc: '스마트 필터와 카테고리로 원하는 상품을 쉽게 찾아보세요',
   },
   {
     id: 2,
     img: HIW2img,
     imgDark: HIW2img,
-    title: 'Add to bag',
-    desc: 'Easily select the correct items and add them to the cart',
+    title: '장바구니 담기',
+    desc: '원하는 상품을 선택하고 장바구니에 담으세요',
   },
   {
     id: 3,
     img: HIW3img,
     imgDark: HIW3img,
-    title: 'Fast shipping',
-    desc: 'The carrier will confirm and ship quickly to you',
+    title: '빠른 배송',
+    desc: '주문 확인 후 신속하게 배송해 드립니다',
   },
   {
     id: 4,
     img: HIW4img,
     imgDark: HIW4img,
-    title: 'Enjoy the product',
-    desc: 'Have fun and enjoy your 5-star quality products',
+    title: '상품 수령',
+    desc: '엄선된 고품질 상품을 받아보고 즐겨보세요',
   },
 ]
 
@@ -59,9 +60,9 @@ const SectionHowItWork: FC<SectionHowItWorkProps> = ({ className = '', data = DE
               alt="HIW"
             />
             <div className="mt-auto text-center">
-              <Badge
-                color={!index ? 'red' : index === 1 ? 'indigo' : index === 2 ? 'yellow' : 'purple'}
-              >{`Step ${index + 1}`}</Badge>
+              <Badge color={!index ? 'red' : index === 1 ? 'indigo' : index === 2 ? 'yellow' : 'purple'}>
+                {`Step ${index + 1}`}
+              </Badge>
               <h3 className="mt-5 text-base font-semibold">{item.title}</h3>
               <span className="mt-4 block text-sm leading-6 text-neutral-600 dark:text-neutral-400">{item.desc}</span>
             </div>

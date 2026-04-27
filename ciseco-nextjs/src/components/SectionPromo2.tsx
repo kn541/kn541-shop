@@ -1,8 +1,8 @@
+// KN541 프로모션 섹션 2 — 한국어화
 import Logo from '@/components/Logo'
 import backgroundLineSvg from '@/images/Moon.svg'
 import rightImgDemo from '@/images/promo2.png'
 import ButtonPrimary from '@/shared/Button/ButtonPrimary'
-
 import clsx from 'clsx'
 import Image from 'next/image'
 import { FC } from 'react'
@@ -16,25 +16,25 @@ const SectionPromo2: FC<SectionPromo2Props> = ({ className }) => {
     <div className={clsx(className, 'xl:pt-10 2xl:pt-24')}>
       <div className="relative flex flex-col rounded-2xl bg-yellow-50 p-4 pb-0 sm:rounded-[40px] sm:p-5 sm:pb-0 lg:flex-row lg:justify-end lg:p-14 xl:px-20 xl:py-24 2xl:py-32 dark:bg-neutral-800">
         <div className="absolute inset-5">
-          <Image fill className="object-contain dark:opacity-5" src={backgroundLineSvg} alt="backgroundLineSvg" />
+          <Image fill className="object-contain dark:opacity-5" src={backgroundLineSvg} alt="배경" />
         </div>
 
         <div className="relative max-w-lg lg:w-[45%]">
           <Logo className="w-28" />
           <h2 className="mt-6 text-3xl leading-[1.13]! font-semibold tracking-tight sm:mt-10 sm:text-4xl xl:text-5xl 2xl:text-6xl">
-            Special offer <br />
-            in kids products
+            다양한 카테고리 <br />
+            특별 혜택
           </h2>
           <span className="mt-6 block text-neutral-500 dark:text-neutral-400">
-            Fashion is a form of self-expression and autonomy at a particular period and place.
+            건강, 식품, 뷰티, 생활용품까지 — 일상의 모든 것을 KN541에서 만나보세요.
           </span>
           <div className="mt-6 flex space-x-2 sm:mt-12 sm:space-x-5">
-            <ButtonPrimary href="/search">Discover more</ButtonPrimary>
+            <ButtonPrimary href="/products">지금 쇼핑하기</ButtonPrimary>
           </div>
         </div>
 
         <div className="relative mt-10 block max-w-xl lg:absolute lg:bottom-0 lg:left-0 lg:mt-0 lg:max-w-[calc(55%-40px)]">
-          <Image alt="section promo 2" src={rightImgDemo} sizes="(max-width: 768px) 100vw, 50vw" className="" />
+          <Image alt="프로모션 섹션 2" src={rightImgDemo} sizes="(max-width: 768px) 100vw, 50vw" className="" />
         </div>
       </div>
     </div>

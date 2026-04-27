@@ -1,5 +1,9 @@
 'use client'
 
+// KN541 컬렉션 탐색 섹션 — 한국어화
+// fix: "Start exploring." → 한국어
+// fix: "Explore all collections" → "전체 카테고리 보기"
+
 import Heading from '@/components/Heading/Heading'
 import { TCollection, getGroupCollections } from '@/data/data'
 import svgs1 from '@/images/collections/explore1.svg'
@@ -36,7 +40,7 @@ const SectionGridMoreExplore: FC<SectionGridMoreExploreProps> = ({
   boxCard = 'box4',
   gridClassName = 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3',
   groupCollections,
-  heading = 'Start exploring.',
+  heading = '카테고리 탐색',
 }) => {
   const [tabActive, setTabActive] = useState(groupCollections[1].id)
 
@@ -52,9 +56,9 @@ const SectionGridMoreExplore: FC<SectionGridMoreExploreProps> = ({
   }
 
   const groupSelected = groupCollections.find((group) => group.id === tabActive)
+
   return (
     <div className={clsx('relative', className)}>
-      {/* Heading */}
       <Heading
         className="mb-12 text-neutral-900 lg:mb-14 dark:text-neutral-50"
         fontClass="text-3xl md:text-4xl 2xl:text-5xl font-semibold"
@@ -76,17 +80,16 @@ const SectionGridMoreExplore: FC<SectionGridMoreExploreProps> = ({
         </Nav>
       </div>
 
-      {/* Collection Cards */}
       <div className={`grid gap-4 md:gap-7 ${gridClassName}`}>
         {groupSelected?.collections.map((collection, index) => (
           <React.Fragment key={collection.id}>{renderCollectionCard(collection, index)}</React.Fragment>
         ))}
       </div>
 
-      {/* Button */}
+      {/* ★ "Explore all collections" → "전체 카테고리 보기" */}
       <div className="mt-20 flex justify-center">
-        <Button color="light" href="/collections/all" className="[--btn-border:white]/0">
-          Explore all collections
+        <Button color="light" href="/products" className="[--btn-border:white]/0">
+          전체 카테고리 보기
           <ArrowRightIcon className="h-4 w-4" />
         </Button>
       </div>

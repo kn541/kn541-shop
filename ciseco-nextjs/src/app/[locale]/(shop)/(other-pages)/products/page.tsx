@@ -1,21 +1,17 @@
 // KN541 상품목록 페이지
-// fix: product_status 'ACTIVE' 필터 제거 (실제 DB는 ON_SALE)
-// fix: handle = product_id(UUID) 기반 (상세페이지 UUID 직접 조회)
-// fix: 백엔드 category_id OR 조건 지원으로 대/중/소분류 모두 매칭
-// fix: BASE URL fallback 추가 (env var 미설정 시에도 동작)
-// fix: 실제 페이지네이션 구현 (page/size 파라미터)
+// fix: sort URL 파라미터 → 백엔드 sort_by/sort_order 전달
+// fix: 상품 mapProduct 상태값 한국어화 (In Stock→판매중, Sold Out→품절)
+// fix: 배송비 정보 포함 → 카드 무료배송 뱃지
 
 import { Suspense } from 'react'
 import ProductsPageClient from './ProductsPageClient'
 import type { Metadata } from 'next'
 
-// ★ env var 미설정 시 Railway URL로 fallback
 const BASE =
   process.env.NEXT_PUBLIC_API_URL ||
   process.env.API_URL ||
   'https://kn541-production.up.railway.app'
 
-// 페이지당 상품 수
 const PAGE_SIZE = 20
 
 export const metadata: Metadata = {
@@ -54,12 +50,8 @@ function flattenCategories(items: any[]): CategoryInfo[] {
 
 async function fetchAllCategories(): Promise<CategoryInfo[]> {
   try {
-    const url = `${BASE}/categories`
-    const res = await fetch(url, { cache: 'no-store' })
-    if (!res.ok) {
-      console.error('[products] fetchAllCategories HTTP error:', res.status, res.statusText)
-      return []
-    }
+    const res = await fetch(`${BASE}/categories`, { cache: 'no-store' })
+    if (!res.ok) return []
     const data = await res.json()
     const raw = data?.data?.items ?? []
     console.log('[products] 카테고리 수:', raw.length)
@@ -70,12 +62,33 @@ async function fetchAllCategories(): Promise<CategoryInfo[]> {
   }
 }
 
-/** 상품 매핑 — product_id(UUID) 기반, adapters.ts와 일치 */
+// ★ sort 값 → 백엔드 파라미터 매핑
+function parseSortParam(sort?: string): { sort_by?: string; sort_order?: string } {
+  switch (sort) {
+    case 'newest':    return { sort_by: 'created_at', sort_order: 'desc' }
+    case 'oldest':    return { sort_by: 'created_at', sort_order: 'asc' }
+    case 'price_asc': return { sort_by: 'sale_price', sort_order: 'asc' }
+    case 'price_desc':return { sort_by: 'sale_price', sort_order: 'desc' }
+    case 'name_asc':  return { sort_by: 'product_name', sort_order: 'asc' }
+    case 'name_desc': return { sort_by: 'product_name', sort_order: 'desc' }
+    default: return {}
+  }
+}
+
+/** 상품 매핑 — product_id(UUID) + 배송비 + 한국어 상태값 */
 function mapProduct(p: any) {
   const pid = String(p.product_id || p.id || '')
+
+  // ★ 상태값 한국어화
+  let status = '판매중'
+  if (p.product_status === 'SOLDOUT' || p.is_soldout) status = '품절'
+  else if (p.product_status === 'DISCONTINUED' || p.is_discontinued) status = '판매종료'
+  else if (p.is_new) status = '신상품'
+  else if (p.is_best) status = '베스트'
+  else if (p.is_sale) status = '할인'
+
   return {
     id: pid,
-    // ★ handle = UUID → 쇼핑몰 상세페이지에서 getProductById 직접 조회
     handle: pid,
     title: p.product_name,
     price: p.sale_price,
@@ -87,15 +100,15 @@ function mapProduct(p: any) {
     images: [],
     reviewNumber: 0,
     rating: 0,
-    status: (
-      p.product_status === 'SOLDOUT' || p.is_soldout
-        ? 'Sold Out'
-        : p.is_new
-          ? 'New in'
-          : 'In Stock'
-    ),
+    status,
     options: [],
     selectedOptions: [],
+    // ★ 배송비 정보 — 카드의 무료배송 뱃지용
+    delivery: {
+      sc_type: p.sc_type ?? 1,
+      shipping_fee: p.shipping_fee ?? 0,
+      free_over: p.free_shipping_over ?? null,
+    },
   }
 }
 
@@ -108,6 +121,7 @@ async function fetchProducts(params: {
   categoryId?: string
   page: number
   size: number
+  sort?: string
 }): Promise<FetchProductsResult> {
   try {
     const qs = new URLSearchParams({
@@ -115,6 +129,11 @@ async function fetchProducts(params: {
       page: String(params.page),
     })
     if (params.categoryId) qs.set('category_id', params.categoryId)
+
+    const sortParams = parseSortParam(params.sort)
+    if (sortParams.sort_by) qs.set('sort_by', sortParams.sort_by)
+    if (sortParams.sort_order) qs.set('sort_order', sortParams.sort_order)
+
     const url = `${BASE}/products?${qs}`
     console.log('[products] fetchProducts URL:', url)
     const res = await fetch(url, { cache: 'no-store' })
@@ -136,14 +155,14 @@ async function fetchProducts(params: {
 export default async function ProductsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ cid?: string; page?: string }>
+  searchParams: Promise<{ cid?: string; page?: string; sort?: string }>
 }) {
-  const { cid, page: pageParam } = await searchParams
+  const { cid, page: pageParam, sort } = await searchParams
   const currentPage = Math.max(1, Number(pageParam) || 1)
 
   const [allCategories, { products, total }] = await Promise.all([
     fetchAllCategories(),
-    fetchProducts({ categoryId: cid, page: currentPage, size: PAGE_SIZE }),
+    fetchProducts({ categoryId: cid, page: currentPage, size: PAGE_SIZE, sort }),
   ])
 
   console.log('[products] 렌더링 — 카테고리:', allCategories.length, '| 상품:', products.length, '| 전체:', total)

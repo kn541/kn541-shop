@@ -1,10 +1,9 @@
 'use client'
 // KN541 결제 실패 페이지
-// 토스 failUrl 도착 → errorCode 한국어 변환 + 주문 취소 처리
-// 취소(USER_CANCEL 등)가 아닌 실제 오류 시만 PATCH /orders/{id}/cancel 호출
+// fix: locale 동적화 (/ko/ 하드코딩 제거)
 
 import { Suspense, useEffect, useRef } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
@@ -27,22 +26,22 @@ const ERROR_MESSAGES: Record<string, string> = {
   NOT_SUPPORTED_INSTALLMENT_PLAN_CARD_OR_MERCHANT: '이 카드는 할부 결제를 지원하지 않습니다.',
 }
 
-// 사용자 수동 취소 코드 — 주문 취소 API 호출 안 함 (재결제 가능)
 const CANCEL_CODES = new Set(['PAY_PROCESS_CANCELED', 'USER_CANCEL'])
 
 function FailContent() {
   const router       = useRouter()
+  const pathname     = usePathname()
+  const locale       = pathname.split('/')[1] || 'ko'
   const searchParams = useSearchParams()
   const cancelCalled = useRef(false)
 
   const errorCode    = searchParams.get('errorCode') ?? ''
   const errorMessage = searchParams.get('errorMessage') ?? '결제에 실패했습니다.'
-  const orderId      = searchParams.get('internal_order_id') // UUID — checkout에서 failUrl에 포함
+  const orderId      = searchParams.get('internal_order_id')
 
   const isCanceled     = CANCEL_CODES.has(errorCode)
   const displayMessage = ERROR_MESSAGES[errorCode] ?? decodeURIComponent(errorMessage)
 
-  // 취소가 아닌 실제 오류 시: orders.order_status = CANCELLED (어드민 주문관리 반영)
   useEffect(() => {
     if (isCanceled || !orderId || cancelCalled.current) return
     cancelCalled.current = true
@@ -59,7 +58,7 @@ function FailContent() {
       body: JSON.stringify({
         cancel_reason: `결제 실패: ${errorCode || errorMessage}`,
       }),
-    }).catch(() => {}) // 실패해도 UI는 정상 표시
+    }).catch(() => {})
   }, [isCanceled, orderId, errorCode, errorMessage])
 
   return (
@@ -80,13 +79,13 @@ function FailContent() {
 
       <div className="mt-6 flex flex-col gap-3 sm:flex-row">
         <button
-          onClick={() => router.push('/ko/checkout')}
+          onClick={() => router.push(`/${locale}/checkout`)}
           className="rounded-xl bg-primary-600 px-6 py-3 text-sm font-medium text-white transition hover:bg-primary-700"
         >
           다시 시도하기
         </button>
         <button
-          onClick={() => router.push('/ko/cart')}
+          onClick={() => router.push(`/${locale}/cart`)}
           className="rounded-xl border border-neutral-200 px-6 py-3 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
         >
           장바구니로 돌아가기

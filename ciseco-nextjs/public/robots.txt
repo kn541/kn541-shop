@@ -1,0 +1,3 @@
+# KN541 폐쇄몰 — 검색엔진 색인 전체 차단
+User-agent: *
+Disallow: /

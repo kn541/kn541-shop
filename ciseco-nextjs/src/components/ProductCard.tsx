@@ -1,12 +1,20 @@
 'use client'
 
+// KN541 상품 카드
+// fix: next-intl Link는 locale 자동 추가 → href에 locale 포함 금지 (/products/UUID만)
+// fix: router.push는 next/navigation → locale 명시 필요 (/${locale}/cart 등)
+// fix: 장바구니 버튼 버블링 방지 + useCart 실제 연동
+// fix: 폐쇄몰 비로그인 → 메인페이지
+
 import { TProductItem } from '@/data/data'
+import { useCart } from '@/lib/cart-context'
 import NcImage from '@/shared/NcImage/NcImage'
 import { Link } from '@/shared/link'
 import { ArrowsPointingOutIcon, ShoppingBagIcon } from '@heroicons/react/24/outline'
 import { StarIcon } from '@heroicons/react/24/solid'
+import { usePathname, useRouter } from 'next/navigation'
 import { FC } from 'react'
-import AddToCardButton from './AddToCardButton'
+import toast from 'react-hot-toast'
 import LikeButton from './LikeButton'
 import Prices from './Prices'
 import ProductStatus from './ProductStatus'
@@ -19,18 +27,101 @@ interface Props {
 }
 
 const ProductCard: FC<Props> = ({ className = '', data, isLiked }) => {
-  const { title, price, status, rating, options, handle, selectedOptions, reviewNumber, images, featuredImage } = data
-  const color = selectedOptions?.find((option) => option.name === 'Color')?.value
+  const { title, price, status, rating, options, handle, selectedOptions, reviewNumber, featuredImage } = data
 
+  const pathname = usePathname()
+  const locale   = pathname.split('/')[1] || 'ko'
+  const router   = useRouter()
+  const { addItem } = useCart()
   const { open: openAside, setProductQuickViewHandle } = useAside()
 
-  const renderColorOptions = () => {
-    const optionColorValues = options?.find((option) => option.name === 'Color')?.optionValues
+  // 배송 정보
+  const delivery = (data as any).delivery as {
+    sc_type?: number
+    shipping_fee?: number
+    free_over?: number | null
+  } | undefined
+  const isFreeShipping = delivery?.sc_type === 1 || (delivery?.shipping_fee ?? 0) === 0
 
-    if (!optionColorValues?.length) {
-      return null
+  // 품절 여부 (status 기반 — 목록 API는 stockQty 없을 수 있음)
+  const isSoldOut = status === '품절' || status === '판매종료'
+
+  // 사전예약
+  const isPreOrder = typeof title === 'string' && title.includes('[사전예약]')
+
+  // 뱃지
+  const getBadge = () => {
+    if (isPreOrder) return { label: '사전예약', className: 'bg-violet-100 text-violet-700' }
+    if (status === '신상품') return { label: 'NEW', className: 'bg-blue-100 text-blue-700' }
+    if (status === '베스트') return { label: 'BEST', className: 'bg-amber-100 text-amber-700' }
+    if (status === '할인')   return { label: 'SALE', className: 'bg-red-100 text-red-600' }
+    return null
+  }
+  const badge = getBadge()
+
+  // ★ next-intl Link는 locale 자동 추가 → href에 locale 포함 금지
+  //   /products/UUID  →  next-intl →  /ko/products/UUID  (정상)
+  //   /ko/products/UUID  →  next-intl →  /ko/ko/products/UUID  (404!)
+  const productPath = `/products/${handle}`
+
+  // ★ 장바구니 담기
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    // 폐쇄몰: 비로그인 → 메인 페이지
+    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
+    if (!token) {
+      router.push(`/${locale}`)
+      return
+    }
+    if (isSoldOut) {
+      toast.error('품절된 상품입니다.')
+      return
     }
 
+    const deliveryData = (data as any).delivery || {}
+    const pid = String(data.id || data.handle || '')
+    if (!pid) { toast.error('상품 정보를 불러올 수 없습니다.'); return }
+
+    addItem({
+      productId: pid,
+      name: title || '',
+      price: Number(price) || 0,
+      quantity: 1,
+      image: featuredImage?.src || '',
+      shippingFee: Number(deliveryData.shipping_fee ?? 0),
+      freeShippingOver: Number(deliveryData.free_over ?? 0),
+      scType: Number(deliveryData.sc_type ?? 1),
+      stockQty: Number((data as any).stockQty ?? 0),
+    })
+
+    toast.success(
+      <span>
+        장바구니에 담겼습니다!{' '}
+        <button
+          type="button"
+          className="font-semibold underline"
+          onClick={() => router.push(`/${locale}/cart`)}
+        >
+          장바구니 보기
+        </button>
+      </span>,
+      { duration: 3000 }
+    )
+  }
+
+  // ★ 빠른보기
+  const handleQuickView = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setProductQuickViewHandle(handle || '')
+    openAside('product-quick-view')
+  }
+
+  const renderColorOptions = () => {
+    const optionColorValues = options?.find((o) => o.name === 'Color')?.optionValues
+    if (!optionColorValues?.length) return null
     return (
       <div className="flex gap-2">
         {optionColorValues.map((color) => (
@@ -48,80 +139,92 @@ const ProductCard: FC<Props> = ({ className = '', data, isLiked }) => {
     )
   }
 
-  const renderGroupButtons = () => {
-    return (
-      <div className="invisible absolute inset-x-1 bottom-0 flex justify-center gap-1.5 opacity-0 transition-all group-hover:visible group-hover:bottom-4 group-hover:opacity-100">
-        <AddToCardButton
-          as={'button'}
-          className="flex cursor-pointer items-center justify-center gap-2 rounded-full bg-neutral-900 px-4 py-2 text-xs/normal text-white shadow-lg hover:bg-neutral-800"
-          title={title || ''}
-          imageUrl={featuredImage?.src || ''}
-          price={price || 0}
-          quantity={1}
-          size={selectedOptions?.find((option) => option.name === 'Size')?.value}
-          color={selectedOptions?.find((option) => option.name === 'Color')?.value}
-        >
-          <ShoppingBagIcon className="-ml-1 size-3.5" />
-          <span>Add to bag</span>
-        </AddToCardButton>
-
-        <button
-          className="flex cursor-pointer items-center justify-center gap-2 rounded-full bg-white px-4 py-2 text-xs/normal text-neutral-950 shadow-lg hover:bg-neutral-50"
-          type="button"
-          onClick={() => {
-            setProductQuickViewHandle(handle || '')
-            openAside('product-quick-view')
-          }}
-        >
-          <ArrowsPointingOutIcon className="-ml-1 size-3.5" />
-          <span>Quick view</span>
-        </button>
-      </div>
-    )
-  }
-
   return (
-    <>
-      <div className={`product-card relative flex flex-col bg-transparent ${className}`}>
-        <Link href={'/products/' + handle} className="absolute inset-0"></Link>
+    <div className={`product-card relative flex flex-col bg-transparent ${className}`}>
+      {/* ★ 카드 전체 클릭 링크 — next-intl Link이므로 locale 없이 */}
+      <Link href={productPath} className="absolute inset-0 z-0" />
 
-        <div className="group relative z-1 shrink-0 overflow-hidden rounded-3xl bg-neutral-50 dark:bg-neutral-300">
-          <Link href={'/products/' + handle} className="block">
-            {featuredImage?.src && (
-              <NcImage
-                containerClassName="flex aspect-w-11 aspect-h-12 w-full h-0"
-                src={featuredImage}
-                className="h-full w-full object-cover"
-                fill
-                sizes="(max-width: 640px) 100vw, (max-width: 1200px) 50vw, 40vw"
-                alt={handle}
-              />
-            )}
-          </Link>
-          <ProductStatus status={status} />
-          <LikeButton liked={isLiked} className="absolute end-3 top-3 z-10" />
-          {renderGroupButtons()}
-        </div>
+      <div className="group relative z-1 shrink-0 overflow-hidden rounded-3xl bg-neutral-50 dark:bg-neutral-300">
+        {/* ★ 이미지 클릭 링크 — 동일하게 locale 없이 */}
+        <Link href={productPath} className="block">
+          {featuredImage?.src && (
+            <NcImage
+              containerClassName="flex aspect-w-11 aspect-h-12 w-full h-0"
+              src={featuredImage}
+              className="h-full w-full object-cover"
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1200px) 50vw, 40vw"
+              alt={title || '상품 이미지'}
+            />
+          )}
+        </Link>
 
-        <div className="space-y-4 px-2.5 pt-5 pb-2.5">
-          {renderColorOptions()}
-          <div>
-            <h2 className="nc-ProductCard__title text-base font-semibold transition-colors">{title}</h2>
-            <p className={`mt-1 text-sm text-neutral-500 dark:text-neutral-400`}>{color}</p>
+        {/* 품절 오버레이 */}
+        {isSoldOut && (
+          <div className="absolute inset-0 flex items-center justify-center rounded-3xl bg-black/40">
+            <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-bold text-neutral-800">품절</span>
           </div>
+        )}
 
-          <div className="flex items-end justify-between">
-            <Prices price={price ?? 1} />
-            <div className="mb-0.5 flex items-center">
-              <StarIcon className="h-5 w-5 pb-px text-amber-400" />
-              <span className="ms-1 text-sm text-neutral-500 dark:text-neutral-400">
-                {rating || ''} ({reviewNumber || 0} reviews)
-              </span>
-            </div>
-          </div>
+        <ProductStatus status={status} />
+        <LikeButton liked={isLiked} className="absolute end-3 top-3 z-10" />
+
+        {/* 호버 버튼 */}
+        <div className="invisible absolute inset-x-1 bottom-0 flex justify-center gap-1.5 opacity-0 transition-all group-hover:visible group-hover:bottom-4 group-hover:opacity-100">
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            disabled={isSoldOut}
+            className="flex cursor-pointer items-center justify-center gap-2 rounded-full bg-neutral-900 px-4 py-2 text-xs/normal text-white shadow-lg hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <ShoppingBagIcon className="-ml-1 size-3.5" />
+            <span>{isSoldOut ? '품절' : '장바구니'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleQuickView}
+            className="flex cursor-pointer items-center justify-center gap-2 rounded-full bg-white px-4 py-2 text-xs/normal text-neutral-950 shadow-lg hover:bg-neutral-50"
+          >
+            <ArrowsPointingOutIcon className="-ml-1 size-3.5" />
+            <span>빠른보기</span>
+          </button>
         </div>
       </div>
-    </>
+
+      <div className="space-y-3 px-2.5 pt-4 pb-2.5">
+        {renderColorOptions()}
+
+        <div>
+          {badge && (
+            <span className={`mb-1.5 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${badge.className}`}>
+              {badge.label}
+            </span>
+          )}
+          <h2 className="nc-ProductCard__title line-clamp-2 text-sm font-semibold leading-snug transition-colors text-neutral-900 dark:text-neutral-100">
+            {title}
+          </h2>
+        </div>
+
+        <div className="flex items-center justify-between gap-2">
+          <Prices price={price ?? 0} contentClass="py-0 text-sm" />
+          {isFreeShipping && (
+            <span className="rounded-full bg-teal-50 px-2 py-0.5 text-xs font-medium text-teal-700 dark:bg-teal-900/30 dark:text-teal-400 whitespace-nowrap">
+              무료배송
+            </span>
+          )}
+        </div>
+
+        {(rating ?? 0) > 0 && (
+          <div className="flex items-center gap-1">
+            <StarIcon className="h-4 w-4 text-amber-400" />
+            <span className="text-xs text-neutral-500 dark:text-neutral-400">
+              {rating}{(reviewNumber ?? 0) > 0 && ` (${reviewNumber})`}
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
   )
 }
 

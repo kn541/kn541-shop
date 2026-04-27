@@ -1,5 +1,10 @@
 'use client'
 
+// KN541 장바구니 담기 버튼 + 토스트 알림 — 한국어화
+// fix: "Added to cart!" → "장바구니에 담겼습니다!"
+// fix: "Qty N" → "수량 N"
+// fix: "View cart" → "장바구니 보기"
+
 import Prices from '@/components/Prices'
 import { Link } from '@/shared/link'
 import { Transition } from '@headlessui/react'
@@ -25,7 +30,8 @@ export const NotifyAddToCart: FC<NotifyAddToCartProps> = ({ show, color, imageUr
       leaveFrom="opacity-100 translate-x-0"
       leaveTo="opacity-0 translate-x-20"
     >
-      <p className="mt-1 block text-base leading-none font-semibold">Added to cart!</p>
+      {/* ★ "Added to cart!" → "장바구니에 담겼습니다!" */}
+      <p className="mt-1 block text-base leading-none font-semibold">장바구니에 담겼습니다!</p>
 
       <div className="mt-6 flex">
         <div className="relative h-24 w-20 shrink-0 overflow-hidden rounded-xl bg-neutral-100">
@@ -39,7 +45,7 @@ export const NotifyAddToCart: FC<NotifyAddToCartProps> = ({ show, color, imageUr
                 <h3 className="text-base font-medium">{title}</h3>
                 <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
                   <span>{color}</span>
-                  <span className="mx-2 h-4 border-l border-neutral-200 dark:border-neutral-700"></span>
+                  {color && size && <span className="mx-2 h-4 border-l border-neutral-200 dark:border-neutral-700"></span>}
                   <span>{size}</span>
                 </p>
               </div>
@@ -47,11 +53,12 @@ export const NotifyAddToCart: FC<NotifyAddToCartProps> = ({ show, color, imageUr
             </div>
           </div>
           <div className="flex flex-1 items-end justify-between text-sm">
-            <p className="text-gray-500 dark:text-neutral-400">{`Qty ${quantity}`}</p>
-
+            {/* ★ "Qty N" → "수량 N" */}
+            <p className="text-gray-500 dark:text-neutral-400">{`수량 ${quantity}`}</p>
             <div className="flex">
+              {/* ★ "View cart" → "장바구니 보기" */}
               <Link href={'/cart'} className="font-medium text-primary-600 dark:text-primary-500">
-                View cart
+                장바구니 보기
               </Link>
             </div>
           </div>
@@ -71,7 +78,7 @@ interface AddToCardButtonProps {
   color?: string
   price: number
   as?: ElementType | ComponentType<any>
-  [key: string]: any // Cho phép bất kỳ props tùy chỉnh nào
+  [key: string]: any
 }
 
 const AddToCardButton = ({
