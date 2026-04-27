@@ -13,4 +13,4 @@ const logos = {
 // 대신 아래 명령으로 수동 복사하세요:
 // Supabase Storage > logos 버킷에 직접 업로드
 console.log('로고 파일은 Supabase Storage logos 버킷에 업로드해주세요.');
-console.log('URL 형식: https://qxmcbdqmmiyrrhenufaj.supabase.co/storage/v1/object/public/logos/logo1.svg');
+console.log('URL 형식: https://ghtkropmnrelkxivzpim.supabase.co/storage/v1/object/public/logos/logo1.svg');

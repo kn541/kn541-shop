@@ -7,7 +7,7 @@ import Image from 'next/image'
 import { useRouter } from '@/i18n/navigation'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL
-const LOGO_URL = 'https://qxmcbdqmmiyrrhenufaj.supabase.co/storage/v1/object/public/brands/white_logo.png'
+const LOGO_URL = 'https://ghtkropmnrelkxivzpim.supabase.co/storage/v1/object/public/brands/white_logo.png'
 
 type MemberType = 'normal' | 'startup'
 type DupState = 'idle' | 'checking' | 'ok' | 'dup' | 'error'

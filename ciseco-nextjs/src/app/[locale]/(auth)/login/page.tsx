@@ -8,7 +8,7 @@ import { useRouter } from '@/i18n/navigation'
 import { useSearchParams } from 'next/navigation'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL
-const LOGO_URL = 'https://qxmcbdqmmiyrrhenufaj.supabase.co/storage/v1/object/public/brands/white_logo.png'
+const LOGO_URL = 'https://ghtkropmnrelkxivzpim.supabase.co/storage/v1/object/public/brands/white_logo.png'
 
 // useSearchParams를 사용하는 실제 폼 컴포넌트 — Suspense 안에서만 렌더링
 function LoginForm() {
