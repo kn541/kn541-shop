@@ -1,8 +1,6 @@
 'use client'
 // KN541 결제 페이지 — 토스페이먼츠 API 개별 연동
-// fix: 폐쇄몰 — 비로그인 시 메인 페이지로 이동
-// fix: hydration 전 redirect 방지 (mounted state)
-// fix: locale 동적화 (/ko/ 하드코딩 제거)
+// feat: "회원정보와 동일" 체크박스 — /auth/me에서 이름·전화번호·이메일 자동 채움
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
@@ -58,13 +56,11 @@ export default function CheckoutPage() {
   const locale   = pathname.split('/')[1] || 'ko'
   const { items, selectedIds, clearCart } = useCart()
 
-  // ★ hydration 완료 + 인증 확인
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setMounted(true)
     const token = getToken()
-    // ★ 폐쇄몰: 비로그인 → 메인 페이지
     if (!token) {
       router.replace(`/${locale}`)
     }
@@ -91,11 +87,12 @@ export default function CheckoutPage() {
   const [payMethod, setPayMethod]       = useState<PayMethod>('CARD')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const paymentRef = useRef<any>(null)
+  const [sameAsMember, setSameAsMember] = useState(false)
+  const [memberInfo, setMemberInfo]     = useState<{ name: string; phone: string; email: string } | null>(null)
 
-  // ★ mounted + 인증 완료 후에만 장바구니 비어있으면 cart로 이동
   useEffect(() => {
     if (!mounted) return
-    if (!getToken()) return  // 비로그인은 위 useEffect에서 처리
+    if (!getToken()) return
     if (orderableItems.length === 0) router.replace(`/${locale}/cart`)
   }, [mounted, orderableItems.length, locale, router])
 
@@ -167,7 +164,7 @@ export default function CheckoutPage() {
   }
 
   function handleNewAddress() {
-    setSelectedAddressId(null); setMemoSelect('')
+    setSelectedAddressId(null); setMemoSelect(''); setSameAsMember(false)
     setForm(f => ({ ...f, name: '', phone: '', memo: '' }))
     setAddress({ zipcode: '', address1: '', address2: '' })
     setShowNewForm(true)
@@ -264,7 +261,6 @@ export default function CheckoutPage() {
   const inputCls = 'w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100'
   const labelCls = 'mb-1.5 block text-sm font-medium text-neutral-700 dark:text-neutral-300'
 
-  // ★ 인증 확인 전 또는 장바구니 비어 있으면 빈 화면 (redirect 처리 중)
   if (!mounted || !getToken()) return null
   if (orderableItems.length === 0) return null
 
@@ -363,6 +359,39 @@ export default function CheckoutPage() {
 
             {showNewForm && (
               <div className="space-y-4 pt-2">
+                {/* 회원정보와 동일 체크 */}
+                <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-primary-200 bg-primary-50 px-4 py-3 text-sm font-medium text-primary-700 dark:border-primary-800 dark:bg-primary-900/20 dark:text-primary-300">
+                  <input
+                    type="checkbox"
+                    checked={sameAsMember}
+                    onChange={async (e) => {
+                      const checked = e.target.checked
+                      setSameAsMember(checked)
+                      if (checked) {
+                        if (memberInfo) {
+                          setForm(f => ({ ...f, name: memberInfo.name, phone: memberInfo.phone, email: memberInfo.email }))
+                        } else {
+                          try {
+                            const token = getToken()
+                            if (!token) return
+                            const res = await fetch(`${BASE}/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
+                            if (res.ok) {
+                              const d = (await res.json()).data
+                              const info = { name: d?.name ?? '', phone: d?.phone ?? '', email: d?.email ?? '' }
+                              setMemberInfo(info)
+                              setForm(f => ({ ...f, name: info.name, phone: info.phone, email: info.email }))
+                            }
+                          } catch {}
+                        }
+                      } else {
+                        setForm(f => ({ ...f, name: '', phone: '', email: '' }))
+                      }
+                    }}
+                    className="h-4 w-4 rounded border-primary-300 text-primary-600"
+                  />
+                  회원정보와 동일
+                </label>
+
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="sm:col-span-2">
                     <label className={labelCls}>수령자 이름 *</label>
