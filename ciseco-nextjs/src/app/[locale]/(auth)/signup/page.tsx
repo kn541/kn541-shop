@@ -148,6 +148,17 @@ export default function SignupPage() {
         if (access_token) {
           localStorage.setItem('access_token', access_token)
           if (refresh_token) localStorage.setItem('refresh_token', refresh_token)
+          try {
+            const part = access_token.split('.')[1]
+            if (part) {
+              const payload = JSON.parse(atob(part.replace(/-/g, '+').replace(/_/g, '/')))
+              const ut = payload?.user_type
+              if (ut != null && String(ut) !== '') localStorage.setItem('user_type', String(ut))
+              else localStorage.removeItem('user_type')
+            }
+          } catch {
+            localStorage.removeItem('user_type')
+          }
           router.push('/ko')
         } else {
           setGlobalError('가입 처리 중 오류가 발생했습니다.')

@@ -68,6 +68,7 @@ export function useAuth() {
   const logout = () => {
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
+    localStorage.removeItem('user_type')
     setUser(null)
     // 로그아웃 후 메인 페이지로 이동
     window.location.href = `/${locale}`

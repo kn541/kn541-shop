@@ -4,6 +4,17 @@ import { Link } from '@/components/Link'
 import { usePathname } from '@/i18n/navigation'
 import { useTranslations } from 'next-intl'
 import { useAuth } from '@/hooks/useAuth'
+import { useEffect, useState } from 'react'
+
+/** JWT에 없을 때 보조 (TASK 3: localStorage user_type) */
+function useEffectiveUserType(jwtType: string | undefined): string {
+  const [t, setT] = useState('')
+  useEffect(() => {
+    const ls = typeof window !== 'undefined' ? localStorage.getItem('user_type') || '' : ''
+    setT((jwtType || '').trim() || ls.trim())
+  }, [jwtType])
+  return t || jwtType || ''
+}
 
 const links = [
   { nameKey: 'settings' as const, link: '/account' },
@@ -30,11 +41,13 @@ const PageTab = ({ variant = 'tabs' }: PageTabProps) => {
   const t = useTranslations('Account')
   const pathname = usePathname()
   const { user } = useAuth()
-
-  const paidShopTabs = ['/myshop', '/commission', '/dividends', '/tree'] as const
+  const effectiveUserType = useEffectiveUserType(user?.user_type)
 
   const visibleLinks = links.filter(item => {
-    if ((paidShopTabs as readonly string[]).includes(item.link) && user?.user_type !== '006') {
+    if (item.link === '/myshop' && effectiveUserType !== '006') {
+      return false
+    }
+    if (['/commission', '/dividends', '/tree'].includes(item.link) && effectiveUserType !== '006') {
       return false
     }
     return true

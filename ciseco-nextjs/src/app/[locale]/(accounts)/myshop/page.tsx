@@ -1,9 +1,16 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from '@/i18n/navigation'
 import ButtonPrimary from '@/shared/Button/ButtonPrimary'
 import ButtonSecondary from '@/shared/Button/ButtonSecondary'
+import {
+  Dialog,
+  DialogActions,
+  DialogBody,
+  DialogDescription,
+  DialogTitle,
+} from '@/shared/dialog'
 import { toast } from 'react-hot-toast'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL || 'https://kn541-production.up.railway.app'
@@ -54,6 +61,15 @@ interface ShopProduct {
   sort_order: number
 }
 
+interface FindProductRow {
+  product_id: string
+  product_name: string
+  thumbnail_url: string | null
+  sale_price?: number
+  is_in_my_shop: boolean
+  is_discontinued?: boolean
+}
+
 type TabType = 'info' | 'products' | 'dashboard' | 'share'
 
 export default function MyShopPage() {
@@ -70,6 +86,12 @@ export default function MyShopPage() {
   const [newUrlCode, setNewUrlCode] = useState('')
   const [newDesc, setNewDesc] = useState('')
   const [urlAvailable, setUrlAvailable] = useState<boolean | null>(null)
+
+  const [addModalOpen, setAddModalOpen] = useState(false)
+  const [findKeyword, setFindKeyword] = useState('')
+  const [findLoading, setFindLoading] = useState(false)
+  const [findItems, setFindItems] = useState<FindProductRow[]>([])
+  const [addingProductId, setAddingProductId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchShop()
@@ -108,6 +130,36 @@ export default function MyShopPage() {
       setProducts(data.data?.items || [])
     } catch {}
   }
+
+  const fetchFindProducts = useCallback(
+    async (keyword: string) => {
+      setFindLoading(true)
+      try {
+        const q = new URLSearchParams({ page: '1', size: '50' })
+        const k = keyword.trim()
+        if (k) q.set('keyword', k)
+        const r = await fetch(`${BASE}/myshop/products/find?${q.toString()}`, { headers: getHeaders() })
+        if (r.status === 401) {
+          router.push('/login')
+          return
+        }
+        const data = await r.json()
+        setFindItems(data.data?.items || [])
+      } catch {
+        toast.error('상품 검색에 실패했습니다')
+        setFindItems([])
+      } finally {
+        setFindLoading(false)
+      }
+    },
+    [router],
+  )
+
+  useEffect(() => {
+    if (!addModalOpen) return
+    setFindKeyword('')
+    void fetchFindProducts('')
+  }, [addModalOpen, fetchFindProducts])
 
   async function checkUrl(code: string) {
     if (code.length < 6) { setUrlAvailable(null); return }
@@ -170,6 +222,33 @@ export default function MyShopPage() {
       fetchProducts()
     } catch {
       toast.error('오류가 발생했습니다')
+    }
+  }
+
+  async function addProductFromCatalog(productId: string) {
+    setAddingProductId(productId)
+    try {
+      const r = await fetch(`${BASE}/myshop/products`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ product_id: productId, sort_order: 0 }),
+      })
+      if (r.status === 401) {
+        router.push('/login')
+        return
+      }
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({}))
+        toast.error(typeof err.detail === 'string' ? err.detail : '담기에 실패했습니다')
+        return
+      }
+      toast.success('상품을 담았습니다')
+      void fetchFindProducts(findKeyword)
+      void fetchProducts()
+    } catch {
+      toast.error('오류가 발생했습니다')
+    } finally {
+      setAddingProductId(null)
     }
   }
 
@@ -314,6 +393,105 @@ export default function MyShopPage() {
       {/* 상품 관리 탭 */}
       {tab === 'products' && (
         <div className="space-y-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-neutral-500 dark:text-neutral-400">
+              본사 상품을 검색해 쇼핑몰에 담을 수 있습니다.
+            </p>
+            <ButtonPrimary className="sm:w-auto" onClick={() => setAddModalOpen(true)}>
+              상품 추가
+            </ButtonPrimary>
+          </div>
+
+          <Dialog open={addModalOpen} onClose={() => setAddModalOpen(false)} size="3xl">
+            <DialogTitle>상품 검색 · 담기</DialogTitle>
+            <DialogDescription>
+              본사 상품을 검색한 뒤 담기를 누르면 아래 목록에 반영됩니다. 이미 담긴 상품은 &quot;담기 완료&quot;로 표시됩니다.
+            </DialogDescription>
+            <DialogBody>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <input
+                  type="search"
+                  value={findKeyword}
+                  onChange={(e) => setFindKeyword(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') void fetchFindProducts(findKeyword)
+                  }}
+                  placeholder="상품명, 브랜드로 검색"
+                  className="min-w-0 flex-1 rounded-xl border border-neutral-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-neutral-600 dark:bg-neutral-900"
+                />
+                <ButtonPrimary
+                  className="shrink-0"
+                  disabled={findLoading}
+                  onClick={() => void fetchFindProducts(findKeyword)}
+                >
+                  {findLoading ? '검색 중…' : '검색'}
+                </ButtonPrimary>
+              </div>
+
+              <div className="mt-4 max-h-[min(24rem,50vh)] space-y-2 overflow-y-auto">
+                {findLoading && findItems.length === 0 ? (
+                  <div className="flex justify-center py-12">
+                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary-500 border-t-transparent" />
+                  </div>
+                ) : findItems.length === 0 ? (
+                  <p className="py-8 text-center text-sm text-neutral-500">검색 결과가 없습니다.</p>
+                ) : (
+                  findItems.map((row) => {
+                    const added = !!row.is_in_my_shop
+                    const disabled =
+                      added || row.is_discontinued || addingProductId === row.product_id
+                    return (
+                      <div
+                        key={row.product_id}
+                        className="flex items-center gap-3 rounded-xl border border-neutral-200 p-3 dark:border-neutral-700"
+                      >
+                        {row.thumbnail_url ? (
+                          <img
+                            src={row.thumbnail_url}
+                            alt=""
+                            className="h-14 w-14 shrink-0 rounded-lg object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-neutral-100 text-xs text-neutral-400 dark:bg-neutral-800">
+                            No img
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-medium text-neutral-900 dark:text-neutral-100">
+                            {row.product_name}
+                          </p>
+                          <p className="text-sm text-primary-600">
+                            {Number(row.sale_price ?? 0).toLocaleString()}원
+                          </p>
+                          {row.is_discontinued ? (
+                            <span className="text-xs text-neutral-400">단종 상품</span>
+                          ) : null}
+                        </div>
+                        <button
+                          type="button"
+                          disabled={disabled}
+                          onClick={() => void addProductFromCatalog(row.product_id)}
+                          className={`shrink-0 rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${
+                            added
+                              ? 'cursor-default bg-neutral-100 text-neutral-400 dark:bg-neutral-800'
+                              : 'bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50'
+                          }`}
+                        >
+                          {added ? '담기 완료' : addingProductId === row.product_id ? '담는 중…' : '담기'}
+                        </button>
+                      </div>
+                    )
+                  })
+                )}
+              </div>
+            </DialogBody>
+            <DialogActions>
+              <ButtonSecondary type="button" onClick={() => setAddModalOpen(false)}>
+                닫기
+              </ButtonSecondary>
+            </DialogActions>
+          </Dialog>
+
           {products.length === 0 ? (
             <div className="py-12 text-center text-sm text-neutral-500">
               담은 상품이 없습니다. 상품을 검색해서 담아보세요.

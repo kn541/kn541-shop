@@ -2,23 +2,29 @@
 
 import { useAuth } from '@/hooks/useAuth'
 import { useTranslations } from 'next-intl'
+import { useEffect, useState } from 'react'
 
-/** signup 페이지 회원유형 코드와 동일 */
-const MEMBER_TYPE_LABELS: Record<string, string> = {
-  '001': '본사',
-  '002': '알레카서울',
-  '003': '아산청아',
-  '004': '울산태화강',
-  '005': '부산대박',
-  '006': '서초그린케어',
-  '007': '인천주안',
-  '008': '창원미라클',
-  '009': '대구',
+/** 시스템 회원 유형 (표시명) — 006은 유료회원으로 통일 */
+const USER_TYPE_LABEL: Record<string, string> = {
+  '001': '관리자',
+  '002': '일반회원',
+  '003': '오프관리자',
+  '004': '공급사',
+  '005': '강사',
+  '006': '유료회원',
+  '008': '셀러',
 }
 
 export default function AccountHeaderInfo() {
   const t = useTranslations('Account')
   const { user, loading } = useAuth()
+  const [effectiveType, setEffectiveType] = useState('')
+
+  useEffect(() => {
+    const fromJwt = (user?.user_type || '').trim()
+    const fromLs = typeof window !== 'undefined' ? localStorage.getItem('user_type')?.trim() || '' : ''
+    setEffectiveType(fromJwt || fromLs)
+  }, [user?.user_type])
 
   const lineClass =
     'mt-4 block text-base text-neutral-500 sm:text-lg dark:text-neutral-400'
@@ -37,11 +43,10 @@ export default function AccountHeaderInfo() {
     user.email?.split('@')[0]?.trim() ||
     t('defaultDisplayName')
 
+  const typeCode = (effectiveType || user.user_type || '').trim()
   const typeLabel =
-    MEMBER_TYPE_LABELS[user.user_type] ||
-    (user.user_type
-      ? t('memberTypeCode', { code: user.user_type })
-      : t('memberTypeUnknown'))
+    USER_TYPE_LABEL[typeCode] ||
+    (typeCode ? t('memberTypeCode', { code: typeCode }) : t('memberTypeUnknown'))
 
   return (
     <span className={lineClass}>
