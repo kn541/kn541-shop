@@ -40,19 +40,14 @@ function LoginForm() {
           setError(json?.detail ?? '로그인에 실패했습니다.')
           return
         }
-        const { access_token, refresh_token } = json?.data ?? {}
+        const { access_token, refresh_token, user_type } = json?.data ?? {}
         if (access_token) {
           localStorage.setItem('access_token', access_token)
           if (refresh_token) localStorage.setItem('refresh_token', refresh_token)
-          try {
-            const part = access_token.split('.')[1]
-            if (part) {
-              const payload = JSON.parse(atob(part.replace(/-/g, '+').replace(/_/g, '/')))
-              const ut = payload?.user_type
-              if (ut != null && String(ut) !== '') localStorage.setItem('user_type', String(ut))
-              else localStorage.removeItem('user_type')
-            }
-          } catch {
+          // user_type: API 응답에서 가져오기 (JWT에는 user_type 없음)
+          if (user_type != null && String(user_type) !== '') {
+            localStorage.setItem('user_type', String(user_type))
+          } else {
             localStorage.removeItem('user_type')
           }
           router.push(redirectTo)
