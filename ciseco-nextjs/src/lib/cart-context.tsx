@@ -23,6 +23,8 @@ export interface CartItem {
   freeShippingOver: number
   scType: number
   stockQty: number   // 재고 수량 — 장바구니 max 제한 + 품절 표시용
+  /** 분양몰 주문 구분 (결제/수당 연동 시 사용) */
+  shopId?: string
 }
 
 interface CartContextValue {

@@ -24,9 +24,13 @@ interface Props {
   className?: string
   data: TProductItem
   isLiked?: boolean
+  /** 상품 상세 링크 쿼리 (예: shop_id=uuid, `?` 없이 key=value) */
+  hrefSearch?: string
+  /** 분양몰 장바구니 담기 시 shop_id (수당 연동 예정) */
+  cartShopId?: string
 }
 
-const ProductCard: FC<Props> = ({ className = '', data, isLiked }) => {
+const ProductCard: FC<Props> = ({ className = '', data, isLiked, hrefSearch, cartShopId }) => {
   const { title, price, status, rating, options, handle, selectedOptions, reviewNumber, featuredImage } = data
 
   const pathname = usePathname()
@@ -62,7 +66,13 @@ const ProductCard: FC<Props> = ({ className = '', data, isLiked }) => {
   // ★ next-intl Link는 locale 자동 추가 → href에 locale 포함 금지
   //   /products/UUID  →  next-intl →  /ko/products/UUID  (정상)
   //   /ko/products/UUID  →  next-intl →  /ko/ko/products/UUID  (404!)
-  const productPath = `/products/${handle}`
+  const querySuffix =
+    hrefSearch && hrefSearch.length > 0
+      ? hrefSearch.startsWith('?')
+        ? hrefSearch
+        : `?${hrefSearch}`
+      : ''
+  const productPath = `/products/${handle}${querySuffix}`
 
   // ★ 장바구니 담기
   const handleAddToCart = (e: React.MouseEvent) => {
@@ -94,6 +104,7 @@ const ProductCard: FC<Props> = ({ className = '', data, isLiked }) => {
       freeShippingOver: Number(deliveryData.free_over ?? 0),
       scType: Number(deliveryData.sc_type ?? 1),
       stockQty: Number((data as any).stockQty ?? 0),
+      ...(cartShopId ? { shopId: cartShopId } : {}),
     })
 
     toast.success(
