@@ -48,6 +48,8 @@ interface CartContextValue {
 
 const CartContext = createContext<CartContextValue | null>(null)
 const STORAGE_KEY = 'kn541_cart'
+/** 체크박스 선택 상태 — 장바구니·결제 간 유지 */
+const SELECTED_KEY = 'kn541_cart_selected'
 
 /** KN541 정식 상품 여부 — productId(UUID)가 있어야 함 */
 function isValidItem(item: any): boolean {
@@ -76,7 +78,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [hydrated, setHydrated] = useState(false)
 
-  // localStorage 로드 — 구형 데모 데이터 자동 필터링
+  // localStorage 로드 — 구형 데모 데이터 자동 필터링 + 선택 ID 복원
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY)
@@ -84,19 +86,32 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         const parsed: any[] = JSON.parse(raw)
         const valid = parsed.filter(isValidItem)
         setItems(valid)
-        setSelectedIds(new Set(valid.map((i: any) => i.id)))
+        const validIds = new Set(valid.map((i: any) => i.id))
+
+        const selectedRaw = localStorage.getItem(SELECTED_KEY)
+        if (selectedRaw) {
+          try {
+            const savedIds: string[] = JSON.parse(selectedRaw)
+            setSelectedIds(new Set(savedIds.filter((id) => validIds.has(id))))
+          } catch {
+            setSelectedIds(new Set(valid.map((i: any) => i.id)))
+          }
+        } else {
+          setSelectedIds(new Set(valid.map((i: any) => i.id)))
+        }
       }
     } catch {}
     setHydrated(true)
   }, [])
 
-  // localStorage 저장
+  // localStorage 저장 — 수량·선택 동기화
   useEffect(() => {
     if (!hydrated) return
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
+      localStorage.setItem(SELECTED_KEY, JSON.stringify([...selectedIds]))
     } catch {}
-  }, [items, hydrated])
+  }, [items, selectedIds, hydrated])
 
   const addItem = useCallback((newItem: Omit<CartItem, 'id'>) => {
     const id = `${newItem.productId}__${newItem.option ?? ''}`

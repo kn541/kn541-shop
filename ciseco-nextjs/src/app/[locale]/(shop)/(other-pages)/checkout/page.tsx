@@ -9,7 +9,6 @@ import {
   LockClosedIcon,
   ExclamationTriangleIcon,
   MapPinIcon,
-  PlusIcon,
   CheckCircleIcon,
   CreditCardIcon,
   BuildingLibraryIcon,
@@ -17,6 +16,7 @@ import {
 } from '@heroicons/react/24/outline'
 import ButtonPrimary from '@/shared/Button/ButtonPrimary'
 import KakaoAddressInput, { AddressValue } from '@/components/common/KakaoAddressSearch'
+import { Link } from '@/shared/link'
 import { useCart, calcItemShipping } from '@/lib/cart-context'
 import toast from 'react-hot-toast'
 
@@ -163,13 +163,6 @@ export default function CheckoutPage() {
     setSelectedAddressId(addr.id); applyAddress(addr); setShowNewForm(false)
   }
 
-  function handleNewAddress() {
-    setSelectedAddressId(null); setMemoSelect(''); setSameAsMember(false)
-    setForm(f => ({ ...f, name: '', phone: '', memo: '' }))
-    setAddress({ zipcode: '', address1: '', address2: '' })
-    setShowNewForm(true)
-  }
-
   function handleMemoSelect(val: string) {
     setMemoSelect(val)
     setForm(f => ({ ...f, memo: val !== '__DIRECT__' ? val : '' }))
@@ -216,7 +209,10 @@ export default function CheckoutPage() {
       const orderRes  = await fetch(`${BASE}/orders`, { method: 'POST', headers, body: JSON.stringify(orderBody) })
       const orderData = await orderRes.json()
       if (!orderRes.ok) throw new Error(orderData.detail ?? '주문 생성에 실패했습니다')
-      const { order_id, order_no, total_amount } = orderData.data
+      const { order_id, order_no, total_amount, skipped_product_ids: skippedProducts } = orderData.data
+      if (Array.isArray(skippedProducts) && skippedProducts.length > 0) {
+        toast(`판매 불가·종료된 상품 ${skippedProducts.length}건은 주문에서 제외되었습니다.`, { icon: 'ℹ️' })
+      }
 
       const orderName = orderableItems.length === 1
         ? orderableItems[0].name
@@ -318,42 +314,91 @@ export default function CheckoutPage() {
               배송 정보
             </h2>
 
-            {savedAddresses.length > 0 && (
+            <div className="mb-4 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowNewForm(true)
+                  setSameAsMember(false)
+                  setSelectedAddressId(null)
+                  setMemoSelect('')
+                  setForm((f) => ({ ...f, name: '', phone: '', memo: '' }))
+                  setAddress({ zipcode: '', address1: '', address2: '' })
+                }}
+                className={`rounded-xl px-4 py-2 text-sm font-medium transition-all ${
+                  showNewForm
+                    ? 'bg-primary-600 text-white'
+                    : 'border border-neutral-200 text-neutral-600 hover:border-neutral-300 dark:border-neutral-600 dark:text-neutral-300'
+                }`}
+              >
+                새 배송지 입력
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowNewForm(false)
+                  setSameAsMember(false)
+                  if (savedAddresses.length > 0) {
+                    const sel = savedAddresses.find((a) => a.id === selectedAddressId) ?? savedAddresses[0]
+                    setSelectedAddressId(sel.id)
+                    applyAddress(sel)
+                  }
+                }}
+                className={`rounded-xl px-4 py-2 text-sm font-medium transition-all ${
+                  !showNewForm
+                    ? 'bg-primary-600 text-white'
+                    : 'border border-neutral-200 text-neutral-600 hover:border-neutral-300 dark:border-neutral-600 dark:text-neutral-300'
+                }`}
+              >
+                저장된 배송지 ({savedAddresses.length})
+              </button>
+            </div>
+
+            {!showNewForm && savedAddresses.length === 0 && (
+              <div className="rounded-2xl border border-dashed border-neutral-300 p-8 text-center dark:border-neutral-600">
+                <p className="mb-2 text-sm text-neutral-400">저장된 배송지가 없습니다</p>
+                <Link href="/addresses" className="text-sm font-medium text-primary-600 hover:underline">
+                  배송지 관리에서 등록하기
+                </Link>
+              </div>
+            )}
+
+            {!showNewForm && savedAddresses.length > 0 && (
               <div className="mb-4 space-y-2">
-                {savedAddresses.map(addr => (
-                  <button key={addr.id} onClick={() => handleSelectAddress(addr)}
+                {savedAddresses.map((addr) => (
+                  <button
+                    key={addr.id}
+                    type="button"
+                    onClick={() => handleSelectAddress(addr)}
                     className={`w-full rounded-2xl border p-4 text-left transition-all ${
                       selectedAddressId === addr.id
                         ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
                         : 'border-neutral-200 hover:border-neutral-300 dark:border-neutral-700'
-                    }`}>
+                    }`}
+                  >
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-2">
                         <MapPinIcon className={`h-4 w-4 shrink-0 mt-0.5 ${selectedAddressId === addr.id ? 'text-primary-600' : 'text-neutral-400'}`} />
                         <div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{addr.recipient_name}</span>
-                            {addr.address_name && <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-500 dark:bg-neutral-700">{addr.address_name}</span>}
-                            {addr.is_default && <span className="rounded-full bg-primary-100 px-2 py-0.5 text-xs font-medium text-primary-600 dark:bg-primary-900/30">기본</span>}
+                            {addr.address_name && (
+                              <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-500 dark:bg-neutral-700">{addr.address_name}</span>
+                            )}
+                            {addr.is_default && (
+                              <span className="rounded-full bg-primary-100 px-2 py-0.5 text-xs font-medium text-primary-600 dark:bg-primary-900/30">기본</span>
+                            )}
                           </div>
                           <p className="mt-0.5 text-sm text-neutral-500">{addr.recipient_phone}</p>
-                          <p className="mt-0.5 text-sm text-neutral-600 dark:text-neutral-400">[{addr.zip_code}] {addr.address1} {addr.address2}</p>
+                          <p className="mt-0.5 text-sm text-neutral-600 dark:text-neutral-400">
+                            [{addr.zip_code}] {addr.address1} {addr.address2}
+                          </p>
                         </div>
                       </div>
                       {selectedAddressId === addr.id && <CheckCircleIcon className="h-5 w-5 shrink-0 text-primary-600" />}
                     </div>
                   </button>
                 ))}
-                <button onClick={handleNewAddress}
-                  className={`w-full rounded-2xl border p-4 text-left transition-all ${
-                    showNewForm
-                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                      : 'border-dashed border-neutral-300 hover:border-neutral-400 dark:border-neutral-600'
-                  }`}>
-                  <div className="flex items-center gap-2 text-sm font-medium text-neutral-600 dark:text-neutral-400">
-                    <PlusIcon className="h-4 w-4" />새 배송지 입력
-                  </div>
-                </button>
               </div>
             )}
 
