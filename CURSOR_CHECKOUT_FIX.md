@@ -1,152 +1,169 @@
-# KN541 Shop 결제 페이지 수정 — Cursor 작업지시서
+# KN541 결제 버그 수정 — Cursor 작업지시서 (수정본)
 
-> **작업일:** 2026-04-29
-> **레포:** `kn541/kn541-shop`
-> **이슈 2건:** 장바구니 삭제상품 처리, 주소록 선택 UX
+> **원인 확정:** `selectedIds`가 localStorage에 저장되지 않음
+> → 장바구니→결제 페이지 이동 시 전체 아이템 자동 선택
+> → DELETED/DISCONTINUED 상품 포함 → 백엔드 "상품을 찾을 수 없습니다" 거부
 
 ---
 
-## TASK 1: 장바구니 → 결제 시 삭제/단종 상품 자동 제외
+## TASK 1: cart-context.tsx — selectedIds localStorage 저장
 
-### 현상
-장바구니에 DELETED/DISCONTINUED 상품이 포함된 채로 결제 진행 시
-백엔드 `POST /orders`에서 "상품을 찾을 수 없습니다" 에러.
+**파일:** `ciseco-nextjs/src/lib/cart-context.tsx`
 
-### 원인
-장바구니는 localStorage에 영구 보관되므로, 담은 이후 상품이 삭제/단종되면
-오래된 장바구니에 잔존. 결제 시점에 유효성 체크가 없음.
-
-### 수정 — 2곳
-
-**1) 장바구니 페이지 (`cart/page.tsx` 또는 CartPage)**
-- 페이지 진입 시 장바구니 상품 productId 목록을 백엔드에 보내 유효성 체크
-- `POST /products/validate-cart` 또는 기존 상품 조회 API 활용
-- DELETED/DISCONTINUED/is_display=false 상품은 "판매 종료" 표시 + 선택 해제 + 결제 불가
-
-**2) 결제 페이지 (`checkout/page.tsx`)**
-- `orderableItems` 필터에 추가 조건: 결제 진입 시 한번 더 검증
-- 유효하지 않은 상품이 있으면 장바구니로 돌려보내기
-
-**간단한 해결 (우선):**
-프론트에서 결제 전 `GET /products/{id}` 호출로 각 상품 유효성 체크하면 API 호출이 많음.
-→ 대안: 백엔드 `POST /orders`에서 삭제/단종 상품만 제외하고 나머지만 주문 생성.
-또는 장바구니 페이지에서 상품 목록 로드 시 API로 유효성 일괄 체크.
-
-**가장 현실적인 방법:**
-```typescript
-// checkout/page.tsx — 결제 진입 시 유효성 체크
-useEffect(() => {
-  if (!mounted || orderableItems.length === 0) return
-  const token = getToken()
-  if (!token) return
-  
-  // 장바구니 상품 일괄 검증
-  fetch(`${BASE}/cart/validate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ product_ids: orderableItems.map(i => i.productId) }),
-  })
-    .then(r => r.json())
-    .then(data => {
-      const invalidIds = data?.data?.invalid_ids ?? []
-      if (invalidIds.length > 0) {
-        toast.error(`판매 종료된 상품 ${invalidIds.length}건이 제외됩니다.`)
-        // 장바구니에서 제거 또는 선택 해제
-      }
-    })
-    .catch(() => {})
-}, [mounted, orderableItems.length])
+### 문제
+```javascript
+// 현재: 로드 시 전체 자동 선택 (항상)
+setSelectedIds(new Set(valid.map((i: any) => i.id)))
 ```
 
-**백엔드 필요:** `POST /cart/validate` 또는 `POST /products/check-availability`
-```python
-@router.post("/cart/validate")
-async def validate_cart(body: dict, db = Depends(get_db)):
-    product_ids = body.get("product_ids", [])
-    # products 테이블에서 유효한 상품만 조회
-    valid = db.table("products").select("id").in_("id", product_ids)\
-        .eq("product_status", "ACTIVE").eq("is_display", True).execute()
-    valid_ids = {r["id"] for r in _rows(valid)}
-    invalid_ids = [pid for pid in product_ids if pid not in valid_ids]
-    return {"status": "success", "data": {"valid_ids": list(valid_ids), "invalid_ids": invalid_ids}}
+### 수정
+selectedIds도 localStorage에 저장하고, 로드 시 복원:
+
+```javascript
+const STORAGE_KEY = 'kn541_cart'
+const SELECTED_KEY = 'kn541_cart_selected'
+
+// 로드 시
+useEffect(() => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (raw) {
+      const parsed: any[] = JSON.parse(raw)
+      const valid = parsed.filter(isValidItem)
+      setItems(valid)
+      
+      // selectedIds 복원 — 저장된 게 있으면 복원, 없으면 전체 선택
+      const selectedRaw = localStorage.getItem(SELECTED_KEY)
+      if (selectedRaw) {
+        const savedIds: string[] = JSON.parse(selectedRaw)
+        // 유효한 아이템 ID만 필터
+        const validIds = valid.map((i: any) => i.id)
+        setSelectedIds(new Set(savedIds.filter(id => validIds.includes(id))))
+      } else {
+        setSelectedIds(new Set(valid.map((i: any) => i.id)))
+      }
+    }
+  } catch {}
+  setHydrated(true)
+}, [])
+
+// 저장 시 — items + selectedIds 함께
+useEffect(() => {
+  if (!hydrated) return
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
+    localStorage.setItem(SELECTED_KEY, JSON.stringify([...selectedIds]))
+  } catch {}
+}, [items, selectedIds, hydrated])
 ```
 
 ### 완료 기준
-- [ ] 장바구니에 삭제/단종 상품 포함 시 "판매 종료" 표시
-- [ ] 결제 진행 시 유효 상품만 주문 생성
-- [ ] "상품을 찾을 수 없습니다" 에러 해소
+- [ ] 장바구니에서 3개 선택 → 결제 이동 → 3개만 표시
+- [ ] 새로고침해도 선택 상태 유지
+- [ ] 상품 제거 시 selectedIds에서도 제거
 
 ---
 
-## TASK 2: 주소록 선택 기능 — 저장된 배송지 목록
+## TASK 2: 백엔드 POST /orders — DELETED 상품 건너뛰기
 
-### 현상
-처음 주문하는 회원은 저장된 주소가 없어서 주소 목록이 안 보임.
-기능 자체는 코드에 있으나 (savedAddresses.length > 0일 때 표시),
-최초 주문 시에도 "주소록에서 선택" 옵션이 필요.
+**레포:** `kn541/kn541` (backend)
+**파일:** `backend/routers/orders/` (주문 생성 라우터)
+
+### 현재
+items에 DELETED/DISCONTINUED 상품이 포함되면 전체 주문 실패.
 
 ### 수정
+유효하지 않은 상품은 건너뛰고, 유효한 상품만으로 주문 생성.
+모든 상품이 무효하면 에러 반환.
 
-**마이페이지 배송지 관리 (`/addresses`)에서 먼저 등록하도록 안내:**
-결제 폼 상단에 "배송지 관리에서 미리 등록하면 다음 주문부터 선택할 수 있습니다" 안내 텍스트 추가.
+```python
+# 상품 유효성 체크
+valid_items = []
+skipped_items = []
+for item in request_items:
+    product = db.table("products").select("*").eq("id", item.product_id)\
+        .in_("product_status", ["ACTIVE", "ON_SALE"])\
+        .eq("is_display", True).limit(1).execute()
+    rows = _rows(product)
+    if rows:
+        valid_items.append((item, rows[0]))
+    else:
+        skipped_items.append(item.product_id)
 
-**또는 (더 좋은 UX):**
-결제 페이지 "배송 정보" 섹션 상단에 2개 탭/라디오 표시:
-1. "새 배송지 입력" (기본)
-2. "저장된 배송지" → 클릭 시 `/my/addresses` 조회 → 없으면 "저장된 배송지가 없습니다" 표시
+if not valid_items:
+    raise HTTPException(400, detail="주문 가능한 상품이 없습니다")
 
-### 수정 위치
-**파일:** `checkout/page.tsx`
+# valid_items만으로 주문 생성
+# 응답에 skipped 정보 포함
+return {
+    "status": "success",
+    "data": {
+        "order_id": ...,
+        "order_no": ...,
+        "total_amount": ...,
+        "skipped_products": skipped_items,  # 프론트에서 안내용
+    }
+}
+```
 
-현재 코드:
+### 완료 기준
+- [ ] DELETED 상품 포함 주문 시 → 유효 상품만 주문 + skipped 목록 반환
+- [ ] 모든 상품 무효 시 → 400 에러 "주문 가능한 상품이 없습니다"
+- [ ] 유효 상품만 주문 시 → 기존과 동일 동작
+
+---
+
+## TASK 3: 주소록 선택 — 저장된 배송지 탭 UI
+
+**파일:** `ciseco-nextjs/src/app/[locale]/(shop)/(other-pages)/checkout/page.tsx`
+
+배송 정보 섹션 상단에 2개 모드 버튼:
+
 ```tsx
-{savedAddresses.length > 0 && (
-  <div className="mb-4 space-y-2">
-    {savedAddresses.map(addr => ...)}
+<div className="mb-4 flex gap-2">
+  <button onClick={() => { setShowNewForm(true); setSameAsMember(false) }}
+    className={`rounded-xl px-4 py-2 text-sm font-medium transition-all ${
+      showNewForm
+        ? 'bg-primary-600 text-white'
+        : 'border border-neutral-200 text-neutral-600 hover:border-neutral-300'
+    }`}>
+    새 배송지 입력
+  </button>
+  <button onClick={() => { setShowNewForm(false); setSameAsMember(false) }}
+    className={`rounded-xl px-4 py-2 text-sm font-medium transition-all ${
+      !showNewForm
+        ? 'bg-primary-600 text-white'
+        : 'border border-neutral-200 text-neutral-600 hover:border-neutral-300'
+    }`}>
+    저장된 배송지 ({savedAddresses.length})
+  </button>
+</div>
+```
+
+저장된 배송지 없을 때:
+```tsx
+{!showNewForm && savedAddresses.length === 0 && (
+  <div className="rounded-2xl border border-dashed border-neutral-300 p-8 text-center">
+    <p className="text-sm text-neutral-400 mb-2">저장된 배송지가 없습니다</p>
+    <a href={`/${locale}/addresses`}
+      className="text-sm text-primary-600 font-medium hover:underline">
+      배송지 관리에서 등록하기
+    </a>
   </div>
 )}
 ```
 
-변경: savedAddresses가 없어도 "저장된 배송지" 탭을 보여주되, 빈 상태 안내:
-```tsx
-{/* 배송지 선택 모드 */}
-<div className="mb-4 flex gap-2">
-  <button onClick={() => setShowNewForm(true)}
-    className={`rounded-xl px-4 py-2 text-sm ${showNewForm ? 'bg-primary-600 text-white' : 'border'}`}>
-    새 배송지 입력
-  </button>
-  <button onClick={() => setShowNewForm(false)}
-    className={`rounded-xl px-4 py-2 text-sm ${!showNewForm ? 'bg-primary-600 text-white' : 'border'}`}>
-    저장된 배송지 ({savedAddresses.length})
-  </button>
-</div>
-
-{!showNewForm && (
-  savedAddresses.length > 0 ? (
-    <div className="space-y-2">
-      {savedAddresses.map(addr => ...기존 코드...)}
-    </div>
-  ) : (
-    <div className="rounded-2xl border border-dashed p-6 text-center text-sm text-neutral-400">
-      저장된 배송지가 없습니다.<br />
-      <a href="/addresses" className="text-primary-600 underline">배송지 관리</a>에서 미리 등록할 수 있습니다.
-    </div>
-  )
-)}
-```
-
 ### 완료 기준
-- [ ] 결제 페이지에 "새 배송지 입력" / "저장된 배송지" 탭 표시
-- [ ] 저장된 배송지 없으면 안내 메시지 + 배송지 관리 링크
-- [ ] 저장된 배송지 있으면 기존처럼 목록 + 선택
+- [ ] "새 배송지 입력" / "저장된 배송지(N)" 2개 버튼 표시
+- [ ] 저장된 배송지 없으면 안내 + 링크
+- [ ] 저장된 배송지 있으면 기존 목록 표시
 
 ---
 
 ## 실행 순서
-
 ```
-1. 백엔드: POST /cart/validate API 추가 (kn541/kn541)
-2. 프론트: checkout/page.tsx — 결제 진입 시 유효성 체크 + 주소록 탭 UI
-3. git push → Vercel 배포
-4. 검증: 삭제 상품 포함 장바구니로 결제 시도 → 에러 없이 유효 상품만 주문
+1. TASK 1: cart-context.tsx selectedIds 저장 (프론트)
+2. TASK 2: POST /orders DELETED 상품 스킵 (백엔드)
+3. TASK 3: 주소록 탭 UI (프론트)
+4. git push 양쪽 → 배포 → 검증
 ```
