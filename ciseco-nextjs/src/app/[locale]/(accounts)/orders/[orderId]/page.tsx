@@ -140,6 +140,40 @@ export default function OrderDetailPage({
         </div>
       </div>
 
+      {data.consult_notices && data.consult_notices.length > 0 && (
+        <div className="rounded-2xl border border-sky-200 bg-sky-50/80 p-5 dark:border-sky-900/50 dark:bg-sky-950/30">
+          <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-sky-900 dark:text-sky-100">
+            <span aria-hidden>📋</span> 섭외 안내
+          </h2>
+          <ul className="space-y-3">
+            {data.consult_notices.map(entry => {
+              const raw = entry.posted_at || ''
+              const line = raw
+                ? new Date(raw).toLocaleString('ko-KR', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false,
+                  })
+                : '—'
+              return (
+                <li
+                  key={entry.id}
+                  className="rounded-xl border border-sky-100 bg-white p-4 text-sm shadow-sm dark:border-sky-900/40 dark:bg-neutral-900/80"
+                >
+                  <p className="text-xs text-sky-700/80 dark:text-sky-300/90">{line}</p>
+                  <p className="mt-2 whitespace-pre-wrap text-neutral-800 dark:text-neutral-100">
+                    {entry.message || '—'}
+                  </p>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      )}
+
       {(recipient || a1) && (
         <div className="rounded-2xl border border-neutral-200 p-5 dark:border-neutral-700">
           <h2 className="mb-3 text-sm font-semibold text-neutral-900 dark:text-neutral-100">배송지</h2>

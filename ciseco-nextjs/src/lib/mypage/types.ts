@@ -97,6 +97,14 @@ export interface OrderDetail {
   address1?: string
   address2?: string | null
   items?: OrderDetailLineItem[]
+  /** GET /mypage/orders/{id} — 운영자 섭외 안내 (service_type=CONSULT) */
+  consult_notices?: OrderConsultNotice[]
+}
+
+export interface OrderConsultNotice {
+  id: number
+  message: string
+  posted_at?: string | null
 }
 
 /** GET /my/commissions?month=YYYY-MM */
