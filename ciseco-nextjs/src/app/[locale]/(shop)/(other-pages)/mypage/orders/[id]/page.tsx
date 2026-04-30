@@ -41,7 +41,6 @@ interface OrderDetail {
     subtotal: number
     thumbnail_url?: string
   }[]
-  consult_notices?: { id: number; message: string; posted_at?: string | null }[]
 }
 
 const STATUS_COLOR: Record<string, string> = {
@@ -136,24 +135,6 @@ export default function OrderDetailPage() {
       </div>
 
       <div className="space-y-6">
-        {order.consult_notices && order.consult_notices.length > 0 && (
-          <section className="rounded-3xl border border-sky-200 bg-sky-50/80 p-5 dark:border-sky-900/50 dark:bg-sky-950/30">
-            <h2 className="mb-3 flex items-center gap-2 text-base font-bold text-sky-900 dark:text-sky-100">
-              <span aria-hidden>📋</span> 섭외 안내
-            </h2>
-            <ul className="space-y-3">
-              {order.consult_notices.map(entry => (
-                <li
-                  key={entry.id}
-                  className="rounded-2xl border border-sky-100 bg-white p-4 text-sm shadow-sm dark:border-sky-900/40 dark:bg-neutral-900/80"
-                >
-                  <p className="text-xs text-sky-700/80 dark:text-sky-300/90">{formatDate(entry.posted_at)}</p>
-                  <p className="mt-2 whitespace-pre-wrap text-neutral-800 dark:text-neutral-100">{entry.message || '—'}</p>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
         {/* 주문 상품 */}
         <section className="rounded-3xl border border-neutral-200 p-5 dark:border-neutral-700">
           <SectionTitle>주문 상품</SectionTitle>
