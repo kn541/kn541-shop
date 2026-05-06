@@ -26,7 +26,7 @@ function splitTitle(title: string): { line1: string; line2: string } {
     .split(/\n/)
     .map((s) => s.trim())
     .filter(Boolean)
-  const line1 = lines[0] ?? title.trim() || ' '
+  const line1 = lines[0] ?? (title.trim() || ' ')
   const line2 = lines[1] ?? line1
   return { line1, line2 }
 }
