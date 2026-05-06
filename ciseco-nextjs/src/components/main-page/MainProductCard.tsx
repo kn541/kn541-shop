@@ -2,6 +2,8 @@
 
 // 메인 단일 product-card 마크업 (디자인 정합성 v1 §7)
 
+import type { MainCartPreviewPayload } from '@/components/main-page/main-cart-types'
+import { useMainCartPreviewOptional } from '@/components/main-page/main-cart-preview-context'
 import type { Product } from '@/lib/api/products'
 import { getProductImageUrl } from '@/lib/api/products'
 import { formatPrice } from '@/lib/formatPrice'
@@ -19,20 +21,7 @@ const CART_ICON = '/images/main-v1/icons/icon-cart-card.svg'
 const PLACE_L1 = '[사전예약] 제품명 제품명 제품명 제품명 제품'
 const PLACE_L2 = '제품명 제품명 제품명 제품명 제품명'
 
-export type MainCartPreviewPayload = {
-  imageUrl: string
-  titleLine1: string
-  titleLine2: string
-  price: number
-  originalPrice: number
-  discountRate: number
-  productId: string
-  name: string
-  stockQty: number
-  shippingFee: number
-  freeShippingOver: number
-  scType: number
-}
+export type { MainCartPreviewPayload } from '@/components/main-page/main-cart-types'
 
 function splitTitle(name: string): [string, string] {
   const parts = name.trim().split(/\s+/).filter(Boolean)
@@ -52,11 +41,12 @@ export function MainProductCard(props: MainProductCardProps) {
   const locale = pathname.split('/')[1] || 'ko'
   const router = useRouter()
   const { addItem } = useCart()
+  const previewCtx = useMainCartPreviewOptional()
   const compact = props.compact ?? false
   const [liked, setLiked] = useState(false)
   const [added, setAdded] = useState(false)
 
-  const openPreview = props.onCartPreview
+  const openPreview = props.onCartPreview ?? previewCtx?.openCartPreview
 
   if (props.mode === 'placeholder') {
     const handleCart = () => {

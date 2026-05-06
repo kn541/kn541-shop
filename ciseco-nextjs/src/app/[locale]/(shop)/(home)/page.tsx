@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import MainPageBody from '@/components/main-page/MainPageBody'
+import { MainPageCartProvider } from '@/components/main-page/main-cart-preview-context'
 import { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
 
@@ -19,5 +20,9 @@ export async function generateMetadata({
 }
 
 export default async function PageHome() {
-  return <MainPageBody />
+  return (
+    <MainPageCartProvider>
+      <MainPageBody />
+    </MainPageCartProvider>
+  )
 }

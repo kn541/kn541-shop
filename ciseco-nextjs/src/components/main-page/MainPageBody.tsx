@@ -10,7 +10,7 @@ import { WelcomeSection } from '@/components/main-page/WelcomeSection'
 /** Phase 4 메인 바디 — 히어로·타일·배너·구획 순서는 퍼블 디자인(index) 기준 */
 export default async function MainPageBody() {
   return (
-    <main className="kn-main-page pb-16">
+    <main className="kn-main-page pb-[calc(80px+env(safe-area-inset-bottom,0px))] md:pb-16">
       <HeroSlider />
       <WelcomeSection />
       <ReserveSection />

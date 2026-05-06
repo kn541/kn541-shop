@@ -230,3 +230,363 @@
     display: none;
   }
 }
+
+/* --- 카트 중앙 팝업 · 모바일 하단 네비 (디자인 원본 style.css 발췌) --- */
+
+body.is-cart-popup-open {
+  overflow: hidden;
+}
+
+.cart-popup {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.cart-popup-panel {
+  position: relative;
+  width: 400px;
+  padding: 38px 29.73px 22px 30px;
+  overflow: hidden;
+  border: 0.5px solid #b5b5b5;
+  border-radius: 40px;
+  background: #fff;
+}
+
+.cart-popup-close {
+  position: absolute;
+  top: 41.5px;
+  right: 30px;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.cart-popup-close::before,
+.cart-popup-close::after {
+  position: absolute;
+  top: 8px;
+  left: -3px;
+  width: 24px;
+  height: 1.5px;
+  background: #121212;
+  content: "";
+}
+
+.cart-popup-close::before {
+  transform: rotate(45deg);
+}
+
+.cart-popup-close::after {
+  transform: rotate(-45deg);
+}
+
+.cart-popup-handle {
+  display: none;
+}
+
+.cart-popup h2 {
+  margin: 0 0 17px;
+  color: #121212;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.44px;
+  line-height: normal;
+}
+
+.cart-popup-product {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  height: 76px;
+  border-bottom: 1px solid #b5b5b5;
+}
+
+.cart-popup-product img {
+  width: 50px;
+  height: 50px;
+  border-radius: 5px;
+  object-fit: cover;
+}
+
+.cart-popup-product p {
+  margin: 6px 0 0;
+  color: #121212;
+  font-size: 16px;
+  font-weight: 300;
+  letter-spacing: -0.32px;
+  line-height: normal;
+}
+
+.cart-popup-product span {
+  display: block;
+  white-space: nowrap;
+}
+
+.cart-popup-price {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 69px;
+  border-bottom: 1px solid #b5b5b5;
+}
+
+.cart-popup-price strong {
+  color: #121212;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: normal;
+}
+
+.cart-popup-price del {
+  margin-left: 12px;
+  color: #b5b5b5;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: normal;
+}
+
+.cart-popup-price span {
+  margin-left: 44px;
+  color: #ff5452;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: normal;
+}
+
+.cart-popup .qty-control {
+  position: absolute;
+  top: 14px;
+  right: 0;
+  display: grid;
+  grid-template-columns: 28px 41px 28px;
+  align-items: center;
+  width: 97px;
+  height: 35px;
+  border-radius: 20px;
+  background: #f0f0f0;
+}
+
+.cart-popup .qty-control button {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.cart-popup .qty-control button::before,
+.cart-popup .qty-plus::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 11.2px;
+  height: 1.2px;
+  background: #777;
+  content: "";
+  transform: translate(-50%, -50%);
+}
+
+.cart-popup .qty-plus::after {
+  width: 1.2px;
+  height: 11.2px;
+}
+
+.cart-popup .qty-control output {
+  color: #121212;
+  font-size: 18px;
+  font-weight: 400;
+  text-align: center;
+  line-height: normal;
+}
+
+.cart-popup-info {
+  display: grid;
+  gap: 0;
+  margin: 10px 0 23px;
+  color: #121212;
+  font-size: 14px;
+  letter-spacing: -0.28px;
+  line-height: 24px;
+}
+
+.cart-popup-info div {
+  display: flex;
+  justify-content: space-between;
+}
+
+.cart-popup-info dt,
+.cart-popup-info dd {
+  margin: 0;
+}
+
+.cart-popup-info dt {
+  font-weight: 300;
+}
+
+.cart-popup-info dd {
+  font-weight: 600;
+}
+
+.cart-popup-submit {
+  display: block;
+  width: 340px;
+  height: 50px;
+  border: 0;
+  border-radius: 10px;
+  background: #05c368;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: normal;
+  cursor: pointer;
+}
+
+.mobile-bottom {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .cart-popup {
+    right: auto;
+    left: 0;
+    width: 100vw;
+    align-items: end;
+    justify-items: start;
+    background: rgba(0, 0, 0, 0.5);
+  }
+
+  .cart-popup-panel {
+    width: 100%;
+    max-width: 100vw;
+    height: 257px;
+    padding: 40px 20px 19px;
+    border: 0;
+    border-radius: 20px 20px 0 0;
+  }
+
+  .cart-popup-close,
+  .cart-popup h2,
+  .cart-popup-info {
+    display: none;
+  }
+
+  .cart-popup-handle {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    display: block;
+    width: 35px;
+    height: 4px;
+    border-radius: 4px;
+    background: #ddd;
+    transform: translateX(-50%);
+  }
+
+  .cart-popup-product {
+    gap: 14px;
+    height: 70px;
+    border-bottom: 1px solid #b5b5b5;
+  }
+
+  .cart-popup-product p {
+    margin-top: 6px;
+  }
+
+  .cart-popup-price {
+    height: 77px;
+    border-bottom: 0;
+  }
+
+  .cart-popup-price strong,
+  .cart-popup-price del,
+  .cart-popup-price span {
+    position: absolute;
+  }
+
+  .cart-popup-price strong {
+    left: 0;
+  }
+
+  .cart-popup-price del {
+    left: 87px;
+    margin-left: 0;
+  }
+
+  .cart-popup-price span {
+    left: 202px;
+    margin: 0;
+  }
+
+  .cart-popup .qty-control {
+    top: 20px;
+    right: 0;
+  }
+
+  .cart-popup-submit {
+    width: 350px;
+    max-width: calc(100% - 40px);
+    margin-inline: auto;
+  }
+
+  .mobile-bottom {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 30;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    height: 80px;
+    border-top: 1px solid #fff;
+    background: #f4f5f5;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  .mobile-bottom .mb-btn {
+    padding-top: 8px;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    text-align: center;
+  }
+
+  .mobile-bottom .mb-btn,
+  .mobile-bottom a.mb-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    color: #121212;
+    font-size: 10px;
+    font-weight: 500;
+    text-decoration: none;
+  }
+
+  .mobile-bottom .home {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 58px;
+    margin: -10px auto 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .mobile-bottom .mb-btn.is-active,
+  .mobile-bottom .home.is-active {
+    color: #05c368;
+  }
+}
