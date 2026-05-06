@@ -166,5 +166,20 @@
   "Search": {
     "ariaLabel": "상품 검색",
     "searchMobileHelp": "검색하려면 Enter를 누르거나 Esc로 닫을 수 있습니다."
+  },
+  "Footer": {
+    "menuAria": "푸터 메뉴",
+    "terms": "이용약관",
+    "privacy": "개인정보처리방침",
+    "guide": "이용안내",
+    "vendor": "입점신청",
+    "vendorBanner": "입점문의",
+    "csTitle": "고객센터",
+    "csHours": "월~금요일 오전 10시 ~ 오후 6시 / 토, 일요일, 공휴일 휴무",
+    "kakaoInquiry": "카카오톡 문의",
+    "kakaoBlurb": "월~금요일 | 오전 10시 - 오후6시\n토, 일, 공휴일 휴무",
+    "emailInquiry": "이메일 문의",
+    "emailBlurb": "365일\n고객센터 운영시간에 순차적으로 답변드리겠습니다.",
+    "checkBizInfo": "사업자정보 확인"
   }
 }

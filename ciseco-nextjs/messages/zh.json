@@ -166,5 +166,20 @@
   "Search": {
     "ariaLabel": "搜索商品",
     "searchMobileHelp": "按 Enter 搜索，按 Esc 关闭。"
+  },
+  "Footer": {
+    "menuAria": "页脚菜单",
+    "terms": "服务条款",
+    "privacy": "隐私政策",
+    "guide": "使用指南",
+    "vendor": "入驻申请",
+    "vendorBanner": "入驻咨询",
+    "csTitle": "客服中心",
+    "csHours": "周一至周五 10:00–18:00 / 周六、周日及节假日休息",
+    "kakaoInquiry": "Kakao 咨询",
+    "kakaoBlurb": "周一至周五 | 10:00–18:00\n周六、周日及节假日休息",
+    "emailInquiry": "邮件咨询",
+    "emailBlurb": "全年\n我们将在客服工作时间内依次回复。",
+    "checkBizInfo": "营业执照核实"
   }
 }
