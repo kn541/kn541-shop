@@ -42,7 +42,7 @@ export const MAIN_NAV_TABS: HomeNavTab[] = [...HOME_TABS, ...FALLBACK_CATEGORY_T
 /** depth=1 루트 카테고리 → 컬렉션 페이지 링크(쇼 라우트 `/collections/[handle]`과 동일 패턴) */
 export function buildMainCategoryTabs(categories: Category[]): HomeNavTab[] {
   return [...categories]
-    .filter((c) => c.is_active && c.depth === 1)
+    .filter((c) => c.is_active && c.depth === 1 && !c.is_event)
     .sort((a, b) => a.sort_order - b.sort_order)
     .map((c) => ({
       key: c.category_code,
