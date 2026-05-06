@@ -118,10 +118,10 @@
 }
 
 @utility pl-container {
-  @apply pl-6 sm:pl-[calc((100vw-40rem+2.5rem)/2)] md:pl-[calc((100vw-48rem+4rem)/2)] lg:pl-[calc((100vw-64rem+4rem)/2)] xl:pl-[calc((100vw-80rem+4rem)/2)] 2xl:pl-[calc((100vw-96rem+4rem)/2)];
+  @apply pl-6 sm:pl-[calc((100vw-40rem+2.5rem)/2)] md:pl-[calc((100vw-48rem+4rem)/2)] lg:pl-[calc((100vw-64rem+4rem)/2)] xl:pl-[calc((100vw-80rem+4rem)/2)] 2xl:pl-[calc((100vw-80rem+4rem)/2)];
 }
 @utility pr-container {
-  @apply pr-6 sm:pr-[calc((100vw-40rem+2.5rem)/2)] md:pr-[calc((100vw-48rem+4rem)/2)] lg:pr-[calc((100vw-64rem+4rem)/2)] xl:pr-[calc((100vw-80rem+4rem)/2)] 2xl:pr-[calc((100vw-96rem+4rem)/2)];
+  @apply pr-6 sm:pr-[calc((100vw-40rem+2.5rem)/2)] md:pr-[calc((100vw-48rem+4rem)/2)] lg:pr-[calc((100vw-64rem+4rem)/2)] xl:pr-[calc((100vw-80rem+4rem)/2)] 2xl:pr-[calc((100vw-80rem+4rem)/2)];
 }
 
 @utility listingSectionSidebar__wrap {
