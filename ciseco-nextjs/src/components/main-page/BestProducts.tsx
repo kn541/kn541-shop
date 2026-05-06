@@ -1,5 +1,6 @@
 import { MainProductCard } from '@/components/main-page/MainProductCard'
 import { MAIN_PAGE_ASSETS } from '@/data/main-page-assets'
+import { getMainDisplayProducts } from '@/lib/api/products'
 import { getTranslations } from 'next-intl/server'
 
 function Chevron() {
@@ -16,6 +17,11 @@ function Chevron() {
 export async function BestProducts() {
   const t = await getTranslations('MainPage')
   const images = MAIN_PAGE_ASSETS.featured.best
+  const items = await getMainDisplayProducts('BEST')
+
+  if (!items.length) {
+    return null
+  }
 
   return (
     <section
@@ -61,8 +67,8 @@ export async function BestProducts() {
           </div>
         </div>
         <div className="best-grid grid grid-cols-2 justify-center gap-x-[55px] gap-y-10 md:grid-cols-4">
-          {images.slice(0, 10).map((src) => (
-            <MainProductCard key={src} mode="placeholder" imageUrl={src} compact />
+          {items.slice(0, 10).map((p) => (
+            <MainProductCard key={p.product_id} mode="api" product={p} compact />
           ))}
         </div>
         <button

@@ -1,5 +1,5 @@
 import { MainProductCard } from '@/components/main-page/MainProductCard'
-import { getRecommendedProductsForMain } from '@/lib/api/products'
+import { getMainDisplayProducts } from '@/lib/api/products'
 import { Link } from '@/shared/link'
 import { getTranslations } from 'next-intl/server'
 
@@ -16,7 +16,7 @@ function Chevron() {
 
 export async function RecommendedProducts() {
   const t = await getTranslations('MainPage')
-  const items = await getRecommendedProductsForMain(4)
+  const items = await getMainDisplayProducts('FEATURED')
 
   if (!items.length) {
     return null

@@ -124,6 +124,30 @@ export async function getProducts(params?: {
   return data.data
 }
 
+/** 메인 디자인 진열 — /public/main-products + 단건 상세 병합 (정렬 유지) */
+export async function getMainDisplayProducts(sectionCode: string): Promise<Product[]> {
+  if (!BASE) return []
+  try {
+    const res = await fetch(
+      `${BASE}/public/main-products?section_code=${encodeURIComponent(sectionCode)}`,
+      { next: { revalidate: 60 } }
+    )
+    if (!res.ok) return []
+    const json = (await res.json()) as {
+      data?: { items?: Array<{ product_id: string; sort_order?: number }> }
+    }
+    const rows = json.data?.items
+    if (!rows?.length) return []
+    const sorted = [...rows].sort((a, b) => (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0))
+    const loaded = await Promise.all(
+      sorted.map((r) => getProductById(r.product_id).catch(() => null))
+    )
+    return loaded.filter((p): p is Product => p != null)
+  } catch {
+    return []
+  }
+}
+
 /** 메인 추천 영역 — 응답 `{ data: { items } }`, 실패·BASE 없으면 빈 배열 */
 export async function getRecommendedProductsForMain(size = 4): Promise<Product[]> {
   if (!BASE) return []

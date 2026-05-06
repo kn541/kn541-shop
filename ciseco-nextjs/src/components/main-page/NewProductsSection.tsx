@@ -1,5 +1,5 @@
 import { MainProductCard } from '@/components/main-page/MainProductCard'
-import { MAIN_PAGE_ASSETS } from '@/data/main-page-assets'
+import { getMainDisplayProducts } from '@/lib/api/products'
 import { Link } from '@/shared/link'
 import { getTranslations } from 'next-intl/server'
 
@@ -27,6 +27,11 @@ function ChevronPc() {
 
 export async function NewProductsSection() {
   const t = await getTranslations('MainPage')
+  const items = await getMainDisplayProducts('NEW')
+
+  if (!items.length) {
+    return null
+  }
 
   return (
     <section className="product-section new-product-section container mx-auto px-4 py-8 md:py-[34px] md:pb-[78px]">
@@ -48,8 +53,8 @@ export async function NewProductsSection() {
           className="product-rail flex gap-[53px] overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           data-rail
         >
-          {[...MAIN_PAGE_ASSETS.products, ...MAIN_PAGE_ASSETS.featured.best.slice(0, 5)].map((src) => (
-            <MainProductCard key={src} mode="placeholder" imageUrl={src} />
+          {[...items].map((p) => (
+            <MainProductCard key={p.product_id} mode="api" product={p} />
           ))}
         </div>
       </div>
