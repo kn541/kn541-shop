@@ -148,3 +148,85 @@
 .kn-main-page .quick-icon:hover span.icon-wrap {
   background: #f0f0f0;
 }
+
+/* product-card — 디자인 원본 */
+.kn-main-page .product-card .like-button {
+  position: absolute;
+  right: 20.28px;
+  bottom: 20px;
+  width: 23.72px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+  background: url('/images/main-v1/icons/icon-heart-card.svg') center / contain no-repeat;
+}
+
+.kn-main-page .product-card .like-button.is-liked {
+  background-image: url('/images/main-v1/icons/icon-heart-active.svg');
+}
+
+.kn-main-page .product-card .review {
+  position: relative;
+  margin: 14px 0 0 17px;
+  color: #b5b5b5;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.kn-main-page .product-card .review::before {
+  position: absolute;
+  top: 2px;
+  left: -17px;
+  width: 12px;
+  height: 12px;
+  background: url('/images/main-v1/icons/icon-review-card.svg') center / contain no-repeat;
+  content: '';
+}
+
+.kn-main-page .product-card {
+  box-sizing: border-box;
+  width: 280px;
+  flex-shrink: 0;
+}
+
+.kn-main-page .product-rail.final-rail {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 280px));
+  gap: 53px;
+  justify-content: center;
+  overflow: visible;
+}
+
+@media (max-width: 767px) {
+  .kn-main-page .product-rail.final-rail {
+    grid-auto-flow: column;
+    grid-auto-columns: min(280px, calc(100vw - 48px));
+    grid-template-columns: none;
+    justify-content: start;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    scrollbar-width: none;
+  }
+
+  .kn-main-page .product-rail.final-rail::-webkit-scrollbar {
+    display: none;
+  }
+
+  .kn-main-page .best-grid.small {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: min(280px, calc(100vw - 48px));
+    grid-template-columns: none;
+    gap: 14px;
+    overflow-x: auto;
+    padding: 0 20px;
+    margin-inline: -20px;
+    scrollbar-width: none;
+  }
+
+  .kn-main-page .best-grid.small::-webkit-scrollbar {
+    display: none;
+  }
+}
