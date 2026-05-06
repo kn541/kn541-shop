@@ -50,6 +50,15 @@
   --color-kn541-gray-200: #e8e8e8;
   --color-kn541-gray-100: #f7f7f7;
   --color-kn541-red: #ff5452;
+
+  /* 메인 디자인 정합성 v1 (cursor_작업지시_디자인정합성_v1.md) */
+  --color-kn541-best-gradient-start: #c9e9aa;
+  --color-kn541-promo-start: #00eb7a;
+  --color-kn541-promo-end: #c0ff91;
+  --color-kn541-search-bg: #f4f5f5;
+  --color-kn541-border-soft: rgba(181, 181, 181, 0.45);
+
+  --container-kn541: 1280px;
 }
 
 @layer base {
