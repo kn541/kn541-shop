@@ -128,7 +128,7 @@ const GalleryImages = ({ images, gridType = 'grid1', className }: Props) => {
         <div className="fixed inset-0 flex w-screen items-center justify-center">
           <DialogPanel
             transition
-            className="relative mx-auto aspect-[3/2] max-h-full w-full max-w-7xl flex-1 transition data-closed:opacity-0"
+            className="relative mx-auto aspect-[3/2] max-h-full w-full max-w-[var(--container-kn541)] flex-1 transition data-closed:opacity-0"
           >
             <EmblaCarousel images={images} option={{ startIndex, slidesToScroll: 1 }} />
           </DialogPanel>

@@ -38,7 +38,7 @@ const PageContact = async () => {
 
   return (
     <div className="pt-12 pb-16 sm:py-16 lg:py-24">
-      <div className="container mx-auto flex max-w-6xl flex-col gap-y-16 lg:gap-y-28">
+      <div className="container mx-auto flex max-w-[var(--container-kn541)] flex-col gap-y-16 lg:gap-y-28">
         <div className="grid shrink-0 grid-cols-1 gap-12 md:grid-cols-2">
           <div>
             <h1 className="text-4xl leading-[1.15] font-semibold tracking-tight text-neutral-900 md:text-5xl dark:text-neutral-100">
