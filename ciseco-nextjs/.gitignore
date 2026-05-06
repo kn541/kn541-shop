@@ -34,3 +34,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Phase 5 — main-v1 이미지 파이프라인
+/_temp_dynamic/
+/optimization-report.json
+/upload-report.json
