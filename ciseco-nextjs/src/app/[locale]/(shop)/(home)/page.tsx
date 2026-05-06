@@ -1,4 +1,5 @@
-export const dynamic = 'force-dynamic'
+/** 어드민 배너 시간 반영 — 최대 약 1분 지연 허용 (Cache-Control과 맞춤) */
+export const revalidate = 60
 
 import MainPageBody from '@/components/main-page/MainPageBody'
 import { MainPageCartProvider } from '@/components/main-page/main-cart-preview-context'

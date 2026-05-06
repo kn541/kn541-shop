@@ -1,14 +1,14 @@
 'use client'
 
 // 디자인 원본 .hero — PC 370px / 모바일 380px, 전환 450ms, 자동 5초 (작업지시 v1 §5)
+// 데이터: GET /public/hero-banners (v_active_hero_banners)
 
-import { MAIN_PAGE_ASSETS } from '@/data/main-page-assets'
+import type { HeroBanner } from '@/lib/api/designPublic'
 import Image from 'next/image'
 import clsx from 'clsx'
 import { useEffect, useState } from 'react'
 import './kn541-main.css'
 
-const SLIDE_COUNT = MAIN_PAGE_ASSETS.heroes.pc.length
 const INTERVAL_MS = 5000
 
 function HeroDivider() {
@@ -21,56 +21,94 @@ function HeroDivider() {
   )
 }
 
-export function HeroSlider() {
+function splitTitle(title: string): { line1: string; line2: string } {
+  const lines = title
+    .split(/\n/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+  const line1 = lines[0] ?? title.trim() || ' '
+  const line2 = lines[1] ?? line1
+  return { line1, line2 }
+}
+
+type HeroSliderProps = {
+  slides: HeroBanner[]
+}
+
+export function HeroSlider({ slides }: HeroSliderProps) {
+  const SLIDE_COUNT = slides.length
   const [index, setIndex] = useState(0)
   const [paused, setPaused] = useState(false)
 
   useEffect(() => {
-    if (paused) return
+    if (paused || SLIDE_COUNT <= 1) return
     const t = setInterval(() => setIndex((i) => (i + 1) % SLIDE_COUNT), INTERVAL_MS)
     return () => clearInterval(t)
-  }, [paused])
+  }, [paused, SLIDE_COUNT])
 
   return (
     <section className="hero relative h-[380px] overflow-hidden bg-kn541-gray-200 md:h-[370px]" aria-label="메인 배너">
       <div className="hero-viewport relative h-full w-full">
-        {MAIN_PAGE_ASSETS.heroes.pc.map((pcSrc, i) => (
-          <article
-            key={pcSrc}
-            className={clsx(
-              'hero-slide absolute inset-0 transition-[opacity,visibility] duration-[450ms]',
-              i === index ? 'visible opacity-100' : 'invisible opacity-0'
-            )}
-          >
-            <picture className="block h-full w-full">
-              <source media="(max-width: 767px)" srcSet={MAIN_PAGE_ASSETS.heroes.mobile[i]} />
-              <Image
-                src={pcSrc}
-                alt=""
-                fill
-                className="object-cover object-center"
-                sizes="100vw"
-                priority={i === 0}
-              />
-            </picture>
-            <div
+        {slides.map((slide, i) => {
+          const mobileSrc = slide.mobile_image_url?.trim() || slide.image_url
+          const pcSrc = slide.image_url
+          const { line1, line2 } = splitTitle(slide.title)
+          const subtitle = (slide.alt_text || '').trim() || '\u00A0'
+          const target = slide.link_target === '_blank' ? '_blank' : '_self'
+          const hasLink = Boolean(slide.link_url?.trim())
+
+          return (
+            <article
+              key={slide.id}
               className={clsx(
-                'hero-copy absolute',
-                'left-[29px] top-[30px] w-[290px]',
-                'md:left-[max(calc((100vw-1280px)/2),20px)] md:top-[103px] md:ml-[90px] md:w-[430px]'
+                'hero-slide absolute inset-0 transition-[opacity,visibility] duration-[450ms]',
+                i === index ? 'visible opacity-100' : 'invisible opacity-0'
               )}
             >
-              <h1 className="text-[26px] font-medium leading-[1.16] tracking-[-0.52px] text-kn541-black md:text-[34px] md:leading-normal md:tracking-[-0.68px]">
-                Main Banner Title
-                <br />
-                Main Banner Title
-              </h1>
-              <p className="mt-6 text-[14px] font-normal tracking-[-0.28px] text-kn541-black md:mt-[31px] md:text-[18px] md:tracking-[-0.36px]">
-                Sub Title Sub Title Sub Title Sub Title Sub Title
-              </p>
-            </div>
-          </article>
-        ))}
+              {hasLink ? (
+                <a
+                  href={slide.link_url!}
+                  target={target}
+                  rel={target === '_blank' ? 'noopener noreferrer' : undefined}
+                  className="absolute inset-0 z-[1]"
+                  aria-label={slide.alt_text || slide.title}
+                >
+                  <span className="sr-only">{slide.title}</span>
+                </a>
+              ) : null}
+              <picture className={clsx('block h-full w-full', hasLink && 'pointer-events-none relative z-0')}>
+                {slide.mobile_image_url?.trim() ? (
+                  <source media="(max-width: 767px)" srcSet={mobileSrc} />
+                ) : null}
+                <Image
+                  src={pcSrc}
+                  alt={slide.alt_text || slide.title || ''}
+                  fill
+                  className="object-cover object-center"
+                  sizes="100vw"
+                  priority={i === 0}
+                />
+              </picture>
+              <div
+                className={clsx(
+                  'hero-copy absolute',
+                  'left-[29px] top-[30px] w-[290px]',
+                  'md:left-[max(calc((100vw-1280px)/2),20px)] md:top-[103px] md:ml-[90px] md:w-[430px]',
+                  hasLink && 'pointer-events-none z-[2]'
+                )}
+              >
+                <h1 className="text-[26px] font-medium leading-[1.16] tracking-[-0.52px] text-kn541-black md:text-[34px] md:leading-normal md:tracking-[-0.68px]">
+                  {line1}
+                  <br />
+                  {line2}
+                </h1>
+                <p className="mt-6 text-[14px] font-normal tracking-[-0.28px] text-kn541-black md:mt-[31px] md:text-[18px] md:tracking-[-0.36px]">
+                  {subtitle}
+                </p>
+              </div>
+            </article>
+          )
+        })}
       </div>
       <div
         className={clsx(

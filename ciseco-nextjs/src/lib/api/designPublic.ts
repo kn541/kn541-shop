@@ -1,0 +1,31 @@
+/**
+ * KN541 shop — 디자인설정 공개 API (인증 불필요)
+ * 백엔드: GET /public/hero-banners, /public/main-products (v_active_* 뷰)
+ */
+
+const BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
+
+export type HeroBanner = {
+  id: string
+  title: string
+  image_url: string
+  mobile_image_url?: string | null
+  link_url?: string | null
+  link_target?: string | null
+  alt_text?: string | null
+  sort_order: number
+}
+
+export async function fetchHeroBanners(): Promise<HeroBanner[]> {
+  if (!BASE) return []
+  try {
+    const res = await fetch(`${BASE}/public/hero-banners`, { next: { revalidate: 60 } })
+    if (!res.ok) return []
+    const json = (await res.json()) as { data?: { items?: HeroBanner[] } }
+    const items = json.data?.items
+    if (!items?.length) return []
+    return [...items].sort((a, b) => (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0))
+  } catch {
+    return []
+  }
+}
