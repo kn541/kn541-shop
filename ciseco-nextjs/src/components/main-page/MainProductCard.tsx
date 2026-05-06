@@ -130,8 +130,11 @@ export function MainProductCard(props: MainProductCardProps) {
       : retail > sale
         ? Math.round((1 - sale / retail) * 100)
         : 0
+  const ps = String(product.product_status ?? '').toUpperCase()
   const soldOut =
     product.is_soldout ||
+    ps === 'SOLDOUT' ||
+    ps === 'SOLD_OUT' ||
     product.product_status === '품절' ||
     (Number(product.stock_qty) || 0) <= 0
 
@@ -155,6 +158,10 @@ export function MainProductCard(props: MainProductCardProps) {
   const handleCart = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
+    if (soldOut) {
+      toast.error('품절된 상품입니다.')
+      return
+    }
     if (openPreview) {
       if (!pid) {
         toast.error('상품 정보를 불러올 수 없습니다.')
@@ -210,6 +217,11 @@ export function MainProductCard(props: MainProductCardProps) {
         <Link href={`/products/${pid}`} className="absolute inset-0 block">
           <Image src={img} alt="" fill className="object-cover" sizes="280px" />
         </Link>
+        {soldOut && (
+          <div className="pointer-events-none absolute inset-0 z-[2] flex items-center justify-center rounded-[10px] bg-black/45">
+            <span className="rounded-full bg-white/95 px-3 py-1 text-xs font-bold text-neutral-900">품절</span>
+          </div>
+        )}
         <button
           type="button"
           className={clsx('like-button z-[1]', liked && 'is-liked')}
@@ -224,15 +236,17 @@ export function MainProductCard(props: MainProductCardProps) {
       </div>
       <button
         type="button"
+        disabled={soldOut}
         className={clsx(
           'cart-button relative z-[1] mt-3 flex h-9 w-full items-center justify-center gap-[9px] rounded-[5px] border border-[#b5b5b5] text-[16px] font-normal text-kn541-black',
-          added && 'border-kn541-green bg-kn541-green-soft text-kn541-green'
+          added && 'border-kn541-green bg-kn541-green-soft text-kn541-green',
+          soldOut && 'cursor-not-allowed opacity-50'
         )}
         onClick={handleCart}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={CART_ICON} alt="" width={18} height={17} className="h-[17px] w-[18px]" />
-        담기
+        {soldOut ? '품절' : '담기'}
       </button>
       <h3 className="mt-[17px] mb-[11px] min-h-[38px] overflow-hidden text-[16px] font-light leading-normal tracking-[-0.32px] text-kn541-black">
         <Link href={`/products/${pid}`}>

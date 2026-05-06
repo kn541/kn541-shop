@@ -140,7 +140,13 @@ const ProductQuickView: FC<ProductQuickViewProps> = ({ className }) => {
   const detailUrl = `/${locale}/products/${handle}`
 
   // 구매 가능 여부
-  const isSoldOut = stockQty === 0 || status === '품절' || status === 'Sold Out'
+  const rawPs = String(product.productStatus ?? '').toUpperCase()
+  const isSoldOut =
+    stockQty === 0 ||
+    status === '품절' ||
+    status === 'Sold Out' ||
+    rawPs === 'SOLDOUT' ||
+    rawPs === 'SOLD_OUT'
   const canBuy = !isSoldOut
 
   // 장바구니 담기

@@ -47,8 +47,13 @@ const ProductCard: FC<Props> = ({ className = '', data, isLiked, hrefSearch, car
   } | undefined
   const isFreeShipping = delivery?.sc_type === 1 || (delivery?.shipping_fee ?? 0) === 0
 
-  // 품절 여부 (status 기반 — 목록 API는 stockQty 없을 수 있음)
-  const isSoldOut = status === '품절' || status === '판매종료'
+  const rawPs = String((data as { productStatus?: string }).productStatus ?? '').toUpperCase()
+  // 품절 여부 (목록 status + API product_status SOLDOUT)
+  const isSoldOut =
+    status === '품절' ||
+    status === '판매종료' ||
+    rawPs === 'SOLDOUT' ||
+    rawPs === 'SOLD_OUT'
 
   // 사전예약
   const isPreOrder = typeof title === 'string' && title.includes('[사전예약]')
