@@ -10,8 +10,19 @@ import { useRouter } from '@/i18n/navigation'
 import { Search01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { ArrowRightIcon } from '@heroicons/react/24/outline'
+import {
+  Pagination,
+  PaginationGap,
+  PaginationList,
+  PaginationNext,
+  PaginationPage,
+  PaginationPrevious,
+} from '@/shared/Pagination/Pagination'
+import { getPaginationItems } from '@/utils/paginationRange'
 import { useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
+
+const PAGE_SIZE = 20
 
 interface ProductListPayload {
   items: Product[]
@@ -24,11 +35,12 @@ export default function SearchPageClient() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const qRaw = searchParams.get('q')?.trim() ?? ''
+  const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10) || 1)
   const [loading, setLoading] = useState(false)
   const [items, setItems] = useState<TProductItem[]>([])
   const [total, setTotal] = useState(0)
 
-  const runSearch = useCallback(async (q: string) => {
+  const runSearch = useCallback(async (q: string, pageNum: number) => {
     if (!q) {
       setItems([])
       setTotal(0)
@@ -37,10 +49,9 @@ export default function SearchPageClient() {
     setLoading(true)
     try {
       const params = new URLSearchParams({
-        search: q,
         keyword: q,
-        page: '1',
-        size: '20',
+        page: String(pageNum),
+        size: String(PAGE_SIZE),
       })
       const data = await mypageFetch<ProductListPayload>(`/products?${params.toString()}`)
       const rawItems = data?.items ?? []
@@ -60,8 +71,19 @@ export default function SearchPageClient() {
   }, [])
 
   useEffect(() => {
-    void runSearch(qRaw)
-  }, [qRaw, runSearch])
+    void runSearch(qRaw, page)
+  }, [qRaw, page, runSearch])
+
+  const totalPages = Math.ceil(total / PAGE_SIZE)
+  const pageItems = getPaginationItems(page, totalPages)
+
+  const searchHref = (p: number) => {
+    const q = new URLSearchParams()
+    if (qRaw) q.set('q', qRaw)
+    if (p > 1) q.set('page', String(p))
+    const qs = q.toString()
+    return qs ? `/search?${qs}` : '/search'
+  }
 
   return (
     <div>
@@ -74,7 +96,7 @@ export default function SearchPageClient() {
               e.preventDefault()
               const fd = new FormData(e.currentTarget)
               const input = String(fd.get('q') ?? '').trim()
-              router.push(`/search?q=${encodeURIComponent(input)}`)
+              router.push(input ? `/search?q=${encodeURIComponent(input)}` : '/search')
             }}
           >
             <fieldset className="text-neutral-500 dark:text-neutral-300">
@@ -124,11 +146,37 @@ export default function SearchPageClient() {
         )}
 
         {!loading && items.length > 0 && (
-          <div className="grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {items.map(item => (
-              <ProductCard data={item} key={item.id} />
-            ))}
-          </div>
+          <>
+            <div className="grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {items.map(item => (
+                <ProductCard data={item} key={item.id} />
+              ))}
+            </div>
+
+            {totalPages > 1 && (
+              <div className="mt-12 flex justify-center lg:mt-16">
+                <Pagination className="mx-auto">
+                  <PaginationPrevious href={page > 1 ? searchHref(page - 1) : null} />
+                  <PaginationList>
+                    {pageItems.map((item, idx) =>
+                      item === 'gap' ? (
+                        <PaginationGap key={`gap-${idx}`} />
+                      ) : (
+                        <PaginationPage
+                          key={item}
+                          href={searchHref(item)}
+                          current={item === page}
+                        >
+                          {item}
+                        </PaginationPage>
+                      )
+                    )}
+                  </PaginationList>
+                  <PaginationNext href={page < totalPages ? searchHref(page + 1) : null} />
+                </Pagination>
+              </div>
+            )}
+          </>
         )}
 
         {!qRaw && !loading && (

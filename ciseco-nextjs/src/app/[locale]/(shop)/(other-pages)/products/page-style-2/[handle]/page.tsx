@@ -32,7 +32,8 @@ export async function generateMetadata({ params }: { params: Promise<{ handle: s
 export default async function Page({ params }: { params: Promise<{ handle: string }> }) {
   const { handle } = await params
   const product = await getProductDetailByHandle(handle)
-  const relatedProducts = (await getProducts()).slice(2, 8)
+  const { products: allProducts } = await getProducts()
+  const relatedProducts = allProducts.slice(2, 8)
   const reviews = await getProductReviews(handle)
 
   if (!product.id) {

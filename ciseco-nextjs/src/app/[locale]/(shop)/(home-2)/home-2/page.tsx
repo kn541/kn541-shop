@@ -28,7 +28,7 @@ async function PageHome2() {
   const allCollections = await getCollections()
   const featuredCollections = allCollections.slice(7, 11)
   const groupCollections = await getGroupCollections()
-  const products = await getProducts()
+  const { products } = await getProducts()
   const carouselProducts1 = products.slice(0, 5)
   const carouselProducts2 = products.slice(3, 10)
   const carouselProducts3 = products.slice(2, 6)

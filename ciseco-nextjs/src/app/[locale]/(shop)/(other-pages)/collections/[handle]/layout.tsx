@@ -26,7 +26,7 @@ const Layout = async ({ children, params }: { children: React.ReactNode; params:
     return notFound()
   }
   const { title, description, count } = collection
-  const products = await getProducts()
+  const { products } = await getProducts({ size: 4 })
 
   return (
     <div className="container flex flex-col gap-y-20 py-20 sm:gap-y-20 lg:gap-y-28 lg:py-28">

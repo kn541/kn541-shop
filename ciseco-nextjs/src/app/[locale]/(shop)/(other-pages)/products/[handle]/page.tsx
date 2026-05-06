@@ -60,7 +60,7 @@ export default async function Page({
   const p = adaptProduct(rawProduct) as any
 
   // 연관 상품 — 현재 상품 제외
-  const allRelated = await getProducts({ size: 9 })
+  const { products: allRelated } = await getProducts({ size: 9 })
   const relatedProducts = allRelated.filter((r: any) => r.id !== p.id && r.handle !== handle).slice(0, 8)
 
   const reviews: any[] = []

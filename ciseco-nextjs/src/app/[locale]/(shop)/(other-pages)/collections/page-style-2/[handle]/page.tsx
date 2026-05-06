@@ -1,17 +1,39 @@
 import { FiltersMenuSidebar } from '@/components/FiltersMenu'
 import ProductCard from '@/components/ProductCard'
-import { getProducts } from '@/data/data'
+import { getCollectionByHandle, getProducts } from '@/data/data'
 import {
   Pagination,
+  PaginationGap,
   PaginationList,
   PaginationNext,
   PaginationPage,
   PaginationPrevious,
 } from '@/shared/Pagination/Pagination'
+import { getPaginationItems } from '@/utils/paginationRange'
 
-export default async function Page({ params }: { params: Promise<{ handle: string }> }) {
+const PAGE_SIZE = 20
+
+export default async function Page({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ handle: string }>
+  searchParams: Promise<{ page?: string }>
+}) {
   const { handle } = await params
-  const products = await getProducts()
+  const sp = await searchParams
+  const page = Math.max(1, parseInt(sp?.page ?? '1', 10) || 1)
+
+  const collection = await getCollectionByHandle(handle)
+  const categoryId = collection?.id
+
+  const { products, total, size } = await getProducts({
+    page,
+    size: PAGE_SIZE,
+    categoryId,
+  })
+  const totalPages = Math.ceil(total / size)
+  const pageItems = getPaginationItems(page, totalPages)
 
   return (
     <main>
@@ -30,20 +52,25 @@ export default async function Page({ params }: { params: Promise<{ handle: strin
             ))}
           </div>
 
-          <div className="mt-20 flex justify-start lg:mt-24">
-            <Pagination className="">
-              <PaginationPrevious href="?page=1" />
-              <PaginationList>
-                <PaginationPage href="?page=1" current>
-                  1
-                </PaginationPage>
-                <PaginationPage href="?page=2">2</PaginationPage>
-                <PaginationPage href="?page=3">3</PaginationPage>
-                <PaginationPage href="?page=4">4</PaginationPage>
-              </PaginationList>
-              <PaginationNext href="?page=3" />
-            </Pagination>
-          </div>
+          {totalPages > 1 && (
+            <div className="mt-20 flex justify-start lg:mt-24">
+              <Pagination className="">
+                <PaginationPrevious href={page > 1 ? `?page=${page - 1}` : null} />
+                <PaginationList>
+                  {pageItems.map((item, idx) =>
+                    item === 'gap' ? (
+                      <PaginationGap key={`gap-${idx}`} />
+                    ) : (
+                      <PaginationPage key={item} href={`?page=${item}`} current={item === page}>
+                        {item}
+                      </PaginationPage>
+                    )
+                  )}
+                </PaginationList>
+                <PaginationNext href={page < totalPages ? `?page=${page + 1}` : null} />
+              </Pagination>
+            </div>
+          )}
         </div>
       </div>
     </main>

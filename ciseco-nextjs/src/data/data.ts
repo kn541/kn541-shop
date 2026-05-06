@@ -321,27 +321,54 @@ export async function getCollectionByHandle(handle: string) {
   return dummy.find((c) => c.handle === handle) ?? dummy[0]
 }
 
+const PRODUCT_LIST_DEFAULT_SIZE = 20
+
+function isUuidCategoryId(id: string | undefined): id is string {
+  if (!id) return false
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+}
+
+export type GetProductsListResult = {
+  products: TProductItem[]
+  total: number
+  page: number
+  size: number
+}
+
 export async function getProducts(params?: {
-  category?: string
+  /** 카테고리 UUID (API category_id) — dummy `gid://` id 는 무시 */
+  categoryId?: string
   page?: number
   size?: number
   sort?: string
   q?: string
-}) {
+}): Promise<GetProductsListResult> {
+  const size = params?.size ?? PRODUCT_LIST_DEFAULT_SIZE
+  const page = Math.max(1, params?.page ?? 1)
+  const category_id = isUuidCategoryId(params?.categoryId) ? params.categoryId : undefined
+
   try {
     const result = await apiGetProducts({
-      size: params?.size ?? 20,
-      page: params?.page,
+      size,
+      page,
       keyword: params?.q,
-      // ★ product_status 필터 제거 — 모든 상태 조회
+      category_id,
     })
-    if (result.items.length > 0) {
-      return adaptProducts(result.items)
+    return {
+      products: adaptProducts(result.items),
+      total: Number(result.total) || result.items.length,
+      page,
+      size,
     }
   } catch {
-    // 폴백
+    const dummy = getDummyProducts()
+    return {
+      products: dummy,
+      total: dummy.length,
+      page: 1,
+      size,
+    }
   }
-  return getDummyProducts()
 }
 
 /**
