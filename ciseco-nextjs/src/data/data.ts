@@ -59,6 +59,7 @@ import {
   getCategories,
   getCategoryById,
   getRootCategories,
+  type Category,
 } from '@/lib/api/categories'
 import {
   getBestProducts,
@@ -272,6 +273,30 @@ export function getCart(_id: string) {
   }
 }
 
+/** API 카테고리 트리 전체를 평탄화 — 루트만 탐색할 때 누락 방지 */
+function flattenCategoriesTree(nodes: Category[] | undefined): Category[] {
+  const out: Category[] = []
+  const walk = (list?: Category[]) => {
+    if (!list?.length) return
+    for (const n of list) {
+      out.push(n)
+      walk(n.children)
+    }
+  }
+  walk(nodes)
+  return out
+}
+
+/** URL handle 과 API category_code 정규화 매칭 (#접두·대소문자·순수숫자 080 vs 80) */
+function categoryCodesMatch(apiCode: string | null | undefined, handleNorm: string): boolean {
+  if (apiCode == null || handleNorm === '') return false
+  const a = String(apiCode).trim().toLowerCase().replace(/^#+/u, '')
+  const b = handleNorm.trim().toLowerCase().replace(/^#+/u, '')
+  if (a === b) return true
+  if (/^\d+$/u.test(a) && /^\d+$/u.test(b) && Number(a) === Number(b)) return true
+  return false
+}
+
 export async function getCollections() {
   try {
     const categories = await getRootCategories()
@@ -301,8 +326,8 @@ export async function getGroupCollections() {
 }
 
 export async function getCollectionByHandle(handle: string) {
-  handle = handle.toLowerCase()
-  if (handle === 'all') {
+  const handleNorm = handle.trim().toLowerCase()
+  if (handleNorm === 'all') {
     return {
       id: 'gid://all', title: '전체 상품', handle: 'all',
       description: '모든 상품을 한눈에 둘러보세요.',
@@ -312,13 +337,15 @@ export async function getCollectionByHandle(handle: string) {
   }
   try {
     const categories = await getCategories()
-    const found = categories.find((c) => c.category_code === handle)
-    if (found) return adaptCategory(found)
+    const roots = Array.isArray(categories) ? categories : []
+    const flat = flattenCategoriesTree(roots)
+    const idx = flat.findIndex((c) => categoryCodesMatch(c.category_code, handleNorm))
+    if (idx !== -1) return adaptCategory(flat[idx], idx)
   } catch {
     // 폴백
   }
   const dummy = getDummyCollections()
-  return dummy.find((c) => c.handle === handle) ?? dummy[0]
+  return dummy.find((c) => c.handle === handleNorm) ?? dummy[0]
 }
 
 const PRODUCT_LIST_DEFAULT_SIZE = 20
