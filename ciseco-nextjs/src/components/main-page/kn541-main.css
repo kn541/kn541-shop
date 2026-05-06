@@ -1,0 +1,150 @@
+/* 메인 페이지 — 디자인 원본 style.css에서 히어로 컨트롤 등 발췌 (main-page 전용 import) */
+
+.kn-main-page .hero-pause {
+  position: relative;
+  width: 29px;
+  height: 29px;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.kn-main-page .hero-pause::before,
+.kn-main-page .hero-pause::after {
+  position: absolute;
+  top: 10px;
+  width: 3px;
+  height: 9px;
+  border-radius: 1px;
+  background: #fff;
+  content: "";
+}
+
+.kn-main-page .hero-pause::before {
+  left: 10px;
+}
+
+.kn-main-page .hero-pause::after {
+  right: 10px;
+}
+
+.kn-main-page .hero-pause[aria-pressed="true"]::before {
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  border-left: 9px solid #fff;
+  border-radius: 0;
+  background: transparent;
+  transform: translate(-40%, -50%);
+}
+
+.kn-main-page .hero-pause[aria-pressed="true"]::after {
+  display: none;
+}
+
+.kn-main-page .hero-controls-text {
+  display: flex;
+  align-items: center;
+  width: 58px;
+  margin: 0;
+  height: 29px;
+  padding: 0 11px;
+  color: #ddd;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 15px;
+  background: rgba(18, 18, 18, 0.5);
+}
+
+.kn-main-page .hero-controls-text span:first-of-type {
+  color: #fff;
+}
+
+.kn-main-page .hero-divider-line {
+  display: inline-block;
+  margin: 0 5px;
+  color: #ddd;
+  font-size: 14px;
+  font-weight: 200;
+}
+
+.kn-main-page .quick-icons {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 23px;
+  margin-top: 34px;
+}
+
+@media (min-width: 1024px) {
+  .kn-main-page .quick-icons {
+    grid-template-columns: repeat(7, minmax(95px, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .kn-main-page .quick-icons {
+    display: flex;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    gap: 16px;
+    margin-top: 24px;
+    scrollbar-width: none;
+  }
+  .kn-main-page .quick-icons::-webkit-scrollbar {
+    display: none;
+  }
+  .kn-main-page .quick-icon {
+    flex: 0 0 auto;
+  }
+}
+
+.kn-main-page .quick-icon {
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  min-height: 135px;
+  color: #121212;
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: -0.4px;
+  white-space: nowrap;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-align: center;
+}
+
+.kn-main-page .quick-icon span.icon-wrap {
+  display: grid;
+  width: 97px;
+  height: 97px;
+  place-items: center;
+  border-radius: 50%;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.kn-main-page .quick-icon span.icon-wrap img {
+  width: 75px;
+  height: 75px;
+  object-fit: contain;
+}
+
+.kn-main-page .quick-icon:first-child span.icon-wrap img,
+.kn-main-page .quick-icon:last-child span.icon-wrap img {
+  width: auto;
+  height: 71px;
+}
+
+.kn-main-page .quick-icon:hover,
+.kn-main-page .quick-icon.is-active {
+  color: #05c368;
+  font-weight: 600;
+}
+
+.kn-main-page .quick-icon.is-active span.icon-wrap,
+.kn-main-page .quick-icon:hover span.icon-wrap {
+  background: #f0f0f0;
+}
