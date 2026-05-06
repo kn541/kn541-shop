@@ -1,8 +1,8 @@
 import Aside from '@/components/aside'
 import '@/styles/tailwind.css'
 import { Metadata } from 'next'
-// 한국어 폰트: Noto Sans KR (KO), 영문 폰트: Poppins (EN)
-import { Noto_Sans_KR, Poppins } from 'next/font/google'
+// 영문·숫자 보조: Poppins (변수). 본문 한글: Pretendard (CDN + tailwind.css body)
+import { Poppins } from 'next/font/google'
 import GlobalClient from './GlobalClient'
 
 const poppins = Poppins({
@@ -10,13 +10,6 @@ const poppins = Poppins({
   display: 'swap',
   weight: ['300', '400', '500', '600', '700'],
   variable: '--font-poppins',
-})
-
-const notoSansKR = Noto_Sans_KR({
-  subsets: ['latin'],
-  display: 'swap',
-  weight: ['300', '400', '500', '600', '700'],
-  variable: '--font-noto-kr',
 })
 
 export const metadata: Metadata = {
@@ -30,10 +23,15 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko" className={`${poppins.variable} ${notoSansKR.variable}`} suppressHydrationWarning>
-      <body
-        className={`${notoSansKR.className} bg-white text-neutral-900 dark:bg-neutral-900 dark:text-neutral-200`}
-      >
+    <html lang="ko" className={poppins.variable} suppressHydrationWarning>
+      <head>
+        <link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"
+          crossOrigin="anonymous"
+        />
+      </head>
+      <body className="bg-white text-neutral-900 dark:bg-neutral-900 dark:text-neutral-200">
         <Aside.Provider>
           {children}
           <GlobalClient />

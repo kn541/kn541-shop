@@ -47,6 +47,15 @@ NEXT_PUBLIC_API_URL=https://kn541-production.up.railway.app
 
 ---
 
+## 가격 표기 규정 (2026-05-06 갱신)
+
+- **한국어(`/ko`) 상점 UI**: 원화는 **`88,888원` 형식**(천 단위 콤마 + `원` 접미사, 숫자와 `원` 사이 공백 없음)을 표준으로 한다. 공통 헬퍼: `ciseco-nextjs/src/lib/formatPrice.ts`의 `formatPriceKo`.
+- **컴포넌트**: 목록·카드·퀵뷰 등에서 재사용 가능한 가격 표시는 `components/Prices.tsx`를 우선한다(`ko`에서 `formatPriceKo` 사용).
+- **영문·중문 등**: `formatPrice.ts`의 **en/zh 전용 분기는 별도 지시 없이 변경하지 않는다**. 로케일별로 직접 `toLocaleString` 등을 쓰는 기존 화면은 해당 로케일 요구사항에 맞게 유지·정리한다.
+- **직접 포맷**: 새 코드에서 `toLocaleString(...) + '원'` 등을 반복하지 말고, `ko` 표준은 가능하면 `formatPriceKo`로 통일한다(배송비 문구 등 문맥상 예외는 허용).
+
+---
+
 ## 기술 스택
 
 - **프레임워크**: Next.js 16 (App Router) + TypeScript + Tailwind CSS

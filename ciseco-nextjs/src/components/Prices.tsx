@@ -1,4 +1,8 @@
+'use client'
+
 import clsx from 'clsx'
+import { formatPriceKo } from '@/lib/formatPrice'
+import { useLocale } from 'next-intl'
 import { FC } from 'react'
 
 export interface PricesProps {
@@ -7,21 +11,26 @@ export interface PricesProps {
   contentClass?: string
 }
 
-// ★ 한국 원화 포맷: 30,000원
 const Prices: FC<PricesProps> = ({
   className,
   price,
   contentClass = 'py-1 px-2 md:py-1.5 md:px-2.5 text-sm font-medium',
 }) => {
-  const formatted = new Intl.NumberFormat('ko-KR').format(Math.round(price))
+  const locale = useLocale()
+  const rounded = Math.round(price)
+  const formattedNum = new Intl.NumberFormat('ko-KR').format(rounded)
 
   return (
     <div className={clsx(className)}>
       <div className={`flex items-center ${contentClass}`}>
-        <span className="font-semibold text-neutral-900 dark:text-neutral-100">
-          {formatted}
-          <span className="ms-0.5 text-xs font-normal text-neutral-500 dark:text-neutral-400">원</span>
-        </span>
+        {locale === 'ko' ? (
+          <span className="font-semibold text-neutral-900 dark:text-neutral-100">{formatPriceKo(price)}</span>
+        ) : (
+          <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+            {formattedNum}
+            <span className="ms-0.5 text-xs font-normal text-neutral-500 dark:text-neutral-400">원</span>
+          </span>
+        )}
       </div>
     </div>
   )
