@@ -4,12 +4,12 @@
 
 import { Link } from '@/components/Link'
 import { useAside } from '@/components/aside/aside'
+import { HOME_TABS, type HomeNavTab } from '@/data/home-tabs'
 import { MAIN_PAGE_ASSETS } from '@/data/main-page-assets'
-import { MAIN_NAV_TABS } from '@/data/home-tabs'
 import { usePathname, useRouter } from '@/i18n/navigation'
 import clsx from 'clsx'
 import { useLocale } from 'next-intl'
-import { FormEventHandler, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { FormEventHandler, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 const ICON = {
   search: '/images/main-v1/icons/icon-search.svg',
@@ -35,11 +35,17 @@ function ChevronDown({ className }: { className?: string }) {
   )
 }
 
-export default function MainHeader() {
+export type MainHeaderProps = {
+  categoryTabs: HomeNavTab[]
+}
+
+export default function MainHeader({ categoryTabs }: MainHeaderProps) {
   const locale = useLocale()
   const pathname = usePathname()
   const router = useRouter()
   const { open: openAside } = useAside()
+
+  const navTabs = useMemo(() => [...HOME_TABS, ...categoryTabs], [categoryTabs])
 
   const [q, setQ] = useState('')
   const [langOpen, setLangOpen] = useState(false)
@@ -59,8 +65,20 @@ export default function MainHeader() {
   }, [])
 
   useEffect(() => {
-    if (pathname === '/' || pathname === '') setActiveTabIndex(0)
-  }, [pathname])
+    if (pathname === '/' || pathname === '') {
+      setActiveTabIndex(0)
+      return
+    }
+    const idx = navTabs.findIndex((tab) => {
+      if (!tab.href || tab.href === '#' || tab.dataTodo) return false
+      if (tab.href === '/') return pathname === '/' || pathname === ''
+      const base = tab.href.split('?')[0]
+      if (pathname === base) return true
+      if (base !== '/' && pathname.startsWith(`${base}/`)) return true
+      return false
+    })
+    if (idx >= 0) setActiveTabIndex(idx)
+  }, [pathname, navTabs])
 
   const updateUnderline = useCallback(() => {
     const inner = innerRef.current
@@ -246,7 +264,7 @@ export default function MainHeader() {
             ref={innerRef}
             className="category-nav-inner relative flex h-12 w-full items-center gap-6 overflow-x-auto overflow-y-hidden [scrollbar-width:none] md:gap-6 [&::-webkit-scrollbar]:hidden"
           >
-            {MAIN_NAV_TABS.map((tab, i) => {
+            {navTabs.map((tab, i) => {
               const active = activeTabIndex === i
               return (
                 <button
