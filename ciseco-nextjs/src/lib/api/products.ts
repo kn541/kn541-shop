@@ -102,6 +102,7 @@ export async function getProducts(params?: {
   is_new?: boolean
   is_best?: boolean
   is_sale?: boolean
+  is_recommended?: boolean
   keyword?: string
   product_status?: string
 }): Promise<ProductListResponse> {
@@ -112,6 +113,7 @@ export async function getProducts(params?: {
   if (params?.is_new) query.set('is_new', 'true')
   if (params?.is_best) query.set('is_best', 'true')
   if (params?.is_sale) query.set('is_sale', 'true')
+  if (params?.is_recommended) query.set('is_recommended', 'true')
   if (params?.keyword) query.set('keyword', params.keyword)
   if (params?.product_status) query.set('product_status', params.product_status)
 
@@ -120,6 +122,20 @@ export async function getProducts(params?: {
   if (!res.ok) throw new Error('상품 조회 실패')
   const data = await res.json()
   return data.data
+}
+
+/** 메인 추천 영역 — 응답 `{ data: { items } }`, 실패·BASE 없으면 빈 배열 */
+export async function getRecommendedProductsForMain(size = 4): Promise<Product[]> {
+  if (!BASE) return []
+  const query = new URLSearchParams({
+    is_recommended: 'true',
+    size: String(size),
+    page: '1',
+  })
+  const res = await fetch(`${BASE}/products?${query}`, { next: { revalidate: 60 } })
+  if (!res.ok) return []
+  const json = await res.json()
+  return json.data?.items ?? []
 }
 
 // ★ 상품 단건 조회 — product_id (UUID) 사용

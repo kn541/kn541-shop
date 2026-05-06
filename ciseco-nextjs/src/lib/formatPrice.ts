@@ -7,3 +7,6 @@ export function formatPriceKo(amount: number): string {
   const n = Math.round(Number(amount) || 0)
   return `${new Intl.NumberFormat('ko-KR').format(n)}원`
 }
+
+/** 신규 코드용 별칭 — 기존 `formatPriceKo` 호출은 유지 */
+export const formatPrice = formatPriceKo

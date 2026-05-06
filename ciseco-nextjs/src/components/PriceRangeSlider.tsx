@@ -1,3 +1,4 @@
+import { formatPrice } from '@/lib/formatPrice'
 import clsx from 'clsx'
 import Slider from 'rc-slider'
 import { useState } from 'react'
@@ -47,14 +48,14 @@ export const PriceRangeSlider = ({
         <div className="flex-1">
           <p className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Min price</p>
           <div className="relative mt-1.5 w-full rounded-full bg-neutral-100 px-4 py-2 text-sm dark:bg-neutral-800">
-            $ {rangePrices?.[0]}
+            {formatPrice(rangePrices?.[0] ?? 0)}
           </div>
           <input type="hidden" name={inputMinName} value={rangePrices?.[0]} />
         </div>
         <div className="flex-1">
           <p className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Max price</p>
           <div className="relative mt-1.5 w-full rounded-full bg-neutral-100 px-4 py-2 text-sm dark:bg-neutral-800">
-            $ {rangePrices?.[1]}
+            {formatPrice(rangePrices?.[1] ?? 0)}
           </div>
           <input type="hidden" name={inputMaxName} value={rangePrices?.[1]} />
         </div>
