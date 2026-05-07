@@ -1,11 +1,13 @@
 'use client'
 // KN541 쇼핑몰 — 로그인 페이지
 // fix: 간편로그인(카카오·네이버·구글) 섹션 전체 삭제
+// 비밀번호 보안 정책 미충족 시 강제 변경 오버레이 (password_change_required)
 
 import { Suspense, useState, useTransition } from 'react'
 import Image from 'next/image'
 import { useRouter } from '@/i18n/navigation'
 import { useSearchParams } from 'next/navigation'
+import { PasswordChangePanel } from '@/components/auth/PasswordChangePanel'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL
 const LOGO_URL = 'https://ghtkropmnrelkxivzpim.supabase.co/storage/v1/object/public/brands/white_logo.png'
@@ -18,6 +20,12 @@ function LoginForm() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isPending, startTransition] = useTransition()
+  /** 백엔드가 임시 토큰으로 강제 변경을 요청할 때 */
+  const [forceChange, setForceChange] = useState<{
+    tempToken: string
+    serverMessage?: string
+    policyText?: string
+  } | null>(null)
 
   const redirectTo = searchParams.get('redirect') || '/'
 
@@ -30,6 +38,10 @@ function LoginForm() {
     }
     startTransition(async () => {
       try {
+        if (!BASE) {
+          setError('API 서버 주소가 설정되지 않았습니다.')
+          return
+        }
         const res = await fetch(`${BASE}/auth/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -38,6 +50,20 @@ function LoginForm() {
         const json = await res.json()
         if (!res.ok) {
           setError(json?.detail ?? '로그인에 실패했습니다.')
+          return
+        }
+        if (json?.status === 'password_change_required') {
+          const d = json?.data ?? {}
+          const token = typeof d.temp_token === 'string' ? d.temp_token : ''
+          if (!token) {
+            setError('비밀번호 변경이 필요하지만 임시 토큰을 받지 못했습니다.')
+            return
+          }
+          setForceChange({
+            tempToken: token,
+            serverMessage: typeof d.message === 'string' ? d.message : undefined,
+            policyText: typeof d.policy === 'string' ? d.policy : undefined,
+          })
           return
         }
         const { access_token, refresh_token, user_type } = json?.data ?? {}
@@ -61,6 +87,44 @@ function LoginForm() {
   }
 
   return (
+    <>
+      {forceChange ? (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4 py-8 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="force-pw-title"
+        >
+          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-xl dark:bg-neutral-900 dark:border dark:border-neutral-800">
+            <h2 id="force-pw-title" className="text-lg font-bold text-neutral-900 dark:text-white">
+              비밀번호 변경 필요
+            </h2>
+            <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+              보안 정책에 맞는 비밀번호로 변경한 뒤 로그인을 완료합니다.
+            </p>
+            <div className="mt-4">
+              <PasswordChangePanel
+                variant="forced"
+                tempToken={forceChange.tempToken}
+                serverMessage={forceChange.serverMessage}
+                policyText={forceChange.policyText}
+                onComplete={({ access_token, refresh_token, user_type }) => {
+                  localStorage.setItem('access_token', access_token)
+                  if (refresh_token) localStorage.setItem('refresh_token', refresh_token)
+                  if (user_type != null && String(user_type) !== '') {
+                    localStorage.setItem('user_type', String(user_type))
+                  } else {
+                    localStorage.removeItem('user_type')
+                  }
+                  setForceChange(null)
+                  router.push(redirectTo)
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      ) : null}
+
     <form onSubmit={handleSubmit} className="space-y-3">
       <input
         type="text"
@@ -97,6 +161,7 @@ function LoginForm() {
         </a>
       </div>
     </form>
+    </>
   )
 }
 

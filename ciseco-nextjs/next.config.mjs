@@ -1,9 +1,19 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import createNextIntlPlugin from 'next-intl/plugin'
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts')
 
+// 상위 폴더(kn541-shop, Desktop 등)에 다른 lockfile 이 있으면 Next가 워크스페이스 루트를 오인해
+// tailwindcss resolve 실패가 날 수 있음 → 이 패키지 디렉터리를 명시한다.
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  outputFileTracingRoot: path.join(__dirname),
+  turbopack: {
+    root: __dirname,
+  },
   typescript: {
     ignoreBuildErrors: true,
   },

@@ -9,6 +9,7 @@ import { getAuthHeader } from '@/lib/mypage/auth'
 import BigTabs from '@/components/mypage/BigTabs'
 import BigButton from '@/components/mypage/BigButton'
 import { MypageAddressInput } from '@/components/common/KakaoAddressSearch'
+import { PasswordChangePanel } from '@/components/auth/PasswordChangePanel'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL
 
@@ -87,76 +88,24 @@ function BasicTab({ data, userId }: { data: Record<string, string | null>; userI
   )
 }
 
-function PasswordTab({ userId }: { userId: string }) {
-  const [cur, setCur] = useState('')
-  const [next, setNext] = useState('')
-  const [confirm, setConfirm] = useState('')
-  const [saving, setSaving] = useState(false)
-  const mismatch = next.length > 0 && confirm.length > 0 && next !== confirm
-  const isValid = cur.length >= 4 && next.length >= 8 && !mismatch
-
-  const save = async () => {
-    setSaving(true)
-    try {
-      const res = await fetch(`${BASE}/members/${userId}`, {
-        method: 'PATCH',
-        headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ current_password: cur, new_password: next }),
-      })
-      if (!res.ok) throw new Error('failed')
-      toast.success('비밀번호가 변경됐습니다.')
-      setCur(''); setNext(''); setConfirm('')
-    } catch {
-      toast.error('실패했습니다. 현재 비밀번호를 확인해 주세요.')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const pwStyle = (borderColor?: string) => ({
-    width: '100%', boxSizing: 'border-box' as const,
-    height: 56, padding: '0 16px',
-    border: `1px solid ${borderColor ?? 'var(--mp-color-border)'}`,
-    borderRadius: 'var(--mp-radius)',
-    fontSize: 18, outline: 'none', background: '#fff',
-  })
-
+/** 계정 탭: POST /auth/change-password (Bearer) — PasswordChangePanel과 동일 정책 */
+function PasswordTab() {
   return (
     <div style={{ padding: 16 }}>
-      <div style={{
-        background: '#F8F7FA', borderRadius: 8, padding: 14,
-        fontSize: 15, lineHeight: 1.8, color: 'var(--mp-color-text-muted)', marginBottom: 20,
-      }}>
-        🔒 비밀번호 규칙<br />
-        • 8자 이상<br />
-        • 영문(a~z) + 숫자 포함<br />
-        • 특수문자(!@#$%) 권장
+      <div
+        style={{
+          background: '#F8F7FA',
+          borderRadius: 8,
+          padding: 14,
+          fontSize: 14,
+          lineHeight: 1.7,
+          color: 'var(--mp-color-text-muted)',
+          marginBottom: 20,
+        }}
+      >
+        🔒 8자 이상, 숫자·특수문자 포함, 동일 문자만 반복은 사용할 수 없습니다.
       </div>
-      <div style={{ marginBottom: 20 }}>
-        <label style={{ display: 'block', fontSize: 15, fontWeight: 600, marginBottom: 8 }}>현재 비밀번호</label>
-        <input type='password' value={cur} onChange={e => setCur(e.target.value)} style={pwStyle()} />
-      </div>
-      <div style={{ marginBottom: 20 }}>
-        <label style={{ display: 'block', fontSize: 15, fontWeight: 600, marginBottom: 8 }}>새 비밀번호</label>
-        <input type='password' value={next} onChange={e => setNext(e.target.value)} style={pwStyle()} />
-      </div>
-      <div style={{ marginBottom: 8 }}>
-        <label style={{ display: 'block', fontSize: 15, fontWeight: 600, marginBottom: 8 }}>새 비밀번호 확인</label>
-        <input
-          type='password' value={confirm} onChange={e => setConfirm(e.target.value)}
-          style={pwStyle(mismatch ? 'var(--mp-color-danger)' : undefined)}
-        />
-        {mismatch && (
-          <div style={{ fontSize: 16, color: 'var(--mp-color-danger)', fontWeight: 700, marginTop: 8 }}>
-            ⚠️ 비밀번호가 일치하지 않습니다.
-          </div>
-        )}
-      </div>
-      <div style={{ marginTop: 24 }}>
-        <BigButton fullWidth onClick={save} disabled={!isValid || saving}>
-          {saving ? '변경 중…' : '비밀번호 변경'}
-        </BigButton>
-      </div>
+      <PasswordChangePanel variant="voluntary" />
     </div>
   )
 }
@@ -257,7 +206,7 @@ export default function AccountProfileClient() {
         ]}
       />
       {tab === 'basic'    && <BasicTab    data={d} userId={data.user_id} />}
-      {tab === 'password' && <PasswordTab userId={data.user_id} />}
+      {tab === 'password' && <PasswordTab />}
       {tab === 'contact'  && <ContactTab  data={d} userId={data.user_id} />}
     </>
   )
