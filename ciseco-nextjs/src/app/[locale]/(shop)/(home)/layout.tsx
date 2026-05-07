@@ -1,19 +1,10 @@
-import MainHeader from '@/components/main-page/MainHeader'
+// KN541 쇼핑몰 메인(홈) 레이아웃
+// 헤더 통일: 기본 ApplicationLayout(<Header />) 사용
+// 이전: MainHeader + categoryTabs 별도 주입 → 메뉴/로고/우측액션이 Header.tsx와 달랐음
+// MainHeader.tsx, home-tabs.ts 는 보존(롤백 대비)
+
 import { ApplicationLayout } from '../application-layout'
-import { buildMainCategoryTabs, FALLBACK_CATEGORY_TABS } from '@/data/home-tabs'
-import { getRootCategories } from '@/lib/api/categories'
 
-export default async function Layout({ children }: { children: React.ReactNode }) {
-  let categoryTabs = FALLBACK_CATEGORY_TABS
-  try {
-    const roots = await getRootCategories()
-    const built = buildMainCategoryTabs(roots)
-    if (built.length > 0) categoryTabs = built
-  } catch {
-    /* API 실패 시 정적 폴백 */
-  }
-
-  return (
-    <ApplicationLayout header={<MainHeader categoryTabs={categoryTabs} />}>{children}</ApplicationLayout>
-  )
+export default function Layout({ children }: { children: React.ReactNode }) {
+  return <ApplicationLayout>{children}</ApplicationLayout>
 }
