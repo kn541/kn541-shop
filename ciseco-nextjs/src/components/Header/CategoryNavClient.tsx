@@ -1,9 +1,11 @@
 'use client'
 // KN541 쇼핑몰 — 카테고리 네비 클라이언트 컴포넌트
-// fix: /ko/products?cid={id(UUID)} 방식으로 변경 (category_code 특수문자 문제 해소)
+// 메뉴 구조: 홈(정적) → 카테고리 DB(동적) → 구분선 → 사전예약/벨류업(정적)
+// 카테고리는 hover 시 2단 드롭다운, 정적 항목은 단순 링크
 
 import { useRef, useState } from 'react'
 import Link from 'next/link'
+import { useLocale } from 'next-intl'
 
 interface Category {
   id: string
@@ -14,6 +16,7 @@ interface Category {
 }
 
 export default function CategoryNavClient({ categories }: { categories: Category[] }) {
+  const locale = useLocale()
   const [openId, setOpenId] = useState<string | null>(null)
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -26,8 +29,21 @@ export default function CategoryNavClient({ categories }: { categories: Category
     closeTimer.current = setTimeout(() => setOpenId(null), 150)
   }
 
+  const staticLinkBase =
+    'block flex-shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors whitespace-nowrap'
+
   return (
-    <nav className="hidden lg:flex items-center gap-0.5 overflow-visible">
+    <nav className="hidden lg:flex items-center gap-0.5 overflow-x-auto whitespace-nowrap scrollbar-hide">
+
+      {/* 홈 (정적, 좌측 첫번째) */}
+      <Link
+        href={`/${locale}`}
+        className={`${staticLinkBase} text-primary-600 hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-900/20`}
+      >
+        홈
+      </Link>
+
+      {/* 카테고리 DB (동적, hover 드롭다운) */}
       {categories.map(cat => (
         <div
           key={cat.id}
@@ -35,9 +51,9 @@ export default function CategoryNavClient({ categories }: { categories: Category
           onMouseEnter={() => enter(cat.id)}
           onMouseLeave={leave}
         >
-          {/* 1단 카테고리 — cid=UUID 사용, /ko/ prefix 포함 */}
+          {/* 1단 카테고리 */}
           <Link
-            href={`/ko/products?cid=${cat.id}`}
+            href={`/${locale}/products?cid=${cat.id}`}
             className={[
               'block whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
               openId === cat.id
@@ -61,7 +77,7 @@ export default function CategoryNavClient({ categories }: { categories: Category
                   .map(sub => (
                     <li key={sub.id}>
                       <Link
-                        href={`/ko/products?cid=${sub.id}`}
+                        href={`/${locale}/products?cid=${sub.id}`}
                         className="block px-4 py-2 text-sm text-neutral-600 transition-colors hover:bg-neutral-50 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white"
                       >
                         {sub.category_name}
@@ -73,6 +89,25 @@ export default function CategoryNavClient({ categories }: { categories: Category
           )}
         </div>
       ))}
+
+      {/* 구분선 */}
+      <span className="mx-2 h-3 w-px flex-shrink-0 bg-neutral-200 dark:bg-neutral-700" />
+
+      {/* 사전예약 (정적) */}
+      <Link
+        href={`/${locale}/preorder`}
+        className={`${staticLinkBase} text-orange-600 hover:bg-orange-50 dark:text-orange-400 dark:hover:bg-orange-900/20`}
+      >
+        사전예약
+      </Link>
+
+      {/* 벨류업 (정적) */}
+      <Link
+        href={`/${locale}/valueup`}
+        className={`${staticLinkBase} text-orange-600 hover:bg-orange-50 dark:text-orange-400 dark:hover:bg-orange-900/20`}
+      >
+        벨류업
+      </Link>
     </nav>
   )
 }

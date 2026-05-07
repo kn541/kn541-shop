@@ -1,6 +1,7 @@
 // KN541 쇼핑몰 — 카테고리 네비 서버 컴포넌트
 // 서버에서 백엔드 API를 직접 호출 → CORS 없음
 // 인터랙션은 CategoryNavClient(클라이언트)가 담당
+// 정적 항목(홈/사전예약/벨류업)은 CategoryNavClient 내부에서 추가
 
 import CategoryNavClient from './CategoryNavClient'
 
@@ -36,7 +37,6 @@ export default async function CategoryNav() {
     .filter(c => c.depth === 1 && c.is_active)
     .sort((a, b) => a.sort_order - b.sort_order)
 
-  if (categories.length === 0) return null
-
+  // categories가 비어있어도 정적 항목(홈/사전예약/벨류업)은 표시되도록 항상 렌더
   return <CategoryNavClient categories={categories} />
 }
