@@ -22,22 +22,20 @@ export function WelcomeSection() {
   > = {
     best: {
       label: t('tileBest'),
-      href: '#',
+      href: '/best',
       img: MAIN_PAGE_ASSETS.categories.best,
-      todo: true,
     },
     mall: { label: t('tileMall'), href: '/myshop', img: MAIN_PAGE_ASSETS.categories.mall },
-    new: { label: t('tileNew'), href: '/products', img: MAIN_PAGE_ASSETS.categories.new },
+    new: { label: t('tileNew'), href: '/new', img: MAIN_PAGE_ASSETS.categories.new },
     reserve: {
       label: t('tileReserve'),
-      href: '/products?product_type=002',
+      href: '/preorder',
       img: MAIN_PAGE_ASSETS.categories.reserve,
     },
     value: {
       label: t('tileValueShort'),
-      href: '#',
+      href: '/value-up',
       img: MAIN_PAGE_ASSETS.categories.value,
-      todo: true,
     },
     office: {
       label: t('tileOfficeShort'),

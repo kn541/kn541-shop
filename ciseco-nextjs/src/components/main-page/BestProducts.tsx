@@ -49,7 +49,10 @@ export async function BestProducts() {
               <p className="text-[16px] font-normal text-[#999]">{t('bestDescription')}</p>
               <p className="mt-2 text-xs text-neutral-500">{t('bestPlaceholderNote')}</p>
             </div>
-            <Link href="/best" className="flex items-center text-[20px] font-normal text-kn541-green">
+            <Link
+              href="/best"
+              className="flex items-center text-[20px] font-normal text-kn541-green"
+            >
               {t('viewAll')}
               <Chevron />
             </Link>
@@ -68,12 +71,13 @@ export async function BestProducts() {
             <MainProductCard key={p.product_id} mode="api" product={p} compact />
           ))}
         </div>
-        <Link
-          href="/best"
-          className="more-button mx-auto mt-12 flex h-[50px] w-full max-w-[500px] items-center justify-center gap-2 rounded-[5px] border border-[#b5b5b5] text-[16px] font-normal text-kn541-black transition-colors hover:border-kn541-green hover:text-kn541-green"
+        <button
+          type="button"
+          className="more-button mx-auto mt-12 flex h-[50px] w-full max-w-[500px] cursor-not-allowed items-center justify-center gap-2 rounded-[5px] border border-[#b5b5b5] text-[16px] font-normal text-kn541-black opacity-70"
+          disabled
         >
           {t('bestLoadMore')}
-        </Link>
+        </button>
       </div>
     </section>
   )

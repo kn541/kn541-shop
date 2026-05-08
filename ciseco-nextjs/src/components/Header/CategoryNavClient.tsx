@@ -103,7 +103,7 @@ export default function CategoryNavClient({ categories }: { categories: Category
 
       {/* 벨류업 (정적) */}
       <Link
-        href={`/${locale}/valueup`}
+        href={`/${locale}/value-up`}
         className={`${staticLinkBase} text-orange-600 hover:bg-orange-50 dark:text-orange-400 dark:hover:bg-orange-900/20`}
       >
         벨류업
