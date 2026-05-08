@@ -9,9 +9,9 @@ const VALID_KINDS = new Set(['best', 'new', 'recommend', 'preorder', 'value-up']
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { kind: string } },
+  { params }: { params: Promise<{ kind: string }> },
 ) {
-  const { kind } = params
+  const { kind } = await params  // Next.js 15+: params는 Promise
 
   if (!VALID_KINDS.has(kind)) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
