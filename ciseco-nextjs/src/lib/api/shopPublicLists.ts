@@ -1,21 +1,15 @@
 /**
  * Shop 5 pages — 공개 목록 API (/public/products/*)
- * 작업지시: docs/cursor_작업지시_shop_5pages_v1.md (kn541 레포)
+ * 클라이언트 컴포넌트에서 도청하므로 CORS 우회를 위해 Next.js API Route 프록시 사용
+ * 클라이언트 → /api/shop-list/{kind} → Railway API (server-to-server)
  */
 
 import type { Product } from '@/lib/api/products'
 
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
+// API Route 프록시 경로 (same-origin, CORS 무관)
+const PROXY = '/api/shop-list'
 
 export type ShopListKind = 'best' | 'new' | 'recommend' | 'preorder' | 'value-up'
-
-const PATHS: Record<ShopListKind, string> = {
-  best: '/public/products/best',
-  new: '/public/products/new',
-  recommend: '/public/products/recommend',
-  preorder: '/public/products/preorder',
-  'value-up': '/public/products/value-up',
-}
 
 export interface ShopPublicListItem {
   product_id: string
@@ -60,14 +54,13 @@ export async function fetchShopPublicList(
   page: number,
   size: number,
 ): Promise<ShopPublicListResponse> {
-  if (!BASE) {
-    return { items: [], total: 0, page: 1, size }
-  }
-  const path = PATHS[kind]
-  const q = new URLSearchParams({ page: String(Math.max(1, page)), size: String(Math.min(60, Math.max(1, size))) })
-  const res = await fetch(`${BASE}${path}?${q}`, { cache: 'no-store' })
+  const q = new URLSearchParams({
+    page: String(Math.max(1, page)),
+    size: String(Math.min(60, Math.max(1, size))),
+  })
+  const res = await fetch(`${PROXY}/${kind}?${q}`, { cache: 'no-store' })
   if (!res.ok) {
-    throw new Error(`shop list ${kind} failed: ${res.status}`)
+    throw new Error(`shop list ${kind} 로드 실패: ${res.status}`)
   }
   const json = (await res.json()) as {
     status?: string
@@ -107,14 +100,7 @@ export async function fetchAllShopPublicItems(kind: ShopListKind): Promise<ShopP
     if (page > 500) break
   }
 
-  return {
-    items: all,
-    total,
-    page: 1,
-    size: all.length,
-    weight,
-    window_days,
-  }
+  return { items: all, total, page: 1, size: all.length, weight, window_days }
 }
 
 export function mapShopListItemToProduct(row: ShopPublicListItem): Product {
