@@ -1,5 +1,7 @@
 import { MainProductCard } from '@/components/main-page/MainProductCard'
 import { MAIN_PAGE_ASSETS } from '@/data/main-page-assets'
+import { mapShopListItemToProduct } from '@/lib/api/shopPublicLists'
+import type { ShopPublicListResponse } from '@/lib/api/shopPublicLists'
 import { Link } from '@/shared/link'
 import { getTranslations } from 'next-intl/server'
 
@@ -14,10 +16,27 @@ function Chevron() {
   )
 }
 
-const valueSamples = [...MAIN_PAGE_ASSETS.products, ...MAIN_PAGE_ASSETS.featured.best.slice(8, 10)]
+const valuePlaceholders = [...MAIN_PAGE_ASSETS.products, ...MAIN_PAGE_ASSETS.featured.best.slice(8, 10)]
+
+async function fetchValueUpProducts() {
+  const base = process.env.NEXT_PUBLIC_API_URL
+  if (!base) return []
+  try {
+    const res = await fetch(`${base}/public/products/value-up?page=1&size=6`, {
+      next: { revalidate: 120 },
+    })
+    if (!res.ok) return []
+    const json = (await res.json()) as { status?: string; data?: ShopPublicListResponse }
+    return json.data?.items ?? []
+  } catch {
+    return []
+  }
+}
 
 export async function ValuePanel() {
   const t = await getTranslations('MainPage')
+  const rawItems = await fetchValueUpProducts()
+  const items = rawItems.map(mapShopListItemToProduct)
 
   return (
     <section className="product-section container mx-auto px-4 py-8 md:py-[34px] md:pb-[78px]">
@@ -30,14 +49,11 @@ export async function ValuePanel() {
           {t('viewAll')}
           <Chevron />
         </Link>
-        {/* 밸류업 전체 페이지 */}
       </div>
       <div className="two-column-products grid grid-cols-1 gap-[50px] lg:grid-cols-[280px_1fr]">
         <article
           className="value-panel relative min-h-[420px] overflow-hidden rounded-xl bg-kn541-green-light md:min-h-[600px] lg:min-h-[1047px]"
-          style={{
-            boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.03)',
-          }}
+          style={{ boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.03)' }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -47,9 +63,7 @@ export async function ValuePanel() {
           />
           <div
             className="absolute inset-0"
-            style={{
-              background: 'linear-gradient(180deg, rgba(11,24,0,0.4), rgba(120,120,120,0.2))',
-            }}
+            style={{ background: 'linear-gradient(180deg, rgba(11,24,0,0.4), rgba(120,120,120,0.2))' }}
           />
           <div className="absolute top-[120px] left-8 z-10 text-white md:top-[192px] md:left-8 [text-shadow:2px_2px_2px_rgba(0,0,0,0.25)]">
             <h2 className="text-[32px] font-semibold md:text-[38px]">{t('valuePanelHeading')}</h2>
@@ -59,9 +73,13 @@ export async function ValuePanel() {
           </div>
         </article>
         <div className="best-grid small grid grid-cols-2 justify-center gap-x-[55px] gap-y-10 md:grid-cols-3">
-          {valueSamples.slice(0, 6).map((src) => (
-            <MainProductCard key={src} mode="placeholder" imageUrl={src} compact />
-          ))}
+          {items.length > 0
+            ? items.slice(0, 6).map((p) => (
+                <MainProductCard key={p.product_id} mode="api" product={p} compact />
+              ))
+            : valuePlaceholders.slice(0, 6).map((src) => (
+                <MainProductCard key={src} mode="placeholder" imageUrl={src} compact />
+              ))}
         </div>
       </div>
     </section>

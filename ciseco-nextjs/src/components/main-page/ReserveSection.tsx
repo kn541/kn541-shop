@@ -1,5 +1,7 @@
 import { MainProductCard } from '@/components/main-page/MainProductCard'
 import { MAIN_PAGE_ASSETS } from '@/data/main-page-assets'
+import { mapShopListItemToProduct } from '@/lib/api/shopPublicLists'
+import type { ShopPublicListResponse } from '@/lib/api/shopPublicLists'
 import { Link } from '@/shared/link'
 import { getTranslations } from 'next-intl/server'
 
@@ -14,10 +16,27 @@ function Chevron() {
   )
 }
 
-const reserveRailSrc = [...MAIN_PAGE_ASSETS.products, ...Object.values(MAIN_PAGE_ASSETS.featured.figma)]
+const PLACEHOLDER_SRCS = [...MAIN_PAGE_ASSETS.products, ...Object.values(MAIN_PAGE_ASSETS.featured.figma)]
+
+async function fetchPreorderProducts() {
+  const base = process.env.NEXT_PUBLIC_API_URL
+  if (!base) return []
+  try {
+    const res = await fetch(`${base}/public/products/preorder?page=1&size=8`, {
+      next: { revalidate: 120 },
+    })
+    if (!res.ok) return []
+    const json = (await res.json()) as { status?: string; data?: ShopPublicListResponse }
+    return json.data?.items ?? []
+  } catch {
+    return []
+  }
+}
 
 export async function ReserveSection() {
   const t = await getTranslations('MainPage')
+  const rawItems = await fetchPreorderProducts()
+  const items = rawItems.map(mapShopListItemToProduct)
 
   return (
     <section className="product-section container mx-auto px-4 py-8 md:py-[34px] md:pb-[78px]">
@@ -41,9 +60,13 @@ export async function ReserveSection() {
           className="product-rail flex w-full gap-[53px] overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           data-rail
         >
-          {reserveRailSrc.map((src) => (
-            <MainProductCard key={src} mode="placeholder" imageUrl={src} />
-          ))}
+          {items.length > 0
+            ? items.map((p) => (
+                <MainProductCard key={p.product_id} mode="api" product={p} />
+              ))
+            : PLACEHOLDER_SRCS.map((src) => (
+                <MainProductCard key={src} mode="placeholder" imageUrl={src} />
+              ))}
         </div>
       </div>
       <Link
