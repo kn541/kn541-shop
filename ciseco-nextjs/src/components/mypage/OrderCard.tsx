@@ -13,8 +13,17 @@ import Link from 'next/link'
 import BigButton from './BigButton'
 import type { OrderListItem } from '@/lib/mypage/types'
 
+/**
+ * fix: PostgreSQL 타임스탬프 형식 대응
+ * "2026-04-29 00:00:03+00" (공백 포함) → new Date() 파싱 실패 → "Invalid Date"
+ * 공백을 T로 교체하여 ISO 8601 형식으로 정규화
+ */
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('ko-KR', {
+  if (!iso) return ''
+  const normalized = iso.replace(' ', 'T')
+  const d = new Date(normalized)
+  if (isNaN(d.getTime())) return iso.slice(0, 10)
+  return d.toLocaleDateString('ko-KR', {
     year: 'numeric', month: 'long', day: 'numeric',
   })
 }

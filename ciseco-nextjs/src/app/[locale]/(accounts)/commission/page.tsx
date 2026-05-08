@@ -1,11 +1,31 @@
 'use client'
+// fix: /my/commissions → /mypage/dividends/history 로 변경
+// 백엔드에 /my/commissions 엔드포인트 없음
+// 기존 /mypage/dividends/history API를 월별 from/to 파라미터로 호출
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from '@/i18n/navigation'
 import { toast } from 'react-hot-toast'
 import { mypageFetch, MypageApiError } from '@/lib/mypage/api'
-import type { CommissionMonthResponse, CommissionMonthRow } from '@/lib/mypage/types'
 import { useProfile } from '@/lib/mypage/useProfile'
+
+interface CommissionItem {
+  commission_id: string
+  commission_type: string
+  commission_type_label: string
+  status: string
+  status_label: string
+  amount: number
+  created_at?: string
+  from_member_name?: string
+}
+
+interface CommissionHistoryResponse {
+  items: CommissionItem[]
+  total: number
+  page: number
+  size: number
+}
 
 function monthOptions(count = 12) {
   const out: string[] = []
@@ -19,10 +39,21 @@ function monthOptions(count = 12) {
   return out
 }
 
-function normalizeRows(res: CommissionMonthResponse): CommissionMonthRow[] {
-  if (Array.isArray(res.items) && res.items.length) return res.items
-  if (Array.isArray(res.rows) && res.rows.length) return res.rows
-  return []
+/** 월의 마지막 날 구하기 */
+function monthRange(month: string): { from: string; to: string } {
+  const [y, m] = month.split('-').map(Number)
+  const lastDay = new Date(y, m, 0).getDate()
+  return {
+    from: `${month}-01`,
+    to:   `${month}-${String(lastDay).padStart(2, '0')}`,
+  }
+}
+
+function formatDate(iso: string) {
+  if (!iso) return ''
+  const d = new Date(iso.replace(' ', 'T'))
+  if (isNaN(d.getTime())) return iso.slice(0, 10)
+  return d.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })
 }
 
 export default function CommissionPage() {
@@ -31,8 +62,8 @@ export default function CommissionPage() {
   const months = useMemo(() => monthOptions(14), [])
   const [month, setMonth] = useState(() => months[0] ?? '')
   const [loading, setLoading] = useState(true)
-  const [rows, setRows] = useState<CommissionMonthRow[]>([])
-  const [monthTotal, setMonthTotal] = useState<number | null>(null)
+  const [rows, setRows] = useState<CommissionItem[]>([])
+  const [monthTotal, setMonthTotal] = useState<number>(0)
 
   const isStartup = profile?.user_type === '006'
 
@@ -40,14 +71,14 @@ export default function CommissionPage() {
     if (!month) return
     setLoading(true)
     try {
-      const data = await mypageFetch<CommissionMonthResponse>(`/my/commissions?month=${encodeURIComponent(month)}`)
-      setRows(normalizeRows(data))
-      const mt = data.month_total
-      if (typeof mt === 'number') setMonthTotal(mt)
-      else {
-        const sum = normalizeRows(data).reduce((acc, r) => acc + Number(r.amount ?? 0), 0)
-        setMonthTotal(sum)
-      }
+      const { from, to } = monthRange(month)
+      const data = await mypageFetch<CommissionHistoryResponse>(
+        `/mypage/dividends/history?from=${from}&to=${to}&size=100`
+      )
+      const items = data.items ?? []
+      setRows(items)
+      const sum = items.reduce((acc, r) => acc + Number(r.amount ?? 0), 0)
+      setMonthTotal(sum)
     } catch (e) {
       if (e instanceof MypageApiError && e.status === 401) {
         router.replace('/login')
@@ -70,17 +101,12 @@ export default function CommissionPage() {
     void load()
   }, [profileLoading, isStartup, load])
 
-  const statusLabel: Record<string, string> = {
-    PENDING: '대기',
-    PROCESSING: '처리중',
-    COMPLETED: '지급완료',
-    CANCELLED: '취소',
-  }
   const statusColor: Record<string, string> = {
-    PENDING: 'text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20',
+    PENDING:    'text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20',
+    SETTLED:    'text-green-600 bg-green-50 dark:bg-green-900/20',
     PROCESSING: 'text-blue-600 bg-blue-50 dark:bg-blue-900/20',
-    COMPLETED: 'text-green-600 bg-green-50 dark:bg-green-900/20',
-    CANCELLED: 'text-neutral-400 bg-neutral-100 dark:bg-neutral-800',
+    CANCELLED:  'text-neutral-400 bg-neutral-100 dark:bg-neutral-800',
+    REVERSAL:   'text-red-500 bg-red-50 dark:bg-red-900/20',
   }
 
   if (profileLoading) {
@@ -135,7 +161,7 @@ export default function CommissionPage() {
         <div className="rounded-2xl border border-neutral-200 p-5 dark:border-neutral-700">
           <p className="text-xs text-neutral-500">해당 월 합계</p>
           <p className="mt-1 text-2xl font-bold">
-            {loading ? '…' : (monthTotal ?? 0).toLocaleString('ko-KR')}원
+            {loading ? '…' : monthTotal.toLocaleString('ko-KR')}원
           </p>
         </div>
         <div className="rounded-2xl border border-neutral-200 p-5 dark:border-neutral-700">
@@ -153,22 +179,17 @@ export default function CommissionPage() {
       ) : (
         <div className="space-y-3">
           {rows.map((item, idx) => {
-            const id = String(item.id ?? `row-${idx}`)
-            const st = String(item.status ?? '')
+            const id = item.commission_id || `row-${idx}`
+            const st = item.status || ''
             return (
               <div
                 key={id}
                 className="flex items-center justify-between rounded-2xl border border-neutral-200 p-4 dark:border-neutral-700"
               >
                 <div>
-                  <p className="text-sm font-medium">{String(item.rule_name ?? '수당')}</p>
-                  {item.from_member_name != null && (
-                    <p className="text-xs text-neutral-500">추천인: {String(item.from_member_name)}</p>
-                  )}
-                  {item.created_at != null && (
-                    <p className="text-xs text-neutral-400">
-                      {new Date(String(item.created_at)).toLocaleDateString('ko-KR')}
-                    </p>
+                  <p className="text-sm font-medium">{item.commission_type_label || item.commission_type || '수당'}</p>
+                  {item.created_at && (
+                    <p className="text-xs text-neutral-400">{formatDate(item.created_at)}</p>
                   )}
                 </div>
                 <div className="text-right">
@@ -178,7 +199,7 @@ export default function CommissionPage() {
                       statusColor[st] || 'text-neutral-500 bg-neutral-100 dark:bg-neutral-800'
                     }`}
                   >
-                    {statusLabel[st] || st || '-'}
+                    {item.status_label || st || '-'}
                   </span>
                 </div>
               </div>
