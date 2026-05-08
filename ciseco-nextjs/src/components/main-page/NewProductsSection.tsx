@@ -42,7 +42,7 @@ export async function NewProductsSection() {
           </p>
           <h2 className="m-0 text-[16px] font-normal leading-tight text-[#999]">{t('newTitle')}</h2>
         </div>
-        <Link href="/products" className="flex items-center gap-3 text-[20px] font-normal text-kn541-green">
+        <Link href="/new" className="flex items-center gap-3 text-[20px] font-normal text-kn541-green">
           {t('viewAll')}
           <ChevronMobile />
           <ChevronPc />

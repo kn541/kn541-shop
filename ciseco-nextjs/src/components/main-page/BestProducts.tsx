@@ -1,6 +1,7 @@
 import { MainProductCard } from '@/components/main-page/MainProductCard'
 import { MAIN_PAGE_ASSETS } from '@/data/main-page-assets'
 import { getMainDisplayProducts } from '@/lib/api/products'
+import { Link } from '@/shared/link'
 import { getTranslations } from 'next-intl/server'
 
 function Chevron() {
@@ -48,14 +49,10 @@ export async function BestProducts() {
               <p className="text-[16px] font-normal text-[#999]">{t('bestDescription')}</p>
               <p className="mt-2 text-xs text-neutral-500">{t('bestPlaceholderNote')}</p>
             </div>
-            <a
-              href="#"
-              data-todo="route-tbd"
-              className="flex items-center text-[20px] font-normal text-kn541-green"
-            >
+            <Link href="/best" className="flex items-center text-[20px] font-normal text-kn541-green">
               {t('viewAll')}
               <Chevron />
-            </a>
+            </Link>
           </div>
           <div className="best-heading-image relative shrink-0 md:ml-auto md:min-h-[284px] md:w-[498px]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -71,13 +68,12 @@ export async function BestProducts() {
             <MainProductCard key={p.product_id} mode="api" product={p} compact />
           ))}
         </div>
-        <button
-          type="button"
-          className="more-button mx-auto mt-12 flex h-[50px] w-full max-w-[500px] cursor-not-allowed items-center justify-center gap-2 rounded-[5px] border border-[#b5b5b5] text-[16px] font-normal text-kn541-black opacity-70"
-          disabled
+        <Link
+          href="/best"
+          className="more-button mx-auto mt-12 flex h-[50px] w-full max-w-[500px] items-center justify-center gap-2 rounded-[5px] border border-[#b5b5b5] text-[16px] font-normal text-kn541-black transition-colors hover:border-kn541-green hover:text-kn541-green"
         >
           {t('bestLoadMore')}
-        </button>
+        </Link>
       </div>
     </section>
   )

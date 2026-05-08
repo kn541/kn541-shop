@@ -29,7 +29,7 @@ export async function ReserveSection() {
           <h2 className="m-0 text-[16px] font-normal leading-tight text-[#999]">{t('reserveTitle')}</h2>
         </div>
         <Link
-          href="/products?product_type=002"
+          href="/preorder"
           className="hidden items-center text-[20px] font-normal text-kn541-green md:inline-flex"
         >
           {t('viewAll')}
@@ -47,7 +47,7 @@ export async function ReserveSection() {
         </div>
       </div>
       <Link
-        href="/products?product_type=002"
+        href="/preorder"
         className="mt-4 flex items-center justify-center text-[20px] font-normal text-kn541-green md:hidden"
       >
         {t('viewAll')}

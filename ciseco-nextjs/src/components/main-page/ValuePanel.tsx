@@ -1,5 +1,6 @@
 import { MainProductCard } from '@/components/main-page/MainProductCard'
 import { MAIN_PAGE_ASSETS } from '@/data/main-page-assets'
+import { Link } from '@/shared/link'
 import { getTranslations } from 'next-intl/server'
 
 function Chevron() {
@@ -25,11 +26,11 @@ export async function ValuePanel() {
           <p className="eyebrow mb-[7px] text-[28px] font-bold leading-none text-kn541-black">{t('valueEyebrow')}</p>
           <h2 className="m-0 text-[16px] font-normal leading-tight text-[#999]">{t('valueTitle')}</h2>
         </div>
-        <a href="#" data-todo="route-tbd" className="flex items-center text-[20px] font-normal text-kn541-green">
+        <Link href="/value-up" className="flex items-center text-[20px] font-normal text-kn541-green">
           {t('viewAll')}
           <Chevron />
-        </a>
-        {/* TODO: 벨류업 페이지 신설 후 */}
+        </Link>
+        {/* 밸류업 전체 페이지 */}
       </div>
       <div className="two-column-products grid grid-cols-1 gap-[50px] lg:grid-cols-[280px_1fr]">
         <article

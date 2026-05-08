@@ -123,7 +123,7 @@ export function MainProductCard(props: MainProductCardProps) {
   const pid = product.product_id || product.id || ''
   const img = getProductImageUrl(product)
   const sale = Number(product.sale_price) || 0
-  const retail = Number(product.market_price ?? product.consumer_price ?? 0) || sale
+  const retail = Number(product.consumer_price ?? product.market_price ?? 0) || sale
   const rate =
     product.sale_discount_rate != null
       ? Math.round(Number(product.sale_discount_rate))
@@ -139,6 +139,7 @@ export function MainProductCard(props: MainProductCardProps) {
     (Number(product.stock_qty) || 0) <= 0
 
   const [l1, l2] = splitTitle(product.product_name || '')
+  const categoryLabel = (product.category_name_2 || product.category_name_1 || '').trim()
 
   const buildPayload = (): MainCartPreviewPayload => ({
     imageUrl: img,
@@ -222,6 +223,16 @@ export function MainProductCard(props: MainProductCardProps) {
             <span className="rounded-full bg-white/95 px-3 py-1 text-xs font-bold text-neutral-900">품절</span>
           </div>
         )}
+        {(product.is_recommended || product.product_type === '002') && (
+          <div className="pointer-events-none absolute start-2 top-2 z-[2] flex flex-wrap gap-1">
+            {product.is_recommended ? (
+              <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-semibold text-amber-900">추천</span>
+            ) : null}
+            {product.product_type === '002' ? (
+              <span className="rounded bg-violet-100 px-1.5 py-0.5 text-[11px] font-semibold text-violet-800">예약</span>
+            ) : null}
+          </div>
+        )}
         <button
           type="button"
           className={clsx('like-button z-[1]', liked && 'is-liked')}
@@ -250,6 +261,12 @@ export function MainProductCard(props: MainProductCardProps) {
       </button>
       <h3 className="mt-[17px] mb-[11px] min-h-[38px] overflow-hidden text-[16px] font-light leading-normal tracking-[-0.32px] text-kn541-black">
         <Link href={`/products/${pid}`}>
+          {categoryLabel ? (
+            <span className="title-line mb-0.5 block truncate text-[12px] font-normal text-[#999]">{categoryLabel}</span>
+          ) : null}
+          {product.brand ? (
+            <span className="title-line mb-0.5 block truncate text-[13px] font-normal text-[#888]">{product.brand}</span>
+          ) : null}
           <span className="title-line block whitespace-nowrap">{l1}</span>
           <span className="title-line block whitespace-nowrap">{l2}</span>
         </Link>
