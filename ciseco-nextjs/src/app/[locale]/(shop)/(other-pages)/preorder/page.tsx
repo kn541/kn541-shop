@@ -1,13 +1,68 @@
-import ShopListingPageClient from '@/components/shop-listing/ShopListingPageClient'
-import { Metadata } from 'next'
+// 사전예약 상품 목록 — 카테고리 페이지와 동일한 디자인/기능
 import { Suspense } from 'react'
+import ProductsPageClient from '../products/ProductsPageClient'
+import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: '사전예약 | KN541',
-  description: '지금 예약하고 먼저 만나보는 사전예약 상품.',
+  description: '진행 중인 사전예약 상품을 만나보세요.',
 }
 
-export default function PreorderProductsPage() {
+const BASE = process.env.NEXT_PUBLIC_API_URL || 'https://kn541-production.up.railway.app'
+const PAGE_SIZE = 20
+
+function mapProduct(p: any) {
+  const pid = String(p.product_id || p.id || '')
+  let status = '판매중'
+  if (p.product_status === 'SOLDOUT' || p.is_soldout) status = '품절'
+  return {
+    id: pid,
+    handle: pid,
+    title: p.product_name,
+    price: p.sale_price,
+    createdAt: p.created_at,
+    vendor: p.brand || p.supplier_name || '',
+    featuredImage: p.thumbnail_url
+      ? { src: p.thumbnail_url, width: 600, height: 600, alt: p.product_name }
+      : { src: '/placeholder-product.jpg', width: 600, height: 600, alt: p.product_name },
+    images: [],
+    reviewNumber: 0,
+    rating: 0,
+    status,
+    options: [],
+    selectedOptions: [],
+    delivery: {
+      sc_type: p.sc_type ?? 1,
+      shipping_fee: p.shipping_fee ?? 0,
+      free_over: p.free_shipping_over ?? null,
+    },
+  }
+}
+
+async function fetchPreorder(page: number) {
+  try {
+    const qs = new URLSearchParams({ page: String(page), size: String(PAGE_SIZE) })
+    const res = await fetch(`${BASE}/public/products/preorder?${qs}`, { cache: 'no-store' })
+    if (!res.ok) return { products: [], total: 0 }
+    const json = await res.json()
+    const items = json.data?.items ?? []
+    const total = json.data?.total ?? 0
+    return { products: items.map(mapProduct), total }
+  } catch {
+    return { products: [], total: 0 }
+  }
+}
+
+export default async function PreorderProductsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>
+}) {
+  const { page: pageParam } = await searchParams
+  const currentPage = Math.max(1, Number(pageParam) || 1)
+  const { products, total } = await fetchPreorder(currentPage)
+  const totalPages = Math.ceil(total / PAGE_SIZE) || 1
+
   return (
     <Suspense
       fallback={
@@ -16,10 +71,15 @@ export default function PreorderProductsPage() {
         </div>
       }
     >
-      <ShopListingPageClient
-        kind="preorder"
-        title="사전예약"
-        description="진행 중인 예약 상품입니다."
+      <ProductsPageClient
+        products={products}
+        currentCategory={null}
+        breadcrumbs={[]}
+        childCategories={[]}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        total={total}
+        pageTitle="사전예약"
       />
     </Suspense>
   )

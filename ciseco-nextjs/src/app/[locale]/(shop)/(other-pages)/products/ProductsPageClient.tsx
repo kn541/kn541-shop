@@ -3,6 +3,7 @@
 // fix: 총 상품 수 표시 (total props → 헤더에 렌더)
 // fix: 빈 상태(Empty State) UX — 다른 카테고리 탐색 유도
 // fix: 브레드크럼, 카테고리 버튼, 정렬 메뉴 유지
+// feat: pageTitle prop 추가 (외부 타이틀 오버라이드)
 
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import ProductCard from '@/components/ProductCard'
@@ -33,6 +34,8 @@ interface Props {
   currentPage: number
   totalPages: number
   total: number
+  /** 외부에서 타이틀 직접 지정 (category_name 대신 사용) */
+  pageTitle?: string
 }
 
 function ChevronIcon() {
@@ -43,7 +46,6 @@ function ChevronIcon() {
   )
 }
 
-// ★ 빈 상태 — 카테고리 유도 컴포넌트
 function EmptyState({ onReset }: { onReset: () => void }) {
   return (
     <div className="flex min-h-72 flex-col items-center justify-center gap-5 rounded-2xl border border-dashed border-neutral-200 dark:border-neutral-700 py-12 px-6 text-center">
@@ -72,13 +74,13 @@ export default function ProductsPageClient({
   currentPage,
   totalPages,
   total,
+  pageTitle: pageTitleProp,
 }: Props) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const activeCid = searchParams.get('cid')
 
-  // 카테고리 이동 — page, sort 유지하되 page는 1로 초기화
   const goCategory = (id: string | null) => {
     const params = new URLSearchParams(searchParams.toString())
     params.delete('page')
@@ -90,22 +92,19 @@ export default function ProductsPageClient({
     router.push(`${pathname}?${params.toString()}`)
   }
 
-  // 페이지 이동 — cid, sort 유지
   const goPage = (page: number) => {
     const params = new URLSearchParams(searchParams.toString())
     params.set('page', String(page))
     router.push(`${pathname}?${params.toString()}`)
   }
 
-  // 홈 URL
-  const homeUrl = pathname.replace(/\/products.*/, '')
+  const homeUrl = pathname.replace(/\/products.*/, '').replace(/\/(preorder|value-up|best|new|recommend).*/, '')
 
-  // 상위 카테고리 id
   const parentCid = breadcrumbs.length >= 2 ? breadcrumbs[breadcrumbs.length - 2].id : null
 
-  const pageTitle = currentCategory?.category_name ?? '전체 상품'
+  // prop 우선, 없으면 카테고리명, 없으면 기본값
+  const displayTitle = pageTitleProp ?? currentCategory?.category_name ?? '전체 상품'
 
-  // 페이지 번호 배열 (최대 5개)
   const getPageNumbers = () => {
     if (totalPages <= 5) return Array.from({ length: totalPages }, (_, i) => i + 1)
     const half = 2
@@ -119,10 +118,10 @@ export default function ProductsPageClient({
   return (
     <div className="container py-10 lg:py-16">
 
-      {/* ── 브레드크럼 ── */}
+      {/* 브레드크럼 */}
       <nav className="mb-4 flex items-center flex-wrap gap-1.5 text-sm text-neutral-500 dark:text-neutral-400">
         <button
-          onClick={() => router.push(homeUrl)}
+          onClick={() => router.push(homeUrl || '/')}
           className="hover:text-neutral-900 dark:hover:text-white transition-colors"
         >
           홈
@@ -142,14 +141,20 @@ export default function ProductsPageClient({
             )}
           </span>
         ))}
+        {/* breadcrumbs 없이 pageTitleProp 있을 때 — 사전예약/밸류업 등 */}
+        {breadcrumbs.length === 0 && pageTitleProp && (
+          <span className="flex items-center gap-1.5">
+            <ChevronIcon />
+            <span className="font-semibold text-neutral-900 dark:text-white">{pageTitleProp}</span>
+          </span>
+        )}
       </nav>
 
-      {/* ── 페이지 타이틀 + ★ 총 상품 수 ── */}
+      {/* 페이지 타이틀 + 총 상품 수 */}
       <div className="mb-6 flex items-end gap-3">
         <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 sm:text-3xl">
-          {pageTitle}
+          {displayTitle}
         </h1>
-        {/* ★ total이 0이 아닐 때만 표시 */}
         {total > 0 && (
           <span className="mb-1 text-sm text-neutral-400">
             총 <strong className="text-neutral-700 dark:text-neutral-300">{total.toLocaleString('ko-KR')}</strong>개
@@ -157,7 +162,7 @@ export default function ProductsPageClient({
         )}
       </div>
 
-      {/* ── 하위 카테고리 버튼 ── */}
+      {/* 하위 카테고리 버튼 */}
       {childCategories.length > 0 && (
         <div className="mb-8 flex flex-wrap gap-2">
           {currentCategory && (
@@ -187,12 +192,12 @@ export default function ProductsPageClient({
 
       <Divider className="mb-8" />
 
-      {/* ── 정렬 메뉴 ── */}
+      {/* 정렬 메뉴 */}
       <div className="mb-8 flex justify-end">
         <FilterSortByMenuListBox />
       </div>
 
-      {/* ── 상품 그리드 or 빈 상태 ── */}
+      {/* 상품 그리드 or 빈 상태 */}
       {products.length > 0 ? (
         <div className="grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 xl:gap-x-8">
           {products.map((product) => (
@@ -200,11 +205,10 @@ export default function ProductsPageClient({
           ))}
         </div>
       ) : (
-        // ★ 개선된 빈 상태 UX
         <EmptyState onReset={() => goCategory(null)} />
       )}
 
-      {/* ── 페이지네이션 ── */}
+      {/* 페이지네이션 */}
       {totalPages > 1 && (
         <div className="mt-16 flex items-center justify-center gap-2 lg:mt-20">
           <button
@@ -214,19 +218,12 @@ export default function ProductsPageClient({
           >
             ‹
           </button>
-
           {getPageNumbers()[0] > 1 && (
             <>
-              <button
-                onClick={() => goPage(1)}
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-neutral-200 text-sm font-medium text-neutral-600 hover:border-neutral-900 hover:text-neutral-900 dark:border-neutral-700 dark:text-neutral-400"
-              >
-                1
-              </button>
+              <button onClick={() => goPage(1)} className="flex h-9 w-9 items-center justify-center rounded-full border border-neutral-200 text-sm font-medium text-neutral-600 hover:border-neutral-900 hover:text-neutral-900 dark:border-neutral-700 dark:text-neutral-400">1</button>
               {getPageNumbers()[0] > 2 && <span className="text-neutral-400">…</span>}
             </>
           )}
-
           {getPageNumbers().map((p) => (
             <button
               key={p}
@@ -241,21 +238,12 @@ export default function ProductsPageClient({
               {p}
             </button>
           ))}
-
           {getPageNumbers()[getPageNumbers().length - 1] < totalPages && (
             <>
-              {getPageNumbers()[getPageNumbers().length - 1] < totalPages - 1 && (
-                <span className="text-neutral-400">…</span>
-              )}
-              <button
-                onClick={() => goPage(totalPages)}
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-neutral-200 text-sm font-medium text-neutral-600 hover:border-neutral-900 hover:text-neutral-900 dark:border-neutral-700 dark:text-neutral-400"
-              >
-                {totalPages}
-              </button>
+              {getPageNumbers()[getPageNumbers().length - 1] < totalPages - 1 && <span className="text-neutral-400">…</span>}
+              <button onClick={() => goPage(totalPages)} className="flex h-9 w-9 items-center justify-center rounded-full border border-neutral-200 text-sm font-medium text-neutral-600 hover:border-neutral-900 hover:text-neutral-900 dark:border-neutral-700 dark:text-neutral-400">{totalPages}</button>
             </>
           )}
-
           <button
             onClick={() => goPage(currentPage + 1)}
             disabled={currentPage >= totalPages}
