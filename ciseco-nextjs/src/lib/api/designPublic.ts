@@ -16,12 +16,18 @@ export type HeroBanner = {
   sort_order: number
 }
 
+type HeroBannersResponse = {
+  status?: string
+  data?: { items?: HeroBanner[] }
+}
+
 export async function fetchHeroBanners(): Promise<HeroBanner[]> {
   if (!BASE) return []
   try {
     const res = await fetch(`${BASE}/public/hero-banners`, { next: { revalidate: 60 } })
     if (!res.ok) return []
-    const json = (await res.json()) as { data?: { items?: HeroBanner[] } }
+    const json = (await res.json()) as HeroBannersResponse
+    if (json.status != null && json.status !== 'success') return []
     const items = json.data?.items
     if (!items?.length) return []
     return [...items].sort((a, b) => (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0))
