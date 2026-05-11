@@ -63,6 +63,7 @@ export default function PackagesPageClient({ initialProducts }: { initialProduct
       freeShippingOver: Number(p.free_shipping_over ?? p.sc_minimum ?? 0) || 0,
       scType: Number(p.sc_type ?? 2),
       stockQty: Number(p.stock_qty ?? 0),
+      product_type: '005',
     })
     router.push(`/checkout`)
   }

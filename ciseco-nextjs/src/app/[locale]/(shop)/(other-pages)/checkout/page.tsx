@@ -71,9 +71,15 @@ export default function CheckoutPage() {
   )
   const skippedCount = items.filter(i => !i.productId?.includes('-')).length
 
+  const isDigitalOnly =
+    orderableItems.length > 0 &&
+    orderableItems.every(i => i.product_type === '005')
+
   const orderTotal    = orderableItems.reduce((s, i) => s + (Number(i.price)||0) * (Number(i.quantity)||0), 0)
   const orderShipping = orderableItems.reduce((s, i) => s + calcItemShipping(i), 0)
   const total         = orderTotal + orderShipping
+  /** 디지털 전용 결제 UI: 요약·버튼 금액은 상품액만 표시(배송비 행 숨김과 정합) */
+  const summaryTotal  = isDigitalOnly ? orderTotal : total
 
   const [savedAddresses, setSavedAddresses]       = useState<SavedAddress[]>([])
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null)
@@ -98,6 +104,7 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (!mounted) return
+    if (isDigitalOnly) return
     const token = getToken()
     if (!token) { setShowNewForm(true); return }
     fetch(`${BASE}/my/addresses`, { headers: { Authorization: `Bearer ${token}` } })
@@ -114,7 +121,7 @@ export default function CheckoutPage() {
         }
       })
       .catch(() => setShowNewForm(true))
-  }, [mounted])
+  }, [mounted, isDigitalOnly])
 
   useEffect(() => {
     if (!mounted || orderableItems.length === 0) return
@@ -170,9 +177,50 @@ export default function CheckoutPage() {
 
   const handlePay = async () => {
     if (isSubmitting) return
-    if (!form.name.trim())   { toast.error('수령자 이름을 입력해 주세요.'); return }
-    if (!form.phone.trim())  { toast.error('휴대폰 번호를 입력해 주세요.'); return }
-    if (!address.address1)   { toast.error('배송지 주소를 입력해 주세요.'); return }
+
+    let payName = form.name.trim()
+    let payPhone = form.phone.trim()
+    let payEmail = form.email.trim()
+
+    if (isDigitalOnly) {
+      const token = getToken()
+      if (!token) {
+        toast.error('로그인이 필요합니다.')
+        router.push(`/${locale}`)
+        return
+      }
+      let resolved: { name: string; phone: string; email: string } | null = memberInfo
+      if (!resolved?.name?.trim() || !resolved?.phone?.trim()) {
+        const meRes = await fetch(`${BASE}/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
+        if (!meRes.ok) {
+          toast.error('회원 정보를 불러올 수 없습니다.')
+          return
+        }
+        const d = (await meRes.json()).data
+        resolved = {
+          name: String(d?.name ?? d?.full_name ?? ''),
+          phone: String(d?.phone ?? ''),
+          email: String(d?.email ?? ''),
+        }
+        setMemberInfo(resolved)
+      }
+      payName = resolved.name.trim()
+      payPhone = resolved.phone.trim()
+      payEmail = (resolved.email || payEmail).trim()
+      if (!payName) {
+        toast.error('회원 이름이 등록되어 있지 않습니다.')
+        return
+      }
+      if (!payPhone) {
+        toast.error('회원 전화번호가 등록되어 있지 않습니다.')
+        return
+      }
+    } else {
+      if (!form.name.trim())   { toast.error('수령자 이름을 입력해 주세요.'); return }
+      if (!form.phone.trim())  { toast.error('휴대폰 번호를 입력해 주세요.'); return }
+      if (!address.address1)   { toast.error('배송지 주소를 입력해 주세요.'); return }
+    }
+
     if (!paymentRef.current) { toast.error('결제 로드 중입니다. 잠시 후 다시 시도해 주세요.'); return }
 
     setIsSubmitting(true)
@@ -185,7 +233,7 @@ export default function CheckoutPage() {
         Authorization: `Bearer ${token}`,
       }
 
-      if (showNewForm && saveNewAddress) {
+      if (!isDigitalOnly && showNewForm && saveNewAddress) {
         try {
           await fetch(`${BASE}/my/addresses`, {
             method: 'POST', headers,
@@ -199,13 +247,24 @@ export default function CheckoutPage() {
         } catch {}
       }
 
-      const orderBody = {
-        items: orderableItems.map(i => ({ product_id: i.productId, option_id: null, quantity: Number(i.quantity)||1 })),
-        recipient_name: form.name.trim(), recipient_phone: form.phone.trim(),
-        zip_code: address.zipcode, address1: address.address1,
-        address2: address.address2 ?? '', delivery_memo: form.memo,
-        payment_method: 'TOSS',
-      }
+      const orderBody = isDigitalOnly
+        ? {
+            items: orderableItems.map(i => ({ product_id: i.productId, option_id: null, quantity: Number(i.quantity)||1 })),
+            recipient_name: payName,
+            recipient_phone: payPhone,
+            zip_code: '',
+            address1: '디지털상품',
+            address2: '',
+            delivery_memo: '',
+            payment_method: 'TOSS',
+          }
+        : {
+            items: orderableItems.map(i => ({ product_id: i.productId, option_id: null, quantity: Number(i.quantity)||1 })),
+            recipient_name: form.name.trim(), recipient_phone: form.phone.trim(),
+            zip_code: address.zipcode, address1: address.address1,
+            address2: address.address2 ?? '', delivery_memo: form.memo,
+            payment_method: 'TOSS',
+          }
       const orderRes  = await fetch(`${BASE}/orders`, { method: 'POST', headers, body: JSON.stringify(orderBody) })
       const orderData = await orderRes.json()
       if (!orderRes.ok) throw new Error(orderData.detail ?? '주문 생성에 실패했습니다')
@@ -229,9 +288,9 @@ export default function CheckoutPage() {
       const baseParams = {
         orderId:             order_no,
         orderName,
-        customerName:        form.name.trim(),
-        customerEmail:       form.email.trim() || undefined,
-        customerMobilePhone: form.phone.replace(/[^0-9]/g, ''),
+        customerName:        payName,
+        customerEmail:       payEmail || undefined,
+        customerMobilePhone: payPhone.replace(/[^0-9]/g, ''),
         successUrl: `${origin}/${locale}/payment/success?internal_order_id=${order_id}`,
         failUrl:    `${origin}/${locale}/payment/fail?internal_order_id=${order_id}`,
         amount: { currency: 'KRW', value: Math.round(total_amount) } as const,
@@ -307,7 +366,7 @@ export default function CheckoutPage() {
 
       <div className="flex flex-col gap-10 lg:flex-row">
         <div className="flex-1 space-y-8">
-          {/* STEP 1 — 배송지 */}
+          {!isDigitalOnly && (
           <section className="rounded-3xl border border-neutral-200 p-6 dark:border-neutral-700">
             <h2 className="mb-5 flex items-center gap-2 text-lg font-bold text-neutral-900 dark:text-neutral-100">
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-600 text-sm font-bold text-white">1</span>
@@ -480,11 +539,12 @@ export default function CheckoutPage() {
               </div>
             )}
           </section>
+          )}
 
-          {/* STEP 2 — 결제 수단 */}
+          {/* STEP 2 — 결제 수단 (디지털 전용 시 첫 번째 단계) */}
           <section className="rounded-3xl border border-neutral-200 p-6 dark:border-neutral-700">
             <h2 className="mb-5 flex items-center gap-2 text-lg font-bold text-neutral-900 dark:text-neutral-100">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-600 text-sm font-bold text-white">2</span>
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-600 text-sm font-bold text-white">{isDigitalOnly ? '1' : '2'}</span>
               결제 수단
             </h2>
 
@@ -547,19 +607,21 @@ export default function CheckoutPage() {
               <div className="flex justify-between">
                 <span>상품금액</span><span>{orderTotal.toLocaleString()}원</span>
               </div>
+              {!isDigitalOnly && (
               <div className="flex justify-between">
                 <span>배송비</span>
                 <span className={orderShipping === 0 ? 'font-medium text-green-600' : ''}>
                   {orderShipping === 0 ? '무료' : `${orderShipping.toLocaleString()}원`}
                 </span>
               </div>
+              )}
             </div>
 
             <div className="my-4 border-t border-neutral-200 dark:border-neutral-700" />
 
             <div className="flex items-center justify-between">
               <span className="font-bold">총 결제금액</span>
-              <span className="text-xl font-bold text-primary-600">{total.toLocaleString()}원</span>
+              <span className="text-xl font-bold text-primary-600">{summaryTotal.toLocaleString()}원</span>
             </div>
 
             <ButtonPrimary className="mt-6 w-full" onClick={handlePay} disabled={isSubmitting}>
@@ -574,7 +636,7 @@ export default function CheckoutPage() {
               ) : (
                 <span className="flex items-center gap-2">
                   <LockClosedIcon className="h-4 w-4" />
-                  {total.toLocaleString()}원 결제하기
+                  {summaryTotal.toLocaleString()}원 결제하기
                 </span>
               )}
             </ButtonPrimary>

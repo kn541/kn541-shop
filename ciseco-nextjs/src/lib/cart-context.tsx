@@ -25,6 +25,8 @@ export interface CartItem {
   stockQty: number   // 재고 수량 — 장바구니 max 제한 + 품절 표시용
   /** 분양몰 주문 구분 (결제/수당 연동 시 사용) */
   shopId?: string
+  /** 동사가치(패키지) 등 디지털 상품 — checkout에서 배송지 생략 */
+  product_type?: string
 }
 
 interface CartContextValue {
@@ -121,7 +123,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         // 수량 합산 시 재고 초과 방지
         const maxStock = newItem.stockQty > 0 ? newItem.stockQty : 99
         const newQty   = Math.min(existing.quantity + newItem.quantity, maxStock)
-        return prev.map(i => i.id === id ? { ...i, quantity: newQty, stockQty: newItem.stockQty } : i)
+        return prev.map(i => i.id === id ? { ...i, quantity: newQty, stockQty: newItem.stockQty, product_type: newItem.product_type ?? i.product_type } : i)
       }
       return [...prev, { ...newItem, id }]
     })
