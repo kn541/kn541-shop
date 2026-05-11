@@ -1,6 +1,7 @@
 // KN541 상품 상세 페이지
 // fix: 갤러리 = THUMBNAIL 타입만, 하단 = DETAIL 타입만
 //   (이전: THUMBNAIL+DETAIL 혼합 → 클릭 시 상세이미지가 메인으로 표시되는 버그)
+// fix: 브레드크럼 — "전체 상품" 제거, 카테고리별 링크 추가
 
 import { Divider } from '@/components/Divider'
 import Prices from '@/components/Prices'
@@ -100,13 +101,28 @@ export default async function Page({
 
   const returnText = returnFee > 0 ? `반품 ${returnFee.toLocaleString('ko-KR')}원` : '반품 무료'
 
+  // ★ 브레드크럼: 홈 + 카테고리 계층 (각 카테고리 클릭 시 해당 카테고리 상품리스트로 이동)
   const breadcrumbs: { name: string; href?: string }[] = [
     { name: '홈', href: `/${locale}` },
-    { name: '전체 상품', href: `/${locale}/products` },
   ]
-  if (p.categoryName1) breadcrumbs.push({ name: p.categoryName1 })
-  if (p.categoryName2) breadcrumbs.push({ name: p.categoryName2 })
-  if (p.categoryName) breadcrumbs.push({ name: p.categoryName })
+  if (p.categoryName1) {
+    breadcrumbs.push({
+      name: p.categoryName1,
+      href: p.categoryId1 ? `/${locale}/products?category_id=${p.categoryId1}` : undefined,
+    })
+  }
+  if (p.categoryName2) {
+    breadcrumbs.push({
+      name: p.categoryName2,
+      href: p.categoryId2 ? `/${locale}/products?category_id=${p.categoryId2}` : undefined,
+    })
+  }
+  if (p.categoryName) {
+    breadcrumbs.push({
+      name: p.categoryName,
+      href: p.categoryId ? `/${locale}/products?category_id=${p.categoryId}` : undefined,
+    })
+  }
 
   const consumerPrice = Number(p.consumerPrice ?? p.consumer_price ?? 0)
   const salePrice     = Number(price || 0)
