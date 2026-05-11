@@ -1,8 +1,4 @@
-// KN541 상품목록 페이지
-// fix: sort URL 파라미터 → 백엔드 sort_by/sort_order 전달
-// fix: 상품 mapProduct 상태값 한국어화 (In Stock→판매중, Sold Out→품절)
-// fix: 배송비 정보 포함 → 카드 무료배송 뱃지
-
+// KN541 상품목록 페이지 — 무한스크롤
 import { Suspense } from 'react'
 import ProductsPageClient from './ProductsPageClient'
 import type { Metadata } from 'next'
@@ -54,15 +50,12 @@ async function fetchAllCategories(): Promise<CategoryInfo[]> {
     if (!res.ok) return []
     const data = await res.json()
     const raw = data?.data?.items ?? []
-    console.log('[products] 카테고리 수:', raw.length)
     return flattenCategories(raw)
-  } catch (err) {
-    console.error('[products] fetchAllCategories 예외:', err)
+  } catch {
     return []
   }
 }
 
-// ★ sort 값 → 백엔드 파라미터 매핑
 function parseSortParam(sort?: string): { sort_by?: string; sort_order?: string } {
   switch (sort) {
     case 'newest':    return { sort_by: 'created_at', sort_order: 'desc' }
@@ -75,18 +68,14 @@ function parseSortParam(sort?: string): { sort_by?: string; sort_order?: string 
   }
 }
 
-/** 상품 매핑 — product_id(UUID) + 배송비 + 한국어 상태값 */
 function mapProduct(p: any) {
   const pid = String(p.product_id || p.id || '')
-
-  // ★ 상태값 한국어화
   let status = '판매중'
   if (p.product_status === 'SOLDOUT' || p.is_soldout) status = '품절'
   else if (p.product_status === 'DISCONTINUED' || p.is_discontinued) status = '판매종료'
   else if (p.is_new) status = '신상품'
   else if (p.is_best) status = '베스트'
   else if (p.is_sale) status = '할인'
-
   return {
     id: pid,
     handle: pid,
@@ -103,7 +92,6 @@ function mapProduct(p: any) {
     status,
     options: [],
     selectedOptions: [],
-    // ★ 배송비 정보 — 카드의 무료배송 뱃지용
     delivery: {
       sc_type: p.sc_type ?? 1,
       shipping_fee: p.shipping_fee ?? 0,
@@ -112,43 +100,30 @@ function mapProduct(p: any) {
   }
 }
 
-interface FetchProductsResult {
-  products: any[]
-  total: number
-}
-
 async function fetchProducts(params: {
   categoryId?: string
   page: number
   size: number
   sort?: string
-}): Promise<FetchProductsResult> {
+}) {
   try {
     const qs = new URLSearchParams({
       size: String(params.size),
       page: String(params.page),
     })
     if (params.categoryId) qs.set('category_id', params.categoryId)
-
     const sortParams = parseSortParam(params.sort)
     if (sortParams.sort_by) qs.set('sort_by', sortParams.sort_by)
     if (sortParams.sort_order) qs.set('sort_order', sortParams.sort_order)
 
-    const url = `${BASE}/products?${qs}`
-    console.log('[products] fetchProducts URL:', url)
-    const res = await fetch(url, { cache: 'no-store' })
-    if (!res.ok) {
-      console.error('[products] fetchProducts HTTP error:', res.status, res.statusText)
-      return { products: [], total: 0 }
-    }
+    const res = await fetch(`${BASE}/products?${qs}`, { cache: 'no-store' })
+    if (!res.ok) return { products: [], hasNext: false }
     const data = await res.json()
     const items = data?.data?.items ?? []
-    const total = data?.data?.total ?? 0
-    console.log('[products] 상품 수:', items.length, '/ 전체:', total)
-    return { products: items.map(mapProduct), total }
-  } catch (err) {
-    console.error('[products] fetchProducts 예외:', err)
-    return { products: [], total: 0 }
+    const hasNext = data?.data?.has_next ?? false
+    return { products: items.map(mapProduct), hasNext }
+  } catch {
+    return { products: [], hasNext: false }
   }
 }
 
@@ -157,17 +132,12 @@ export default async function ProductsPage({
 }: {
   searchParams: Promise<{ cid?: string; page?: string; sort?: string }>
 }) {
-  const { cid, page: pageParam, sort } = await searchParams
-  const currentPage = Math.max(1, Number(pageParam) || 1)
+  const { cid, sort } = await searchParams
 
-  const [allCategories, { products, total }] = await Promise.all([
+  const [allCategories, { products, hasNext }] = await Promise.all([
     fetchAllCategories(),
-    fetchProducts({ categoryId: cid, page: currentPage, size: PAGE_SIZE, sort }),
+    fetchProducts({ categoryId: cid, page: 1, size: PAGE_SIZE, sort }),
   ])
-
-  console.log('[products] 렌더링 — 카테고리:', allCategories.length, '| 상품:', products.length, '| 전체:', total)
-
-  const totalPages = Math.ceil(total / PAGE_SIZE)
 
   const currentCategory = cid
     ? allCategories.find((c) => c.id === String(cid)) ?? null
@@ -203,9 +173,10 @@ export default async function ProductsPage({
         currentCategory={currentCategory}
         breadcrumbs={breadcrumbs}
         childCategories={childCategories}
-        currentPage={currentPage}
-        totalPages={totalPages}
-        total={total}
+        hasNextInitial={hasNext}
+        currentPage={1}
+        totalPages={0}
+        total={0}
       />
     </Suspense>
   )

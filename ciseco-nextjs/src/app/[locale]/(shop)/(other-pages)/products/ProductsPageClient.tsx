@@ -1,13 +1,17 @@
 'use client'
-// KN541 상품목록 — 클라이언트 렌더링
-// fix: 페이지네이션 모듈화 (ProductListPagination 사용)
+// KN541 상품목록 — 무한스크롤 방식
 
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import ProductCard from '@/components/ProductCard'
-import ProductListPagination from '@/components/ProductListPagination'
+import ScrollToTop from '@/components/ScrollToTop'
 import { FilterSortByMenuListBox } from '@/components/FilterSortByMenu'
 import { Divider } from '@/components/Divider'
 import type { CategoryInfo } from './page'
+
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL || 'https://kn541-production.up.railway.app'
+const PAGE_SIZE = 20
 
 interface ProductItem {
   id: string
@@ -29,10 +33,10 @@ interface Props {
   currentCategory: CategoryInfo | null
   breadcrumbs: CategoryInfo[]
   childCategories: CategoryInfo[]
+  hasNextInitial: boolean
   currentPage: number
   totalPages: number
   total: number
-  /** 외부에서 타이틀 직접 지정 (category_name 대신 사용) */
   pageTitle?: string
 }
 
@@ -64,20 +68,107 @@ function EmptyState({ onReset }: { onReset: () => void }) {
   )
 }
 
+/** API 상품 → 컴포넌트 형식 매핑 */
+function mapApiProduct(p: any): ProductItem {
+  const pid = String(p.product_id || p.id || '')
+  let status = '판매중'
+  if (p.product_status === 'SOLDOUT' || p.is_soldout) status = '품절'
+  else if (p.product_status === 'DISCONTINUED' || p.is_discontinued) status = '판매종료'
+  else if (p.is_new) status = '신상품'
+  else if (p.is_best) status = '베스트'
+  else if (p.is_sale) status = '할인'
+  return {
+    id: pid,
+    handle: pid,
+    title: p.product_name,
+    price: p.sale_price,
+    featuredImage: p.thumbnail_url
+      ? { src: p.thumbnail_url, width: 600, height: 600, alt: p.product_name }
+      : { src: '/placeholder-product.jpg', width: 600, height: 600, alt: p.product_name },
+    images: [],
+    reviewNumber: 0,
+    rating: 0,
+    status,
+    options: [],
+    selectedOptions: [],
+    delivery: {
+      sc_type: p.sc_type ?? 1,
+      shipping_fee: p.shipping_fee ?? 0,
+      free_over: p.free_shipping_over ?? null,
+    },
+  }
+}
+
 export default function ProductsPageClient({
-  products,
+  products: initialProducts,
   currentCategory,
   breadcrumbs,
   childCategories,
-  currentPage,
-  totalPages,
-  total,
+  hasNextInitial,
   pageTitle: pageTitleProp,
 }: Props) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const activeCid = searchParams.get('cid')
+  const activeSort = searchParams.get('sort') || ''
+
+  // ★ 무한스크롤 상태
+  const [products, setProducts] = useState<ProductItem[]>(initialProducts)
+  const [page, setPage] = useState(1)
+  const [hasNext, setHasNext] = useState(hasNextInitial)
+  const [loading, setLoading] = useState(false)
+  const sentinelRef = useRef<HTMLDivElement>(null)
+
+  // 카테고리/정렬 변경 시 리셋
+  useEffect(() => {
+    setProducts(initialProducts)
+    setPage(1)
+    setHasNext(hasNextInitial)
+  }, [initialProducts, hasNextInitial])
+
+  // ★ 다음 페이지 로드
+  const loadMore = useCallback(async () => {
+    if (loading || !hasNext) return
+    setLoading(true)
+    try {
+      const nextPage = page + 1
+      const qs = new URLSearchParams({ page: String(nextPage), size: String(PAGE_SIZE) })
+      if (activeCid) qs.set('category_id', activeCid)
+      if (activeSort === 'newest') { qs.set('sort_by', 'created_at'); qs.set('sort_order', 'desc') }
+      else if (activeSort === 'oldest') { qs.set('sort_by', 'created_at'); qs.set('sort_order', 'asc') }
+      else if (activeSort === 'price_asc') { qs.set('sort_by', 'sale_price'); qs.set('sort_order', 'asc') }
+      else if (activeSort === 'price_desc') { qs.set('sort_by', 'sale_price'); qs.set('sort_order', 'desc') }
+
+      const res = await fetch(`${API_BASE}/products?${qs}`)
+      if (!res.ok) throw new Error('fetch failed')
+      const data = await res.json()
+      const newItems: any[] = data?.data?.items ?? []
+      const nextHasNext = data?.data?.has_next ?? false
+
+      setProducts(prev => [...prev, ...newItems.map(mapApiProduct)])
+      setPage(nextPage)
+      setHasNext(nextHasNext)
+    } catch (err) {
+      console.error('[infinite-scroll] loadMore error:', err)
+    } finally {
+      setLoading(false)
+    }
+  }, [loading, hasNext, page, activeCid, activeSort])
+
+  // ★ IntersectionObserver — 하단 감지 시 자동 로드
+  useEffect(() => {
+    const el = sentinelRef.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) loadMore()
+      },
+      { rootMargin: '400px' }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [loadMore])
 
   const goCategory = (id: string | null) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -91,10 +182,7 @@ export default function ProductsPageClient({
   }
 
   const homeUrl = pathname.replace(/\/products.*/, '').replace(/\/(preorder|value-up|best|new|recommend).*/, '')
-
   const parentCid = breadcrumbs.length >= 2 ? breadcrumbs[breadcrumbs.length - 2].id : null
-
-  // prop 우선, 없으면 카테고리명, 없으면 기본값
   const displayTitle = pageTitleProp ?? currentCategory?.category_name ?? '전체 상품'
 
   return (
@@ -131,16 +219,11 @@ export default function ProductsPageClient({
         )}
       </nav>
 
-      {/* 페이지 타이틀 + 총 상품 수 */}
-      <div className="mb-6 flex items-end gap-3">
+      {/* 페이지 타이틀 */}
+      <div className="mb-6">
         <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 sm:text-3xl">
           {displayTitle}
         </h1>
-        {total > 0 && (
-          <span className="mb-1 text-sm text-neutral-400">
-            총 <strong className="text-neutral-700 dark:text-neutral-300">{total.toLocaleString('ko-KR')}</strong>개
-          </span>
-        )}
       </div>
 
       {/* 하위 카테고리 버튼 */}
@@ -178,7 +261,7 @@ export default function ProductsPageClient({
         <FilterSortByMenuListBox />
       </div>
 
-      {/* 상품 그리드 or 빈 상태 */}
+      {/* 상품 그리드 */}
       {products.length > 0 ? (
         <div className="grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 xl:gap-x-8">
           {products.map((product) => (
@@ -189,13 +272,25 @@ export default function ProductsPageClient({
         <EmptyState onReset={() => goCategory(null)} />
       )}
 
-      {/* ★ 모듈화된 페이지네이션 */}
-      <ProductListPagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        total={total}
-        pageSize={20}
-      />
+      {/* ★ 로딩 인디케이터 */}
+      {loading && (
+        <div className="mt-10 flex justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-neutral-300 border-t-neutral-900 dark:border-neutral-600 dark:border-t-white" />
+        </div>
+      )}
+
+      {/* ★ 무한스크롤 감지 센티널 */}
+      {hasNext && <div ref={sentinelRef} className="h-1" />}
+
+      {/* 더 이상 없음 표시 */}
+      {!hasNext && products.length > PAGE_SIZE && (
+        <p className="mt-12 text-center text-sm text-neutral-400">
+          모든 상품을 불러왔습니다
+        </p>
+      )}
+
+      {/* ★ 상단이동 버튼 */}
+      <ScrollToTop />
     </div>
   )
 }
