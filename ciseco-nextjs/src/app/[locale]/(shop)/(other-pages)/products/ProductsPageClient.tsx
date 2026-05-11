@@ -1,12 +1,10 @@
 'use client'
 // KN541 상품목록 — 클라이언트 렌더링
-// fix: 총 상품 수 표시 (total props → 헤더에 렌더)
-// fix: 빈 상태(Empty State) UX — 다른 카테고리 탐색 유도
-// fix: 브레드크럼, 카테고리 버튼, 정렬 메뉴 유지
-// feat: pageTitle prop 추가 (외부 타이틀 오버라이드)
+// fix: 페이지네이션 모듈화 (ProductListPagination 사용)
 
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import ProductCard from '@/components/ProductCard'
+import ProductListPagination from '@/components/ProductListPagination'
 import { FilterSortByMenuListBox } from '@/components/FilterSortByMenu'
 import { Divider } from '@/components/Divider'
 import type { CategoryInfo } from './page'
@@ -92,28 +90,12 @@ export default function ProductsPageClient({
     router.push(`${pathname}?${params.toString()}`)
   }
 
-  const goPage = (page: number) => {
-    const params = new URLSearchParams(searchParams.toString())
-    params.set('page', String(page))
-    router.push(`${pathname}?${params.toString()}`)
-  }
-
   const homeUrl = pathname.replace(/\/products.*/, '').replace(/\/(preorder|value-up|best|new|recommend).*/, '')
 
   const parentCid = breadcrumbs.length >= 2 ? breadcrumbs[breadcrumbs.length - 2].id : null
 
   // prop 우선, 없으면 카테고리명, 없으면 기본값
   const displayTitle = pageTitleProp ?? currentCategory?.category_name ?? '전체 상품'
-
-  const getPageNumbers = () => {
-    if (totalPages <= 5) return Array.from({ length: totalPages }, (_, i) => i + 1)
-    const half = 2
-    let start = Math.max(1, currentPage - half)
-    let end = Math.min(totalPages, currentPage + half)
-    if (currentPage <= half) end = Math.min(totalPages, 5)
-    if (currentPage >= totalPages - half) start = Math.max(1, totalPages - 4)
-    return Array.from({ length: end - start + 1 }, (_, i) => start + i)
-  }
 
   return (
     <div className="container py-10 lg:py-16">
@@ -141,7 +123,6 @@ export default function ProductsPageClient({
             )}
           </span>
         ))}
-        {/* breadcrumbs 없이 pageTitleProp 있을 때 — 사전예약/밸류업 등 */}
         {breadcrumbs.length === 0 && pageTitleProp && (
           <span className="flex items-center gap-1.5">
             <ChevronIcon />
@@ -208,51 +189,13 @@ export default function ProductsPageClient({
         <EmptyState onReset={() => goCategory(null)} />
       )}
 
-      {/* 페이지네이션 */}
-      {totalPages > 1 && (
-        <div className="mt-16 flex items-center justify-center gap-2 lg:mt-20">
-          <button
-            onClick={() => goPage(currentPage - 1)}
-            disabled={currentPage <= 1}
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-neutral-200 text-sm font-medium text-neutral-600 hover:border-neutral-900 hover:text-neutral-900 disabled:cursor-not-allowed disabled:opacity-30 dark:border-neutral-700 dark:text-neutral-400 dark:hover:border-white dark:hover:text-white"
-          >
-            ‹
-          </button>
-          {getPageNumbers()[0] > 1 && (
-            <>
-              <button onClick={() => goPage(1)} className="flex h-9 w-9 items-center justify-center rounded-full border border-neutral-200 text-sm font-medium text-neutral-600 hover:border-neutral-900 hover:text-neutral-900 dark:border-neutral-700 dark:text-neutral-400">1</button>
-              {getPageNumbers()[0] > 2 && <span className="text-neutral-400">…</span>}
-            </>
-          )}
-          {getPageNumbers().map((p) => (
-            <button
-              key={p}
-              onClick={() => goPage(p)}
-              className={[
-                'flex h-9 w-9 items-center justify-center rounded-full text-sm font-medium transition-colors',
-                p === currentPage
-                  ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900'
-                  : 'border border-neutral-200 text-neutral-600 hover:border-neutral-900 hover:text-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:hover:border-white dark:hover:text-white',
-              ].join(' ')}
-            >
-              {p}
-            </button>
-          ))}
-          {getPageNumbers()[getPageNumbers().length - 1] < totalPages && (
-            <>
-              {getPageNumbers()[getPageNumbers().length - 1] < totalPages - 1 && <span className="text-neutral-400">…</span>}
-              <button onClick={() => goPage(totalPages)} className="flex h-9 w-9 items-center justify-center rounded-full border border-neutral-200 text-sm font-medium text-neutral-600 hover:border-neutral-900 hover:text-neutral-900 dark:border-neutral-700 dark:text-neutral-400">{totalPages}</button>
-            </>
-          )}
-          <button
-            onClick={() => goPage(currentPage + 1)}
-            disabled={currentPage >= totalPages}
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-neutral-200 text-sm font-medium text-neutral-600 hover:border-neutral-900 hover:text-neutral-900 disabled:cursor-not-allowed disabled:opacity-30 dark:border-neutral-700 dark:text-neutral-400 dark:hover:border-white dark:hover:text-white"
-          >
-            ›
-          </button>
-        </div>
-      )}
+      {/* ★ 모듈화된 페이지네이션 */}
+      <ProductListPagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        total={total}
+        pageSize={20}
+      />
     </div>
   )
 }
