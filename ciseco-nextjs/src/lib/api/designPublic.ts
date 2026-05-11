@@ -8,6 +8,8 @@ const BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
 export type HeroBanner = {
   id: string
   title: string
+  /** 배너 하단 보조 카피 (선택). alt_text(접근성)와 별개 */
+  subtitle?: string | null
   image_url: string
   mobile_image_url?: string | null
   link_url?: string | null

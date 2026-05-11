@@ -21,16 +21,6 @@ function HeroDivider() {
   )
 }
 
-function splitTitle(title: string): { line1: string; line2: string } {
-  const lines = title
-    .split(/\n/)
-    .map((s) => s.trim())
-    .filter(Boolean)
-  const line1 = lines[0] ?? (title.trim() || ' ')
-  const line2 = lines[1] ?? line1
-  return { line1, line2 }
-}
-
 type HeroSliderProps = {
   slides: HeroBanner[]
 }
@@ -52,8 +42,7 @@ export function HeroSlider({ slides }: HeroSliderProps) {
         {slides.map((slide, i) => {
           const mobileSrc = slide.mobile_image_url?.trim() || slide.image_url
           const pcSrc = slide.image_url
-          const { line1, line2 } = splitTitle(slide.title)
-          const subtitle = (slide.alt_text || '').trim() || '\u00A0'
+          const displaySubtitle = (slide.subtitle || '').trim()
           const target = slide.link_target === '_blank' ? '_blank' : '_self'
           const hasLink = Boolean(slide.link_url?.trim())
 
@@ -97,14 +86,14 @@ export function HeroSlider({ slides }: HeroSliderProps) {
                   hasLink && 'pointer-events-none z-[2]'
                 )}
               >
-                <h1 className="text-[26px] font-medium leading-[1.16] tracking-[-0.52px] text-kn541-black md:text-[34px] md:leading-normal md:tracking-[-0.68px]">
-                  {line1}
-                  <br />
-                  {line2}
+                <h1 className="whitespace-pre-line text-[26px] font-medium leading-[1.16] tracking-[-0.52px] text-kn541-black md:text-[34px] md:leading-normal md:tracking-[-0.68px]">
+                  {slide.title.trim() || '\u00A0'}
                 </h1>
-                <p className="mt-6 text-[14px] font-normal tracking-[-0.28px] text-kn541-black md:mt-[31px] md:text-[18px] md:tracking-[-0.36px]">
-                  {subtitle}
-                </p>
+                {displaySubtitle ? (
+                  <p className="mt-6 text-[14px] font-normal tracking-[-0.28px] text-kn541-black md:mt-[31px] md:text-[18px] md:tracking-[-0.36px]">
+                    {displaySubtitle}
+                  </p>
+                ) : null}
               </div>
             </article>
           )
