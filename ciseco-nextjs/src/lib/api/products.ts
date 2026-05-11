@@ -124,7 +124,7 @@ export async function getProducts(params?: {
   return data.data
 }
 
-/** 메인 디자인 진열 — /public/main-products + 단건 상세 병합 (정렬 유지) */
+/** 메인 디자인 진열 — GET /public/main-products?section_code=001|002|003|004 + 단건 상세 병합 (정렬 유지) */
 export async function getMainDisplayProducts(sectionCode: string): Promise<Product[]> {
   if (!BASE) return []
   try {
@@ -134,8 +134,10 @@ export async function getMainDisplayProducts(sectionCode: string): Promise<Produ
     )
     if (!res.ok) return []
     const json = (await res.json()) as {
+      status?: string
       data?: { items?: Array<{ product_id: string; sort_order?: number }> }
     }
+    if (json.status != null && json.status !== 'success') return []
     const rows = json.data?.items
     if (!rows?.length) return []
     const sorted = [...rows].sort((a, b) => (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0))

@@ -68,7 +68,7 @@
     "reserveCountdownHint": "Countdown (placeholder)",
     "viewAll": "View all",
     "bestEyebrow": "BEST ITEMS",
-    "bestTitle": "Best products",
+    "bestTitle": "Bestsellers",
     "bestDescription": "See what's trending — sample layout.",
     "bestPlaceholderNote": "Images and prices are design placeholders until sort=best is available from the API.",
     "bestLoadMore": "More best products",
@@ -79,7 +79,9 @@
     "valuePanelHeading": "Value-up",
     "valuePanelCopy": "Meet special picks that\nboost the value of your spending.",
     "recommendedEyebrow": "Recommended",
-    "recommendedTitle": "Hand-picked products worth your attention."
+    "recommendedTitle": "Hand-picked products worth your attention.",
+    "saleEyebrow": "On sale",
+    "saleTitle": "See products on special offer right now."
   },
   "Product": {
     "addToCart": "Add to cart",

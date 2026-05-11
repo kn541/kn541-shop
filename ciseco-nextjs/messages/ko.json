@@ -68,18 +68,20 @@
     "reserveCountdownHint": "사전예약 종료까지 (안내용 표기)",
     "viewAll": "전체보기",
     "bestEyebrow": "BEST ITEMS",
-    "bestTitle": "베스트 상품",
+    "bestTitle": "베스트셀러",
     "bestDescription": "지금 인기 급상승 중인 상품을 만나보세요.",
     "bestPlaceholderNote": "※ 이미지·가격·카피는 디자인 샘플입니다. 실제 랭킹 목록은 API(sort=best) 연동 후 표시됩니다.",
     "bestLoadMore": "베스트 상품 더보기",
-    "newEyebrow": "신제품",
+    "newEyebrow": "신상품",
     "newTitle": "새롭게 출시된 상품을 가장 먼저 만나보세요.",
     "valueEyebrow": "벨류업 상품",
     "valueTitle": "소비의 가치를 높여주는 특별한 상품을 만나보세요.",
     "valuePanelHeading": "벨류업 상품",
     "valuePanelCopy": "소비의 가치를 높여주는\n특별한 상품을 만나보세요.",
     "recommendedEyebrow": "추천 상품",
-    "recommendedTitle": "지금 주목할 만한 추천 상품을 만나보세요."
+    "recommendedTitle": "지금 주목할 만한 추천 상품을 만나보세요.",
+    "saleEyebrow": "할인 상품",
+    "saleTitle": "지금 할인 중인 상품을 만나보세요."
   },
   "Product": {
     "addToCart": "장바구니 담기",

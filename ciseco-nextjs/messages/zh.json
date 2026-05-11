@@ -79,7 +79,9 @@
     "valuePanelHeading": "升值精选",
     "valuePanelCopy": "发现能提升\n消费价值的特别商品。",
     "recommendedEyebrow": "推荐商品",
-    "recommendedTitle": "值得您关注的精选推荐。"
+    "recommendedTitle": "值得您关注的精选推荐。",
+    "saleEyebrow": "折扣商品",
+    "saleTitle": "查看当前优惠商品。"
   },
   "Product": {
     "addToCart": "加入购物车",

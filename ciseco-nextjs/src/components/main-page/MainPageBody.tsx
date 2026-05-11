@@ -4,6 +4,7 @@ import { HeroSlider } from '@/components/main-page/HeroSlider'
 import { NewProductsSection } from '@/components/main-page/NewProductsSection'
 import { RecommendedProducts } from '@/components/main-page/RecommendedProducts'
 import { ReserveSection } from '@/components/main-page/ReserveSection'
+import { SaleProductsSection } from '@/components/main-page/SaleProductsSection'
 import { ValuePanel } from '@/components/main-page/ValuePanel'
 import { WelcomeSection } from '@/components/main-page/WelcomeSection'
 import { fetchHeroBanners } from '@/lib/api/designPublic'
@@ -17,11 +18,12 @@ export default async function MainPageBody() {
       {heroSlides.length > 0 ? <HeroSlider slides={heroSlides} /> : null}
       <WelcomeSection />
       <ReserveSection />
-      <BestProducts />
       <GiftBanner />
-      <NewProductsSection />
-      <ValuePanel />
       <RecommendedProducts />
+      <NewProductsSection />
+      <BestProducts />
+      <SaleProductsSection />
+      <ValuePanel />
     </main>
   )
 }
