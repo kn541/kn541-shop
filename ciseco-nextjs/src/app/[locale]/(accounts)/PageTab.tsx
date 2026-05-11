@@ -22,6 +22,7 @@ const links = [
   { nameKey: 'ordersHistory' as const, link: '/orders' },
   { nameKey: 'points' as const, link: '/points' },
   { nameKey: 'coupons' as const, link: '/coupons' },
+  { nameKey: 'packages' as const, link: '/packages' },
   { nameKey: 'commission' as const, link: '/commission' },
   { nameKey: 'dividends' as const, link: '/dividends' },
   { nameKey: 'referralTree' as const, link: '/tree' },
@@ -44,6 +45,9 @@ const PageTab = ({ variant = 'tabs' }: PageTabProps) => {
   const effectiveUserType = useEffectiveUserType(user?.user_type)
 
   const visibleLinks = links.filter(item => {
+    if (item.link === '/packages' && effectiveUserType !== '006') {
+      return false
+    }
     if (item.link === '/myshop' && effectiveUserType !== '006') {
       return false
     }
@@ -62,6 +66,9 @@ const PageTab = ({ variant = 'tabs' }: PageTabProps) => {
       isActive = true
     }
     if (item.link === '/dividends' && pathname.startsWith('/dividends/')) {
+      isActive = true
+    }
+    if (item.link === '/packages' && pathname.startsWith('/packages')) {
       isActive = true
     }
     return isActive

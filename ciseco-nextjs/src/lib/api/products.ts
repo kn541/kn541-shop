@@ -105,6 +105,8 @@ export async function getProducts(params?: {
   is_recommended?: boolean
   keyword?: string
   product_status?: string
+  /** system_codes product_type (예: 동사가치 VALUE_ACT = 005) */
+  product_type?: string
 }): Promise<ProductListResponse> {
   const query = new URLSearchParams()
   if (params?.page) query.set('page', String(params.page))
@@ -116,12 +118,32 @@ export async function getProducts(params?: {
   if (params?.is_recommended) query.set('is_recommended', 'true')
   if (params?.keyword) query.set('keyword', params.keyword)
   if (params?.product_status) query.set('product_status', params.product_status)
+  if (params?.product_type) query.set('product_type', params.product_type)
 
   const url = `${BASE}/products${query.toString() ? `?${query}` : ''}`
   const res = await fetch(url, { next: { revalidate: 60 } })
   if (!res.ok) throw new Error('상품 조회 실패')
   const data = await res.json()
   return data.data
+}
+
+/** 마이페이지 패키지(동사가치) — product_type=005, 판매중, sale_price 오름차순 상위 4건 */
+export async function getPackageProducts(): Promise<Product[]> {
+  if (!BASE) return []
+  try {
+    const res = await getProducts({
+      page: 1,
+      size: 20,
+      product_type: '005',
+      product_status: 'ON_SALE',
+    })
+    const items = res?.items ?? []
+    return [...items]
+      .sort((a, b) => Number(a.sale_price) - Number(b.sale_price))
+      .slice(0, 4)
+  } catch {
+    return []
+  }
 }
 
 /** 메인 디자인 진열 — GET /public/main-products?section_code=001|002|003|004 + 단건 상세 병합 (정렬 유지) */
