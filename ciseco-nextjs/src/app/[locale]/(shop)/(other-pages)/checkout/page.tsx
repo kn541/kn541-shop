@@ -95,6 +95,37 @@ export default function CheckoutPage() {
   const paymentRef = useRef<any>(null)
   const [sameAsMember, setSameAsMember] = useState(false)
   const [memberInfo, setMemberInfo]     = useState<{ name: string; phone: string; email: string } | null>(null)
+  /** 패키지(005) 체크아웃: /auth/me 선로딩 */
+  const [digitalOrdererLoading, setDigitalOrdererLoading] = useState(false)
+
+  useEffect(() => {
+    if (!mounted) return
+    if (!isDigitalOnly) return
+    const token = getToken()
+    if (!token) return
+    let cancelled = false
+    setDigitalOrdererLoading(true)
+    ;(async () => {
+      try {
+        const meRes = await fetch(`${BASE}/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
+        if (!meRes.ok) throw new Error('회원 정보를 불러올 수 없습니다.')
+        const d = (await meRes.json()).data
+        const info = {
+          name: String(d?.name ?? d?.full_name ?? ''),
+          phone: String(d?.phone ?? ''),
+          email: String(d?.email ?? ''),
+        }
+        if (cancelled) return
+        setMemberInfo(info)
+        setForm(f => ({ ...f, name: info.name, phone: info.phone, email: info.email || f.email }))
+      } catch {
+        if (!cancelled) toast.error('회원 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.')
+      } finally {
+        if (!cancelled) setDigitalOrdererLoading(false)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [mounted, isDigitalOnly])
 
   useEffect(() => {
     if (!mounted) return
@@ -183,30 +214,13 @@ export default function CheckoutPage() {
     let payEmail = form.email.trim()
 
     if (isDigitalOnly) {
-      const token = getToken()
-      if (!token) {
-        toast.error('로그인이 필요합니다.')
-        router.push(`/${locale}`)
+      if (digitalOrdererLoading) {
+        toast.error('회원 정보를 불러오는 중입니다.')
         return
       }
-      let resolved: { name: string; phone: string; email: string } | null = memberInfo
-      if (!resolved?.name?.trim() || !resolved?.phone?.trim()) {
-        const meRes = await fetch(`${BASE}/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
-        if (!meRes.ok) {
-          toast.error('회원 정보를 불러올 수 없습니다.')
-          return
-        }
-        const d = (await meRes.json()).data
-        resolved = {
-          name: String(d?.name ?? d?.full_name ?? ''),
-          phone: String(d?.phone ?? ''),
-          email: String(d?.email ?? ''),
-        }
-        setMemberInfo(resolved)
-      }
-      payName = resolved.name.trim()
-      payPhone = resolved.phone.trim()
-      payEmail = (resolved.email || payEmail).trim()
+      payName = form.name.trim()
+      payPhone = form.phone.trim()
+      payEmail = form.email.trim()
       if (!payName) {
         toast.error('회원 이름이 등록되어 있지 않습니다.')
         return
@@ -366,6 +380,61 @@ export default function CheckoutPage() {
 
       <div className="flex flex-col gap-10 lg:flex-row">
         <div className="flex-1 space-y-8">
+          {isDigitalOnly && (
+            <section className="rounded-3xl border border-neutral-200 p-6 dark:border-neutral-700">
+              <h2 className="mb-5 flex items-center gap-2 text-lg font-bold text-neutral-900 dark:text-neutral-100">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-600 text-sm font-bold text-white">1</span>
+                주문자 정보
+              </h2>
+              {digitalOrdererLoading ? (
+                <div className="flex justify-center py-10">
+                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary-500 border-t-transparent" />
+                </div>
+              ) : (
+                <>
+                  <p className="mb-4 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-600 dark:border-neutral-600 dark:bg-neutral-800/50 dark:text-neutral-300">
+                    디지털 콘텐츠 상품으로 배송이 필요하지 않습니다.
+                  </p>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="sm:col-span-2">
+                      <label className={labelCls}>이름</label>
+                      <input
+                        className={`${inputCls} cursor-not-allowed bg-neutral-100 opacity-90 dark:bg-neutral-800`}
+                        type="text"
+                        value={form.name}
+                        readOnly
+                        disabled
+                        autoComplete="name"
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className={labelCls}>휴대폰</label>
+                      <input
+                        className={`${inputCls} cursor-not-allowed bg-neutral-100 opacity-90 dark:bg-neutral-800`}
+                        type="tel"
+                        value={form.phone}
+                        readOnly
+                        disabled
+                        autoComplete="tel"
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className={labelCls}>이메일 (영수증·주문 확인 발송)</label>
+                      <input
+                        className={inputCls}
+                        placeholder="example@email.com"
+                        type="email"
+                        value={form.email}
+                        onChange={e => setForm({ ...form, email: e.target.value })}
+                        autoComplete="email"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+            </section>
+          )}
+
           {!isDigitalOnly && (
           <section className="rounded-3xl border border-neutral-200 p-6 dark:border-neutral-700">
             <h2 className="mb-5 flex items-center gap-2 text-lg font-bold text-neutral-900 dark:text-neutral-100">
@@ -541,10 +610,10 @@ export default function CheckoutPage() {
           </section>
           )}
 
-          {/* STEP 2 — 결제 수단 (디지털 전용 시 첫 번째 단계) */}
+          {/* 결제 수단 — 배송(1) 또는 주문자(1) 다음 단계 */}
           <section className="rounded-3xl border border-neutral-200 p-6 dark:border-neutral-700">
             <h2 className="mb-5 flex items-center gap-2 text-lg font-bold text-neutral-900 dark:text-neutral-100">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-600 text-sm font-bold text-white">{isDigitalOnly ? '1' : '2'}</span>
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-600 text-sm font-bold text-white">2</span>
               결제 수단
             </h2>
 
@@ -624,7 +693,7 @@ export default function CheckoutPage() {
               <span className="text-xl font-bold text-primary-600">{summaryTotal.toLocaleString()}원</span>
             </div>
 
-            <ButtonPrimary className="mt-6 w-full" onClick={handlePay} disabled={isSubmitting}>
+            <ButtonPrimary className="mt-6 w-full" onClick={handlePay} disabled={isSubmitting || (isDigitalOnly && digitalOrdererLoading)}>
               {isSubmitting ? (
                 <span className="flex items-center gap-2">
                   <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
