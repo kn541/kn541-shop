@@ -2,6 +2,7 @@
  * KN541 API 데이터 → Ciseco 컴포넌트 형식 변환 어댑터
  * fix: thumbnailImageSrcs / detailImageSrcs 분리 필드 추가
  * fix: status 기본값 '판매중'
+ * fix: categoryId / categoryId1 / categoryId2 추가 (브레드크럼 링크용)
  */
 
 import type { Category } from './api/categories'
@@ -30,7 +31,7 @@ export function adaptProduct(p: Product): TProductItem {
     ? { src: p.thumbnail_url, width: 600, height: 600, alt: p.product_name }
     : { src: PLACEHOLDER_IMG, width: 600, height: 600, alt: p.product_name }
 
-  // ★ THUMBNAIL 타입 이미지 (걤러리 사이드바 용)
+  // ★ THUMBNAIL 타입 이미지 (갤러리 사이드바 용)
   const thumbImgs = (p.images || [])
     .filter(img => img?.image_url && img.image_type === 'THUMBNAIL')
     .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
@@ -95,6 +96,10 @@ export function adaptProduct(p: Product): TProductItem {
     categoryName: p.category_name ?? '',
     categoryName1: p.category_name_1 ?? '',
     categoryName2: p.category_name_2 ?? '',
+    // ★ 카테고리 ID (브레드크럼 링크용)
+    categoryId: p.category_id ?? '',
+    categoryId1: p.category_id_1 ?? '',
+    categoryId2: p.category_id_2 ?? '',
     origin: (p as any).origin ?? '',
     taxLabel,
     taxType: p.tax_type ?? 0,
