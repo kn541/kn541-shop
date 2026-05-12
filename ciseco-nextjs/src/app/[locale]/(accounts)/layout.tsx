@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 
 import { Divider } from '@/components/Divider'
 import Footer from '@/components/Footer'
-import Header2 from '@/components/Header/Header2'
+import Header from '@/components/Header/Header'
 import AsideProductQuickView from '@/components/aside-product-quickview'
 import AsideSidebarCart from '@/components/aside-sidebar-cart'
 import AsideSidebarNavigation from '@/components/aside-sidebar-navigation'
@@ -22,7 +22,7 @@ const Layout: FC<Props> = async ({ children }) => {
 
   return (
     <>
-      <Header2 />
+      <Header />
       <div className="container">
         <div className="mt-14 sm:mt-20">
           <div className="mx-auto max-w-[var(--container-kn541)]">
