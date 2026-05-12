@@ -1,6 +1,6 @@
 'use client'
 // KN541 쇼핑몰 — 회원가입 페이지
-// fix: 로고·로그인 링크 href locale 수정 (/ → /ko, /login → /ko/login)
+// fix: router.push('/ko') → router.push('/') (next-intl이 자동으로 locale 추가)
 
 import { useState, useTransition, useCallback, useRef } from 'react'
 import Image from 'next/image'
@@ -159,7 +159,8 @@ export default function SignupPage() {
           } catch {
             localStorage.removeItem('user_type')
           }
-          router.push('/ko')
+          // ★ fix: '/ko' → '/' (next-intl useRouter가 자동으로 locale 추가)
+          router.push('/')
         } else {
           setGlobalError('가입 처리 중 오류가 발생했습니다.')
         }
@@ -186,7 +187,6 @@ export default function SignupPage() {
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex items-start justify-center px-4 py-12">
       <div className="w-full max-w-[420px]">
 
-        {/* ★ 로고 링크 /ko로 수정 */}
         <div className="flex justify-center mb-8">
           <a href="/ko" className="block">
             <Image
@@ -382,7 +382,6 @@ export default function SignupPage() {
           </form>
         </div>
 
-        {/* ★ 로그인 링크 /ko/login으로 수정 */}
         <p className="text-center text-sm text-neutral-500 dark:text-neutral-400 mt-6">
           이미 계정이 있으신가요?{' '}
           <a href="/ko/login" className="font-semibold text-neutral-900 dark:text-white hover:underline">로그인</a>
