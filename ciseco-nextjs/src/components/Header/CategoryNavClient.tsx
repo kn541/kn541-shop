@@ -2,6 +2,8 @@
 // KN541 쇼핑몰 — 카테고리 네비 클라이언트 컴포넌트
 // 메뉴 구조: 홈(정적) → 카테고리 DB(동적) → 구분선 → 사전예약/벨류업(정적)
 // 카테고리는 hover 시 2단 드롭다운, 정적 항목은 단순 링크
+//
+// fix: overflow-x-auto → 제거 (overflow-x 설정 시 overflow-y도 auto로 강제되어 드롭다운 잘림)
 
 import { useRef, useState } from 'react'
 import Link from 'next/link'
@@ -33,7 +35,7 @@ export default function CategoryNavClient({ categories }: { categories: Category
     'block flex-shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors whitespace-nowrap'
 
   return (
-    <nav className="hidden lg:flex items-center gap-0.5 overflow-x-auto whitespace-nowrap scrollbar-hide">
+    <nav className="hidden lg:flex items-center gap-0.5 whitespace-nowrap scrollbar-hide">
 
       {/* 홈 (정적, 좌측 첫번째) */}
       <Link
