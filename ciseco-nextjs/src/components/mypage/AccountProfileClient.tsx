@@ -52,10 +52,38 @@ function EditableField({
   )
 }
 
-function BasicTab({ data, userId }: { data: Record<string, string | null>; userId: string }) {
+function BasicTab({
+  data,
+  userId,
+  onSaved,
+}: {
+  data: Record<string, string | null>
+  userId: string
+  onSaved: () => void
+}) {
   const [email, setEmail] = useState(data.email ?? '')
+  const [birthDate, setBirthDate] = useState(() => (data.birth_date ? String(data.birth_date).slice(0, 10) : ''))
+  const [gender, setGender] = useState<'M' | 'F' | ''>(() =>
+    data.gender === 'M' || data.gender === 'F' ? data.gender : ''
+  )
   const [saving, setSaving] = useState(false)
-  const changed = email !== (data.email ?? '')
+
+  const initialBirth = data.birth_date ? String(data.birth_date).slice(0, 10) : ''
+  const initialGender = data.gender === 'M' || data.gender === 'F' ? data.gender : ''
+  const changed =
+    email !== (data.email ?? '') || birthDate !== initialBirth || gender !== initialGender
+
+  const fieldBoxStyle = {
+    width: '100%',
+    boxSizing: 'border-box' as const,
+    height: 56,
+    padding: '0 16px',
+    border: '1px solid var(--mp-color-border)',
+    borderRadius: 'var(--mp-radius)',
+    fontSize: 18,
+    outline: 'none',
+    background: '#fff',
+  }
 
   const save = async () => {
     setSaving(true)
@@ -63,10 +91,15 @@ function BasicTab({ data, userId }: { data: Record<string, string | null>; userI
       const res = await fetch(`${BASE}/members/${userId}`, {
         method: 'PATCH',
         headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({
+          email: email.trim() || null,
+          birth_date: birthDate.trim() === '' ? null : birthDate.trim().slice(0, 10),
+          gender: gender === '' ? null : gender,
+        }),
       })
       if (!res.ok) throw new Error('failed')
-      toast.success('저장됐습니다.')
+      toast.success('저장되었습니다')
+      onSaved()
     } catch {
       toast.error('저장에 실패했습니다. 다시 시도해 주세요.')
     } finally {
@@ -78,10 +111,32 @@ function BasicTab({ data, userId }: { data: Record<string, string | null>; userI
     <div style={{ padding: 16 }}>
       <ReadOnlyField label='아이디' value={data.username ?? ''} />
       <ReadOnlyField label='이름' value={data.name ?? ''} />
-      <ReadOnlyField label='생년월일' value={data.birth_date ?? ''} />
-      <ReadOnlyField label='성별' value={data.gender === 'M' ? '남' : data.gender === 'F' ? '여' : ''} />
+
+      <div style={{ marginBottom: 20 }}>
+        <label style={{ display: 'block', fontSize: 15, fontWeight: 600, marginBottom: 8 }}>생년월일</label>
+        <input
+          type='date'
+          value={birthDate}
+          onChange={e => setBirthDate(e.target.value)}
+          style={fieldBoxStyle}
+        />
+      </div>
+
+      <div style={{ marginBottom: 20 }}>
+        <label style={{ display: 'block', fontSize: 15, fontWeight: 600, marginBottom: 8 }}>성별</label>
+        <select
+          value={gender}
+          onChange={e => setGender(e.target.value === 'M' ? 'M' : e.target.value === 'F' ? 'F' : '')}
+          style={fieldBoxStyle}
+        >
+          <option value=''>선택안함</option>
+          <option value='M'>남성</option>
+          <option value='F'>여성</option>
+        </select>
+      </div>
+
       <EditableField label='이메일' value={email} type='email' onChange={setEmail} />
-      <BigButton fullWidth onClick={save} disabled={!changed || saving}>
+      <BigButton fullWidth onClick={() => void save()} disabled={!changed || saving}>
         {saving ? '저장 중…' : '저장하기'}
       </BigButton>
     </div>
@@ -110,7 +165,15 @@ function PasswordTab() {
   )
 }
 
-function ContactTab({ data, userId }: { data: Record<string, string | null>; userId: string }) {
+function ContactTab({
+  data,
+  userId,
+  onSaved,
+}: {
+  data: Record<string, string | null>
+  userId: string
+  onSaved: () => void
+}) {
   const [phone, setPhone] = useState(data.phone ?? '')
   const [zip, setZip] = useState(data.zip_code ?? '')
   const [addr1, setAddr1] = useState(data.address1 ?? '')
@@ -140,7 +203,8 @@ function ContactTab({ data, userId }: { data: Record<string, string | null>; use
         body: JSON.stringify({ phone, zip_code: zip, address1: addr1, address2: addr2 }),
       })
       if (!res.ok) throw new Error('failed')
-      toast.success('저장됐습니다.')
+      toast.success('저장되었습니다')
+      onSaved()
     } catch {
       toast.error('저장에 실패했습니다.')
     } finally {
@@ -172,7 +236,11 @@ function ContactTab({ data, userId }: { data: Record<string, string | null>; use
 
 export default function AccountProfileClient() {
   const [tab, setTab] = useState('basic')
-  const { data, loading } = useProfile()
+  const { data, loading, reload } = useProfile()
+
+  const basicKey = data
+    ? `${data.user_id}:${data.birth_date ?? ''}:${data.gender ?? ''}:${data.email ?? ''}`
+    : 'x'
 
   if (loading) {
     return (
@@ -205,9 +273,9 @@ export default function AccountProfileClient() {
           { value: 'contact',  label: '연락처' },
         ]}
       />
-      {tab === 'basic'    && <BasicTab    data={d} userId={data.user_id} />}
+      {tab === 'basic' && <BasicTab key={basicKey} data={d} userId={data.user_id} onSaved={reload} />}
       {tab === 'password' && <PasswordTab />}
-      {tab === 'contact'  && <ContactTab  data={d} userId={data.user_id} />}
+      {tab === 'contact' && <ContactTab data={d} userId={data.user_id} onSaved={reload} />}
     </>
   )
 }

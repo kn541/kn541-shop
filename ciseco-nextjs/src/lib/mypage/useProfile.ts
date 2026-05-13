@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import type { MypageProfile } from './types'
 import { MOCK_PROFILE } from './mocks'
 import { getAuthHeader, isLoggedIn } from './auth'
@@ -11,14 +11,19 @@ export function useProfile() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    if (!BASE) {
+      setData(MOCK_PROFILE)
+      setLoading(false)
+      return
+    }
     if (!isLoggedIn()) {
-      // 로그인 전이면 Mock 데이터로 폴백
       setData(MOCK_PROFILE)
       setLoading(false)
       return
     }
 
+    setLoading(true)
     fetch(`${BASE}/auth/me`, {
       headers: getAuthHeader() as HeadersInit,
     })
@@ -27,7 +32,6 @@ export function useProfile() {
         return r.json()
       })
       .then((res: { status: string; data: Record<string, unknown> }) => {
-        // API 응답을 MypageProfile로 매핑
         const d = res.data
         setData({
           user_id:    String(d.id ?? d.user_id ?? ''),
@@ -36,7 +40,7 @@ export function useProfile() {
           phone:      d.phone   ? String(d.phone)    : null,
           name:       String(d.name ?? d.full_name ?? ''),
           birth_date: d.birth_date ? String(d.birth_date) : null,
-          gender:     d.gender  ? String(d.gender)   : null,
+          gender:     d.gender != null && d.gender !== '' ? String(d.gender) : null,
           zip_code:   d.zip_code  ? String(d.zip_code)   : null,
           address1:   d.address1  ? String(d.address1)   : null,
           address2:   d.address2  ? String(d.address2)   : null,
@@ -53,5 +57,9 @@ export function useProfile() {
       .finally(() => setLoading(false))
   }, [])
 
-  return { data, loading, error }
+  useEffect(() => {
+    void load()
+  }, [load])
+
+  return { data, loading, error, reload: load }
 }
