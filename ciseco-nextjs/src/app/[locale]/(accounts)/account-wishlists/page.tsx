@@ -5,6 +5,7 @@ import { toast } from 'react-hot-toast'
 import { useTranslations } from 'next-intl'
 import { Link } from '@/components/Link'
 import WishlistItemCard, { type WishlistProduct } from '@/components/mypage/WishlistItemCard'
+import { ConfirmDeleteDialog } from '@/components/common/ConfirmDeleteDialog'
 import { mypageFetch, MypageApiError } from '@/lib/mypage/api'
 
 function extractWishlistArray(payload: unknown): unknown[] {
@@ -43,6 +44,7 @@ export default function AccountWishlistsPage() {
   const [items, setItems] = useState<WishlistProduct[]>([])
   const [loading, setLoading] = useState(true)
   const [removingId, setRemovingId] = useState<string | null>(null)
+  const [pendingRemoveProductId, setPendingRemoveProductId] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -113,12 +115,19 @@ export default function AccountWishlistsPage() {
             <WishlistItemCard
               key={item.product_id}
               item={item}
-              onRemove={() => void handleRemove(item.product_id)}
+              onRemove={() => setPendingRemoveProductId(item.product_id)}
               removing={removingId === item.product_id}
             />
           ))}
         </div>
       )}
+      <ConfirmDeleteDialog
+        open={pendingRemoveProductId !== null}
+        onClose={() => setPendingRemoveProductId(null)}
+        onConfirm={async () => {
+          if (pendingRemoveProductId) await handleRemove(pendingRemoveProductId)
+        }}
+      />
     </div>
   )
 }

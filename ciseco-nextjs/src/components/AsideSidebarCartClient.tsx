@@ -11,6 +11,8 @@ import ButtonSecondary from '@/shared/Button/ButtonSecondary'
 import clsx from 'clsx'
 import { useTranslations } from 'next-intl'
 import Image from 'next/image'
+import { useState } from 'react'
+import { ConfirmDeleteDialog } from '@/components/common/ConfirmDeleteDialog'
 
 export default function AsideSidebarCartClient() {
   const t = useTranslations('Cart')
@@ -78,6 +80,7 @@ function CartLine({
   const { removeItem, updateQty } = useCart()
   const { close } = useAside()
   const maxQty = product.stockQty > 0 ? product.stockQty : 99
+  const [removeOpen, setRemoveOpen] = useState(false)
 
   return (
     <div className="flex py-5 last:pb-0">
@@ -122,13 +125,21 @@ function CartLine({
             <button
               type="button"
               className="font-medium text-primary-600 dark:text-primary-500"
-              onClick={() => removeItem(product.id)}
+              onClick={() => setRemoveOpen(true)}
             >
               {removeLabel}
             </button>
           </div>
         </div>
       </div>
+
+      <ConfirmDeleteDialog
+        open={removeOpen}
+        onClose={() => setRemoveOpen(false)}
+        onConfirm={async () => {
+          removeItem(product.id)
+        }}
+      />
     </div>
   )
 }

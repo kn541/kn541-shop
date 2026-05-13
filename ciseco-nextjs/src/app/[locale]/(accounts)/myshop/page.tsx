@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from '@/i18n/navigation'
+import { ConfirmDeleteDialog } from '@/components/common/ConfirmDeleteDialog'
 import ButtonPrimary from '@/shared/Button/ButtonPrimary'
 import ButtonSecondary from '@/shared/Button/ButtonSecondary'
 import {
@@ -92,6 +93,7 @@ export default function MyShopPage() {
   const [findLoading, setFindLoading] = useState(false)
   const [findItems, setFindItems] = useState<FindProductRow[]>([])
   const [addingProductId, setAddingProductId] = useState<string | null>(null)
+  const [pendingRemoveShopProductId, setPendingRemoveShopProductId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchShop()
@@ -211,18 +213,17 @@ export default function MyShopPage() {
     }
   }
 
-  async function removeProduct(productId: string) {
-    if (!confirm('이 상품을 내 쇼핑몰에서 제거할까요?')) return
-    try {
-      await fetch(`${BASE}/myshop/products/${productId}`, {
-        method: 'DELETE',
-        headers: getHeaders(),
-      })
-      toast.success('상품을 제거했습니다')
-      fetchProducts()
-    } catch {
+  async function removeShopProduct(productId: string) {
+    const r = await fetch(`${BASE}/myshop/products/${productId}`, {
+      method: 'DELETE',
+      headers: getHeaders(),
+    })
+    if (!r.ok) {
       toast.error('오류가 발생했습니다')
+      throw new Error('remove failed')
     }
+    toast.success('상품을 제거했습니다')
+    fetchProducts()
   }
 
   async function addProductFromCatalog(productId: string) {
@@ -523,7 +524,7 @@ export default function MyShopPage() {
                     {p.is_active ? '노출 중' : '숨김'}
                   </button>
                   <button
-                    onClick={() => removeProduct(p.product_id)}
+                    onClick={() => setPendingRemoveShopProductId(p.product_id)}
                     className="rounded-lg bg-red-50 px-3 py-1 text-xs font-medium text-red-600 dark:bg-red-900/30"
                   >
                     제거
@@ -578,6 +579,14 @@ export default function MyShopPage() {
           ))}
         </div>
       )}
+
+      <ConfirmDeleteDialog
+        open={pendingRemoveShopProductId !== null}
+        onClose={() => setPendingRemoveShopProductId(null)}
+        onConfirm={async () => {
+          if (pendingRemoveShopProductId) await removeShopProduct(pendingRemoveShopProductId)
+        }}
+      />
     </div>
   )
 }

@@ -7,6 +7,7 @@ import ButtonPrimary from '@/shared/Button/ButtonPrimary'
 import ButtonSecondary from '@/shared/Button/ButtonSecondary'
 import { toast } from 'react-hot-toast'
 import KakaoAddressInput, { type AddressValue } from '@/components/common/KakaoAddressSearch'
+import { ConfirmDeleteDialog } from '@/components/common/ConfirmDeleteDialog'
 import { mypageFetch, MypageApiError } from '@/lib/mypage/api'
 
 const MAX_ADDRESSES = 5
@@ -48,6 +49,7 @@ export default function AddressesPage() {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
   const [address, setAddress] = useState<AddressValue>(EMPTY_ADDR)
+  const [pendingDeleteAddressId, setPendingDeleteAddressId] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -110,7 +112,6 @@ export default function AddressesPage() {
   }
 
   async function deleteAddress(id: string) {
-    if (!confirm('이 배송지를 삭제할까요?')) return
     try {
       await mypageFetch<unknown>(`/my/addresses/${encodeURIComponent(id)}`, { method: 'DELETE' })
       toast.success('배송지가 삭제되었습니다.')
@@ -118,6 +119,7 @@ export default function AddressesPage() {
     } catch (e) {
       const msg = e instanceof MypageApiError ? e.message : '삭제에 실패했습니다.'
       toast.error(msg)
+      throw e
     }
   }
 
@@ -270,7 +272,7 @@ export default function AddressesPage() {
                   )}
                   <button
                     type="button"
-                    onClick={() => void deleteAddress(addr.id)}
+                    onClick={() => setPendingDeleteAddressId(addr.id)}
                     className="rounded-lg bg-red-50 px-3 py-1.5 text-xs text-red-600 hover:bg-red-100 dark:bg-red-900/30"
                   >
                     삭제
@@ -281,6 +283,13 @@ export default function AddressesPage() {
           ))}
         </div>
       )}
+      <ConfirmDeleteDialog
+        open={pendingDeleteAddressId !== null}
+        onClose={() => setPendingDeleteAddressId(null)}
+        onConfirm={async () => {
+          if (pendingDeleteAddressId) await deleteAddress(pendingDeleteAddressId)
+        }}
+      />
     </div>
   )
 }

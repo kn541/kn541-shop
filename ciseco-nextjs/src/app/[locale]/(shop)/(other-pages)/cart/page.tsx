@@ -3,20 +3,27 @@
 // fix: 폐쇄몰 — 비로그인 시 메인 페이지로 이동
 // fix: locale 동적화, NcInputNumber key 추가
 
+import { ConfirmDeleteDialog } from '@/components/common/ConfirmDeleteDialog'
 import NcInputNumber from '@/components/NcInputNumber'
 import ButtonPrimary from '@/shared/Button/ButtonPrimary'
 import { Link } from '@/shared/link'
 import { TrashIcon, ShoppingBagIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline'
 import Image from 'next/image'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useCart, calcItemShipping } from '@/lib/cart-context'
 import toast from 'react-hot-toast'
+
+type PendingCartDelete =
+  | { kind: 'item'; id: string }
+  | { kind: 'selected' }
 
 export default function CartPage() {
   const router   = useRouter()
   const pathname = usePathname()
   const locale   = pathname.split('/')[1] || 'ko'
+  const [pendingDelete, setPendingDelete] = useState<PendingCartDelete | null>(null)
+  const pendingDeleteRef = useRef<PendingCartDelete | null>(null)
   const {
     items, selectedIds,
     removeItem, removeSelected, updateQty,
@@ -93,8 +100,14 @@ export default function CartPage() {
                 전체선택 ({selectedCount}/{items.length})
               </label>
               {selectedCount > 0 && (
-                <button onClick={removeSelected}
-                  className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20">
+                <button
+                  onClick={() => {
+                    const p = { kind: 'selected' as const }
+                    pendingDeleteRef.current = p
+                    setPendingDelete(p)
+                  }}
+                  className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                >
                   <TrashIcon className="h-3.5 w-3.5" />
                   선택삭제 ({selectedCount})
                 </button>
@@ -155,9 +168,15 @@ export default function CartPage() {
                             </p>
                           )}
                         </div>
-                        <button onClick={() => removeItem(item.id)}
+                        <button
+                          onClick={() => {
+                            const p = { kind: 'item' as const, id: item.id }
+                            pendingDeleteRef.current = p
+                            setPendingDelete(p)
+                          }}
                           className="ml-2 shrink-0 rounded-full p-1 text-neutral-400 hover:bg-neutral-100 hover:text-red-500 dark:hover:bg-neutral-800"
-                          aria-label="삭제">
+                          aria-label="삭제"
+                        >
                           <TrashIcon className="h-4 w-4" />
                         </button>
                       </div>
@@ -263,6 +282,19 @@ export default function CartPage() {
           </div>
         </div>
       </main>
+
+      <ConfirmDeleteDialog
+        open={pendingDelete !== null}
+        onClose={() => {
+          pendingDeleteRef.current = null
+          setPendingDelete(null)
+        }}
+        onConfirm={async () => {
+          const p = pendingDeleteRef.current
+          if (p?.kind === 'item') removeItem(p.id)
+          else if (p?.kind === 'selected') removeSelected()
+        }}
+      />
     </div>
   )
 }
