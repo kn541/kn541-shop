@@ -28,7 +28,6 @@ const links = [
   { nameKey: 'referralTree' as const, link: '/tree' },
   { nameKey: 'myshop' as const, link: '/myshop' },
   { nameKey: 'addresses' as const, link: '/addresses' },
-  { nameKey: 'changePassword' as const, link: '/account-password' },
 ] as const
 
 type PageTabVariant = 'tabs' | 'sidebar'

@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 
 /** (accounts) 그룹 경로 — 하단 '마이' 탭 활성 구간 */
 const MYPAGE_SECTION_RE =
-  /^\/(account|orders|points|coupons|commission|dividends|tree|myshop|withdraw|addresses|account-wishlists|account-password|account-billing|upgrade-paid)(\/|$)/
+  /^\/(account|orders|points|coupons|commission|dividends|tree|myshop|withdraw|addresses|account-wishlists|account-billing|upgrade-paid)(\/|$)/
 
 const TABS = [
   { icon: '🏠', label: '홈', hrefSuffix: '' },
