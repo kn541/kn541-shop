@@ -8,6 +8,11 @@ import { useEffect, useState, useCallback } from 'react'
 import { useLocale } from 'next-intl'
 import { useRouter } from '@/i18n/navigation'
 import { toast } from 'react-hot-toast'
+import {
+  KN541_CART_SELECTED_STORAGE_KEY,
+  KN541_CART_STORAGE_KEY,
+  useCart,
+} from '@/lib/cart-context'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL
 
@@ -19,6 +24,7 @@ interface UserInfo {
 export default function HeaderUserActions() {
   const locale = useLocale()
   const router = useRouter()
+  const { clearCart } = useCart()
   const [isMounted, setIsMounted] = useState(false)
   const [user, setUser] = useState<UserInfo | null>(null)
   const [loading, setLoading] = useState(true)
@@ -27,10 +33,13 @@ export default function HeaderUserActions() {
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
     localStorage.removeItem('user_type')
+    localStorage.removeItem(KN541_CART_STORAGE_KEY)
+    localStorage.removeItem(KN541_CART_SELECTED_STORAGE_KEY)
+    clearCart()
     setUser(null)
     toast.success('로그아웃되었습니다')
     router.push('/')
-  }, [router])
+  }, [router, clearCart])
 
   useEffect(() => {
     setIsMounted(true)

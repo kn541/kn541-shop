@@ -1,6 +1,6 @@
 'use client'
 // KN541 장바구니 전역 Context
-// localStorage('kn541_cart')에 저장 → 새로고침 후에도 유지
+// localStorage('kn541_cart' / 'kn541_cart_selected')에 저장 → 새로고침 후에도 유지
 // 구형 데모 데이터(productId 없음) 자동 정리
 
 import {
@@ -49,9 +49,10 @@ interface CartContextValue {
 }
 
 const CartContext = createContext<CartContextValue | null>(null)
-const STORAGE_KEY = 'kn541_cart'
+/** 로그아웃 등에서 동일 키로 제거할 때 사용 */
+export const KN541_CART_STORAGE_KEY = 'kn541_cart'
 /** 체크박스 선택 상태 — 장바구니·결제 간 유지 */
-const SELECTED_KEY = 'kn541_cart_selected'
+export const KN541_CART_SELECTED_STORAGE_KEY = 'kn541_cart_selected'
 
 /** KN541 정식 상품 여부 — productId(UUID)가 있어야 함 */
 function isValidItem(item: any): boolean {
@@ -83,14 +84,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   // localStorage 로드 — 구형 데모 데이터 자동 필터링 + 선택 ID 복원
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY)
+      const raw = localStorage.getItem(KN541_CART_STORAGE_KEY)
       if (raw) {
         const parsed: any[] = JSON.parse(raw)
         const valid = parsed.filter(isValidItem)
         setItems(valid)
         const validIds = new Set(valid.map((i: any) => i.id))
 
-        const selectedRaw = localStorage.getItem(SELECTED_KEY)
+        const selectedRaw = localStorage.getItem(KN541_CART_SELECTED_STORAGE_KEY)
         if (selectedRaw) {
           try {
             const savedIds: string[] = JSON.parse(selectedRaw)
@@ -106,12 +107,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setHydrated(true)
   }, [])
 
-  // localStorage 저장 — 수량·선택 동기화
+  // localStorage 저장 — 수량·선택 동기화 (빈 장바구니는 키 제거)
   useEffect(() => {
     if (!hydrated) return
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
-      localStorage.setItem(SELECTED_KEY, JSON.stringify([...selectedIds]))
+      if (items.length === 0) {
+        localStorage.removeItem(KN541_CART_STORAGE_KEY)
+        localStorage.removeItem(KN541_CART_SELECTED_STORAGE_KEY)
+      } else {
+        localStorage.setItem(KN541_CART_STORAGE_KEY, JSON.stringify(items))
+        localStorage.setItem(KN541_CART_SELECTED_STORAGE_KEY, JSON.stringify([...selectedIds]))
+      }
     } catch {}
   }, [items, selectedIds, hydrated])
 
