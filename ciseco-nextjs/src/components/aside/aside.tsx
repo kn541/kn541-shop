@@ -23,6 +23,8 @@ export function Aside({
   type,
   contentMaxWidthClassName = 'max-w-lg',
   showHeading = true,
+  /** 제목 없이도 닫기 버튼만 표시 (예: 상품 퀵뷰) */
+  showCloseButton,
 }: {
   heading?: string
   logoOnHeading?: boolean
@@ -31,6 +33,7 @@ export function Aside({
   type: AsideType
   contentMaxWidthClassName?: string
   showHeading?: boolean
+  showCloseButton?: boolean
 }) {
   const { type: activeType, close } = useAside()
   const open = type === activeType
@@ -39,21 +42,37 @@ export function Aside({
 
   const hasHeading = !!heading || logoOnHeading
 
+  const closeButtonEl = (
+    <button
+      type="button"
+      className="group flex size-10 min-h-8 min-w-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-neutral-700 hover:bg-neutral-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 dark:text-neutral-200 dark:hover:bg-neutral-700 dark:focus-visible:ring-white"
+      onClick={onClose}
+      aria-label="닫기"
+    >
+      <HugeiconsIcon
+        className="transition-transform duration-200 group-hover:rotate-90"
+        icon={Cancel01Icon}
+        size={24}
+        strokeWidth={1}
+      />
+    </button>
+  )
+
   return (
-    <Dialog as="div" className="relative z-50" onClose={onClose} open={open}>
+    <Dialog as="div" className="relative z-[200]" onClose={onClose} open={open}>
       <DialogBackdrop
         transition
-        className="fixed inset-0 bg-neutral-900/50 duration-300 ease-out data-closed:opacity-0"
+        className="fixed inset-0 z-[200] bg-neutral-900/50 duration-300 ease-out data-closed:opacity-0"
       />
 
-      <div className="fixed inset-0">
+      <div className="fixed inset-0 z-[200]">
         <div className="absolute inset-0 overflow-hidden">
           <div className={clsx('fixed inset-y-0 flex max-w-full', openFrom === 'right' && 'right-0')}>
             <DialogPanel
               transition
               className={clsx(
                 contentMaxWidthClassName,
-                'h-screen w-screen translate-x-0 overflow-hidden bg-white text-start align-middle shadow-xl transition duration-200 ease-in-out dark:bg-neutral-800',
+                'pointer-events-auto h-screen w-screen translate-x-0 overflow-hidden bg-white text-start align-middle shadow-xl transition duration-200 ease-in-out dark:bg-neutral-800',
                 openFrom === 'left' && 'data-closed:-translate-x-20 data-closed:opacity-0',
                 openFrom === 'right' && 'data-closed:translate-x-20 data-closed:opacity-0'
               )}
@@ -61,8 +80,8 @@ export function Aside({
               <div className="flex h-full flex-col px-4 md:px-8">
                 {showHeading ? (
                   <header
-                    className={`flex h-16 flex-shrink-0 items-center border-b border-neutral-900/10 md:h-20 ${
-                      hasHeading ? 'justify-between' : 'justify-end'
+                    className={`sticky top-0 z-[210] flex flex-shrink-0 items-center border-b border-neutral-900/10 bg-white dark:bg-neutral-800 ${
+                      hasHeading ? 'h-16 justify-between md:h-20' : 'h-14 justify-end md:h-16'
                     }`}
                   >
                     {hasHeading && (
@@ -76,14 +95,12 @@ export function Aside({
                       </>
                     )}
 
-                    <button type="button" className="group -m-4 cursor-pointer p-4" onClick={onClose}>
-                      <HugeiconsIcon
-                        className="transition-transform duration-200 group-hover:rotate-90"
-                        icon={Cancel01Icon}
-                        size={24}
-                        strokeWidth={1}
-                      />
-                    </button>
+                    {closeButtonEl}
+                  </header>
+                ) : showCloseButton ? (
+                  <header className="sticky top-0 z-[210] flex h-14 flex-shrink-0 items-center justify-end border-b border-neutral-900/10 bg-white pt-2 pb-1 dark:bg-neutral-800 md:h-16 md:pt-2">
+                    <DialogTitle className="sr-only">상품 빠른보기</DialogTitle>
+                    {closeButtonEl}
                   </header>
                 ) : null}
                 <div className="flex-1 overflow-hidden">{children}</div>
