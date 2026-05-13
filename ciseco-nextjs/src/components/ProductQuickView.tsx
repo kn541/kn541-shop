@@ -113,7 +113,7 @@ const ProductQuickView: FC<ProductQuickViewProps> = ({ className }) => {
   const isFreeShipping = scType === 1 || shippingFee === 0
 
   const stockQty = Number(product.stockQty ?? 0)
-  const maxQty = Math.max(1, Math.min(99, stockQty || 1))
+  const maxQty = stockQty > 0 ? stockQty : 1
 
   // KN541 옵션 — {id, option_name, add_price, stock_qty} 형태
   const kn541Options: Array<{ id: string; option_name: string; add_price: number; stock_qty: number }> =

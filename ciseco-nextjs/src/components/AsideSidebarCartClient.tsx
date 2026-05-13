@@ -5,13 +5,12 @@ import { Link } from '@/components/Link'
 import type { CartItem } from '@/lib/cart-context'
 import { formatPrice } from '@/lib/formatPrice'
 import { useCart } from '@/lib/cart-context'
+import NcInputNumber from '@/components/NcInputNumber'
 import ButtonPrimary from '@/shared/Button/ButtonPrimary'
 import ButtonSecondary from '@/shared/Button/ButtonSecondary'
-import { ChevronDownIcon } from '@heroicons/react/20/solid'
 import clsx from 'clsx'
 import { useTranslations } from 'next-intl'
 import Image from 'next/image'
-import toast from 'react-hot-toast'
 
 export default function AsideSidebarCartClient() {
   const t = useTranslations('Cart')
@@ -78,8 +77,7 @@ function CartLine({
 }) {
   const { removeItem, updateQty } = useCart()
   const { close } = useAside()
-  const maxQ = product.stockQty > 0 ? Math.min(product.stockQty, 99) : 99
-  const opts = Array.from({ length: maxQ }, (_, i) => i + 1)
+  const maxQty = product.stockQty > 0 ? product.stockQty : 99
 
   return (
     <div className="flex py-5 last:pb-0">
@@ -108,32 +106,15 @@ function CartLine({
             </p>
           </div>
         </div>
-        <div className="flex flex-1 items-end justify-between text-sm">
-          <div className="inline-grid w-full max-w-16 grid-cols-1">
-            <select
-              name={`quantity-${product.id}`}
+        <div className="flex flex-1 items-end justify-between gap-2 text-sm">
+          <div className="max-w-[11rem] shrink-0 rounded-full bg-neutral-100 py-1 pe-1 ps-1 dark:bg-neutral-800">
+            <NcInputNumber
+              className="!gap-0"
+              defaultValue={Math.min(Number(product.quantity) || 1, maxQty)}
+              min={1}
+              max={maxQty}
               aria-label={`${qtyLabel}, ${product.name}`}
-              className="col-start-1 row-start-1 appearance-none rounded-md py-0.5 ps-3 pe-8 text-xs/6 outline-1 -outline-offset-1 outline-neutral-900/10 focus:outline-1 dark:outline-white/15"
-              value={Math.min(product.quantity, maxQ)}
-              onChange={(e) => {
-                const q = Number(e.target.value)
-                if (q < 1) return
-                if (product.stockQty > 0 && q > product.stockQty) {
-                  toast.error('재고 수량을 초과할 수 없습니다.')
-                  return
-                }
-                updateQty(product.id, q)
-              }}
-            >
-              {opts.map((n) => (
-                <option key={n} value={n}>
-                  {n}
-                </option>
-              ))}
-            </select>
-            <ChevronDownIcon
-              aria-hidden="true"
-              className="pointer-events-none col-start-1 row-start-1 me-2 size-4 self-center justify-self-end text-neutral-500 dark:text-neutral-400"
+              onChange={(q) => updateQty(product.id, q)}
             />
           </div>
 

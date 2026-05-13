@@ -70,7 +70,7 @@ export default function ProductActions({
   const [colorSel, setColorSel] = useState('')
   const [sizeSel, setSizeSel] = useState('')
 
-  const maxQty = Math.max(1, Math.min(99, stock || 1))
+  const maxQty = stock > 0 ? stock : 1
 
   const blockReason = useMemo(
     () => validateCartAction({ productStatus, stock, qty, hasColorOption, hasSizeOption, colorSelected: colorSel, sizeSelected: sizeSel, listingStatus, isSoldout }),
