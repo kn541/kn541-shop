@@ -173,14 +173,11 @@ export default async function Page({
 
         <div className="w-full lg:w-[45%]">
           <div className="sticky top-8 flex flex-col gap-4">
-            {(p.vendor || p.supplierName) && (
+            {p.vendor ? (
               <div className="flex items-center gap-2 flex-wrap">
-                {p.vendor && <span className="text-sm font-semibold uppercase tracking-widest text-primary-600">{p.vendor}</span>}
-                {p.supplierName && p.supplierName !== p.vendor && (
-                  <span className="text-xs text-neutral-400 border border-neutral-200 rounded px-2 py-0.5">{p.supplierName}</span>
-                )}
+                <span className="text-sm font-semibold uppercase tracking-widest text-primary-600">{p.vendor}</span>
               </div>
-            )}
+            ) : null}
 
             <h1 className="text-2xl font-bold leading-snug sm:text-3xl">{title}</h1>
 

@@ -53,7 +53,9 @@ export function adaptProduct(p: Product): TProductItem {
     allImages = [thumbImg]
   }
 
-  const vendor = p.brand || p.supplier_name || p.category_name_1 || 'KN541'
+  // Shop: 소비자에게는 브랜드만 노출 — supplier_name은 vendor에 넣지 않음 (공급사 숨김)
+  const brandOnly = (p.brand != null && String(p.brand).trim()) ? String(p.brand).trim() : ''
+  const vendor = brandOnly
   const shippingFee = p.shipping_fee ?? 0
   const freeOver = p.free_shipping_over ?? null
   const taxLabel = p.tax_type === 1 ? '비과세' : p.tax_type === 2 ? '면세' : '과세 (10%)'

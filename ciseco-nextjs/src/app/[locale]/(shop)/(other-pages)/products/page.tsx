@@ -77,7 +77,7 @@ function mapProduct(p: any) {
     title: p.product_name,
     price: p.sale_price,
     createdAt: p.created_at,
-    vendor: p.brand || p.supplier_name || '',
+    vendor: p.brand != null && String(p.brand).trim() ? String(p.brand).trim() : '',
     featuredImage: p.thumbnail_url
       ? { src: p.thumbnail_url, width: 600, height: 600, alt: p.product_name }
       : { src: '/placeholder-product.jpg', width: 600, height: 600, alt: p.product_name },
