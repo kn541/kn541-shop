@@ -4,24 +4,25 @@ import { useState } from 'react'
 import BigTabs from '@/components/mypage/BigTabs'
 import OrderCard from '@/components/mypage/OrderCard'
 import { useOrders } from '@/lib/mypage/useOrders'
-import type { OrderStatus } from '@/lib/mypage/types'
+import { useOrderTabBadges } from '@/lib/mypage/useOrderTabBadges'
 import { useLocale, useTranslations } from 'next-intl'
 
 type TabKey = 'ALL' | 'SHIPPING' | 'DELIVERED' | 'CANCELED'
 
-const TAB_TO_STATUS: Record<TabKey, OrderStatus | 'ALL'> = {
+/** 백엔드 /mypage/orders 의 status 파라미터와 동일 (마이페이지 주문 API) */
+const TAB_TO_API_STATUS: Record<TabKey, string | 'ALL'> = {
   ALL: 'ALL',
-  SHIPPING: 'SHIPPING',
+  SHIPPING: 'SHIPPED',
   DELIVERED: 'DELIVERED',
-  CANCELED: 'CANCELED',
+  CANCELED: 'CANCELLED',
 }
 
 export default function OrdersPage() {
   const locale = useLocale()
   const t = useTranslations('Account')
   const [tab, setTab] = useState<TabKey>('ALL')
-  const { data, loading } = useOrders({ status: TAB_TO_STATUS[tab] })
-  const counts = data?.status_counts
+  const { data, loading } = useOrders({ status: TAB_TO_API_STATUS[tab] })
+  const { badges: tabBadges, loading: badgesLoading } = useOrderTabBadges(tab)
 
   return (
     <div className="flex flex-col gap-y-8">
@@ -36,10 +37,26 @@ export default function OrdersPage() {
         value={tab}
         onChange={v => setTab(v as TabKey)}
         tabs={[
-          { value: 'ALL',       label: '전체',       badge: counts?.ALL ?? 0 },
-          { value: 'SHIPPING',  label: '배송중',     badge: counts?.SHIPPING ?? 0 },
-          { value: 'DELIVERED', label: '배송완료' },
-          { value: 'CANCELED',  label: '취소·반품' },
+          {
+            value: 'ALL',
+            label: '전체',
+            badge: badgesLoading ? undefined : tabBadges?.ALL ?? 0,
+          },
+          {
+            value: 'SHIPPING',
+            label: '배송중',
+            badge: badgesLoading ? undefined : tabBadges?.SHIPPING ?? 0,
+          },
+          {
+            value: 'DELIVERED',
+            label: '배송완료',
+            badge: badgesLoading ? undefined : tabBadges?.DELIVERED ?? 0,
+          },
+          {
+            value: 'CANCELED',
+            label: '취소·반품',
+            badge: badgesLoading ? undefined : tabBadges?.CANCELED ?? 0,
+          },
         ]}
       />
 

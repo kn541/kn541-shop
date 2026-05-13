@@ -1,25 +1,30 @@
 'use client'
 import { useEffect, useState } from 'react'
-import type { OrderListResponse, OrderStatus } from './types'
+import type { OrderListResponse } from './types'
 import { MOCK_ORDER_RESPONSE } from './mocks'
 import { mypageFetch, MypageApiError } from './api'
+import { normalizeOrderListResponse } from './orderListAdapter'
 
 interface Params {
-  status?: OrderStatus | 'ALL'
+  /** API status 쿼리 (예: SHIPPED, CANCELLED) — 백엔드와 동일 문자열 */
+  status?: string | 'ALL'
   page?: number
   size?: number
 }
 
-function mockData(status: OrderStatus | 'ALL', page: number, size: number): OrderListResponse {
-  const filtered =
-    status === 'ALL' || status === 'CANCELED'
-      ? status === 'ALL'
-        ? MOCK_ORDER_RESPONSE.items
-        : MOCK_ORDER_RESPONSE.items.filter(
-            o =>
-              o.status === 'CANCELED' || o.status === 'RETURNED' || o.status === 'EXCHANGED'
-          )
-      : MOCK_ORDER_RESPONSE.items.filter(o => o.status === status)
+function mockData(filterStatus: string | 'ALL', page: number, size: number): OrderListResponse {
+  let filtered: typeof MOCK_ORDER_RESPONSE.items
+  if (filterStatus === 'ALL') {
+    filtered = MOCK_ORDER_RESPONSE.items
+  } else if (filterStatus === 'CANCELED' || filterStatus === 'CANCELLED') {
+    filtered = MOCK_ORDER_RESPONSE.items.filter(
+      (o) => o.status === 'CANCELED' || o.status === 'RETURNED' || o.status === 'EXCHANGED'
+    )
+  } else if (filterStatus === 'SHIPPING' || filterStatus === 'SHIPPED') {
+    filtered = MOCK_ORDER_RESPONSE.items.filter((o) => o.status === 'SHIPPING')
+  } else {
+    filtered = MOCK_ORDER_RESPONSE.items.filter((o) => o.status === filterStatus)
+  }
 
   return {
     ...MOCK_ORDER_RESPONSE,
@@ -42,9 +47,9 @@ export function useOrders({ status = 'ALL', page = 1, size = 20 }: Params = {}) 
       try {
         const qs = new URLSearchParams({ page: String(page), size: String(size) })
         if (status !== 'ALL') qs.set('status', status)
-        const res = await mypageFetch<OrderListResponse>(`/mypage/orders?${qs}`)
+        const raw = await mypageFetch<unknown>(`/mypage/orders?${qs}`)
         if (!cancelled) {
-          setData(res)
+          setData(normalizeOrderListResponse(raw))
           setLoading(false)
         }
       } catch (e) {
