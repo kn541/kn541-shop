@@ -7,7 +7,7 @@
 
 import { useState } from 'react'
 import { toast } from 'react-hot-toast'
-import { checkPasswordPolicy, isPasswordValid } from '@/lib/passwordPolicy'
+import { checkPasswordPolicy, isPasswordValid, passwordContainsHangul, stripHangulFromPassword } from '@/lib/passwordPolicy'
 import { mypageFetch, MypageApiError } from '@/lib/mypage/api'
 
 const apiBase = process.env.NEXT_PUBLIC_API_URL
@@ -61,9 +61,9 @@ function PolicyChecklist({ password }: { password: string }) {
   const c = checkPasswordPolicy(password)
   const rows = [
     { ok: c.minLength, label: '8자 이상' },
-    { ok: c.hasNumber, label: '숫자 포함' },
-    { ok: c.hasSpecial, label: '특수문자 포함' },
+    { ok: c.hasNumberOrSpecial, label: '숫자 또는 특수문자 포함' },
     { ok: c.notAllSame, label: '동일 문자만 반복 불가' },
+    { ok: c.noHangul, label: '한글 사용 불가' },
   ]
   return (
     <ul className="mt-2 space-y-1 text-xs sm:text-sm">
@@ -92,6 +92,8 @@ export function PasswordChangePanel(props: PasswordChangePanelProps) {
   const [showCf, setShowCf] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [serverErr, setServerErr] = useState('')
+  const [newPwHangulMsg, setNewPwHangulMsg] = useState('')
+  const [cfPwHangulMsg, setCfPwHangulMsg] = useState('')
 
   const isForced = props.variant === 'forced'
   const matchOk = newPassword.length > 0 && confirm.length > 0 && newPassword === confirm
@@ -101,6 +103,8 @@ export function PasswordChangePanel(props: PasswordChangePanelProps) {
     policyOk &&
     matchOk &&
     !submitting &&
+    !newPwHangulMsg &&
+    !cfPwHangulMsg &&
     (isForced ? Boolean(props.tempToken?.trim()) : currentPassword.length > 0)
 
   const inputClass =
@@ -139,6 +143,8 @@ export function PasswordChangePanel(props: PasswordChangePanelProps) {
           return
         }
         toast.success(json.data?.message ?? '비밀번호가 변경되었습니다.')
+        setNewPwHangulMsg('')
+        setCfPwHangulMsg('')
         props.onComplete({
           access_token: json.data.access_token,
           refresh_token: json.data.refresh_token,
@@ -158,6 +164,8 @@ export function PasswordChangePanel(props: PasswordChangePanelProps) {
       setCurrentPassword('')
       setNewPassword('')
       setConfirm('')
+      setNewPwHangulMsg('')
+      setCfPwHangulMsg('')
       props.onSuccess?.()
     } catch (err) {
       const msg =
@@ -219,13 +227,24 @@ export function PasswordChangePanel(props: PasswordChangePanelProps) {
         <label className="mb-1.5 block text-xs font-medium text-neutral-700 dark:text-neutral-300">
           새 비밀번호
         </label>
+        <p className="mb-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+          8자 이상, 숫자 또는 특수문자 포함 (한글 사용 불가)
+        </p>
         <div className="relative">
           <input
             type={showNew ? 'text' : 'password'}
             autoComplete="new-password"
             value={newPassword}
-            onChange={e => setNewPassword(e.target.value)}
-            className={`${inputClass} pr-11`}
+            onInput={e => {
+              const raw = e.currentTarget.value
+              if (passwordContainsHangul(raw)) {
+                setNewPwHangulMsg('비밀번호에 한글을 사용할 수 없습니다')
+              } else {
+                setNewPwHangulMsg('')
+              }
+              setNewPassword(stripHangulFromPassword(raw))
+            }}
+            className={`${inputClass} pr-11 ${newPwHangulMsg ? 'border-red-500 ring-1 ring-red-500/30' : ''}`}
           />
           <button
             type="button"
@@ -236,6 +255,9 @@ export function PasswordChangePanel(props: PasswordChangePanelProps) {
             <EyeIcon open={showNew} />
           </button>
         </div>
+        {newPwHangulMsg ? (
+          <p className="mt-1 text-xs font-medium text-red-500">{newPwHangulMsg}</p>
+        ) : null}
         {newPassword.length > 0 ? <PolicyChecklist password={newPassword} /> : null}
       </div>
 
@@ -248,8 +270,16 @@ export function PasswordChangePanel(props: PasswordChangePanelProps) {
             type={showCf ? 'text' : 'password'}
             autoComplete="new-password"
             value={confirm}
-            onChange={e => setConfirm(e.target.value)}
-            className={`${inputClass} pr-11 ${matchBad ? 'border-red-500 ring-1 ring-red-500/30' : ''}`}
+            onInput={e => {
+              const raw = e.currentTarget.value
+              if (passwordContainsHangul(raw)) {
+                setCfPwHangulMsg('비밀번호에 한글을 사용할 수 없습니다')
+              } else {
+                setCfPwHangulMsg('')
+              }
+              setConfirm(stripHangulFromPassword(raw))
+            }}
+            className={`${inputClass} pr-11 ${matchBad || cfPwHangulMsg ? 'border-red-500 ring-1 ring-red-500/30' : ''}`}
           />
           <button
             type="button"
@@ -260,6 +290,9 @@ export function PasswordChangePanel(props: PasswordChangePanelProps) {
             <EyeIcon open={showCf} />
           </button>
         </div>
+        {cfPwHangulMsg ? (
+          <p className="mt-1 text-xs font-medium text-red-500">{cfPwHangulMsg}</p>
+        ) : null}
         {confirm.length > 0 ? (
           <p
             className={`mt-1 text-xs font-medium ${matchOk ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}`}

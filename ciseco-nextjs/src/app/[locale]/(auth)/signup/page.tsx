@@ -5,6 +5,8 @@
 import { useState, useTransition, useCallback, useRef } from 'react'
 import Image from 'next/image'
 import { useRouter } from '@/i18n/navigation'
+import { checkPasswordPolicy, isPasswordValid, passwordContainsHangul, stripHangulFromPassword } from '@/lib/passwordPolicy'
+import { HANGUL_CHARS_RE, USERNAME_OK_RE, isUsernameFormatValid, sanitizeUsernameInput } from '@/lib/usernamePolicy'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL
 const LOGO_URL = 'https://ghtkropmnrelkxivzpim.supabase.co/storage/v1/object/public/brands/white_logo.png'
@@ -43,6 +45,26 @@ function XIcon() {
   )
 }
 
+function SignupPasswordHints({ password }: { password: string }) {
+  if (!password.length) return null
+  const c = checkPasswordPolicy(password)
+  const rows = [
+    { ok: c.minLength, label: '8자 이상' },
+    { ok: c.hasNumberOrSpecial, label: '숫자 또는 특수문자 포함' },
+    { ok: c.notAllSame, label: '동일 문자만 반복 불가' },
+    { ok: c.noHangul, label: '한글 사용 불가' },
+  ]
+  return (
+    <ul className="mt-1.5 space-y-0.5 text-xs">
+      {rows.map(({ ok, label }) => (
+        <li key={label} className={ok ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-500 dark:text-neutral-400'}>
+          {ok ? '✓' : '○'} {label}
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 const inputCls = "w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 px-4 py-3 text-sm text-neutral-900 dark:text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
 const labelCls = "block text-xs font-semibold text-neutral-500 dark:text-neutral-400 mb-1.5 uppercase tracking-wide"
 
@@ -67,6 +89,10 @@ export default function SignupPage() {
   const [bankName, setBankName] = useState('')
   const [accountNo, setAccountNo] = useState('')
   const [accountHolder, setAccountHolder] = useState('')
+
+  const [usernameFormatErr, setUsernameFormatErr] = useState('')
+  const [passwordHangulErr, setPasswordHangulErr] = useState('')
+  const [confirmHangulErr, setConfirmHangulErr] = useState('')
 
   const [usernameDup, setUsernameDup] = useState<DupState>('idle')
   const [emailDup, setEmailDup] = useState<DupState>('idle')
@@ -94,11 +120,28 @@ export default function SignupPage() {
 
   const passwordMatch = password && passwordConfirm && password === passwordConfirm
 
+  const updateUsernameField = useCallback(
+    (raw: string) => {
+      const v = sanitizeUsernameInput(raw)
+      if (HANGUL_CHARS_RE.test(raw) || raw !== v) {
+        setUsernameFormatErr('영문, 숫자만 입력 가능합니다')
+      } else if (v.length > 0 && !isUsernameFormatValid(v)) {
+        setUsernameFormatErr('아이디는 4~20자 영문, 숫자만 사용할 수 있습니다')
+      } else {
+        setUsernameFormatErr('')
+      }
+      setUsername(v)
+      checkDuplicate('username', v, setUsernameDup)
+    },
+    [checkDuplicate]
+  )
+
   const validate = () => {
     if (!name.trim()) return '이름을 입력해주세요.'
     if (!username.trim() && !email.trim() && !phone.trim()) return '아이디, 이메일, 휴대폰 중 하나는 필수입니다.'
+    if (username.trim() && !USERNAME_OK_RE.test(username.trim())) return '아이디는 4~20자 영문, 숫자만 사용할 수 있습니다.'
     if (!password) return '비밀번호를 입력해주세요.'
-    if (password.length < 8) return '비밀번호는 8자 이상이어야 합니다.'
+    if (!isPasswordValid(password)) return '비밀번호 요건을 확인해 주세요. (8자 이상, 숫자 또는 특수문자 포함, 한글 불가)'
     if (password !== passwordConfirm) return '비밀번호가 일치하지 않습니다.'
     if (usernameDup === 'dup') return '이미 사용 중인 아이디입니다.'
     if (emailDup === 'dup') return '이미 사용 중인 이메일입니다.'
@@ -257,26 +300,63 @@ export default function SignupPage() {
 
             <div>
               <label className={labelCls}>아이디</label>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1.5">4~20자 영문, 숫자만 입력 가능합니다</p>
               <div className="flex items-center gap-2">
-                <input type="text" value={username}
-                  onChange={e => { setUsername(e.target.value); checkDuplicate('username', e.target.value, setUsernameDup) }}
-                  placeholder="영문, 숫자 조합 (4~20자)" className={inputCls} />
+                <input
+                  type="text"
+                  value={username}
+                  onInput={e => updateUsernameField(e.currentTarget.value)}
+                  placeholder="영문, 숫자 (4~20자)"
+                  className={`${inputCls} ${usernameFormatErr ? 'border-red-500 ring-1 ring-red-500/30' : ''}`}
+                />
                 <DupIcon state={usernameDup} />
               </div>
-              <DupMsg state={usernameDup} okMsg="사용 가능한 아이디입니다." dupMsg="이미 사용 중인 아이디입니다." />
+              {usernameFormatErr ? (
+                <p className="text-xs text-red-500 mt-1">{usernameFormatErr}</p>
+              ) : (
+                <DupMsg state={usernameDup} okMsg="사용 가능한 아이디입니다." dupMsg="이미 사용 중인 아이디입니다." />
+              )}
             </div>
 
             <div>
               <label className={labelCls}>비밀번호 <span className="text-red-400">*</span></label>
-              <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="8자 이상 입력해주세요" className={inputCls} />
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1.5">
+                8자 이상, 숫자 또는 특수문자 포함 (한글 사용 불가)
+              </p>
+              <input
+                type="password"
+                value={password}
+                onInput={e => {
+                  const raw = e.currentTarget.value
+                  if (passwordContainsHangul(raw)) setPasswordHangulErr('비밀번호에 한글을 사용할 수 없습니다')
+                  else setPasswordHangulErr('')
+                  setPassword(stripHangulFromPassword(raw))
+                }}
+                placeholder="비밀번호"
+                className={`${inputCls} ${passwordHangulErr ? 'border-red-500 ring-1 ring-red-500/30' : ''}`}
+              />
+              {passwordHangulErr ? <p className="text-xs text-red-500 mt-1">{passwordHangulErr}</p> : null}
+              <SignupPasswordHints password={password} />
             </div>
 
             <div>
               <label className={labelCls}>비밀번호 확인 <span className="text-red-400">*</span></label>
               <div className="flex items-center gap-2">
-                <input type="password" value={passwordConfirm} onChange={e => setPasswordConfirm(e.target.value)} placeholder="비밀번호를 다시 입력해주세요" className={inputCls} />
+                <input
+                  type="password"
+                  value={passwordConfirm}
+                  onInput={e => {
+                    const raw = e.currentTarget.value
+                    if (passwordContainsHangul(raw)) setConfirmHangulErr('비밀번호에 한글을 사용할 수 없습니다')
+                    else setConfirmHangulErr('')
+                    setPasswordConfirm(stripHangulFromPassword(raw))
+                  }}
+                  placeholder="비밀번호를 다시 입력해주세요"
+                  className={`${inputCls} ${confirmHangulErr ? 'border-red-500 ring-1 ring-red-500/30' : ''}`}
+                />
                 {passwordConfirm && (passwordMatch ? <CheckIcon /> : <XIcon />)}
               </div>
+              {confirmHangulErr ? <p className="text-xs text-red-500 mt-1">{confirmHangulErr}</p> : null}
               {passwordConfirm && !passwordMatch && <p className="text-xs text-red-500 mt-1">비밀번호가 일치하지 않습니다.</p>}
             </div>
 
