@@ -15,7 +15,7 @@
     "viewAll": "View all",
     "addToCart": "Add to cart",
     "buyNow": "Buy now",
-    "outOfStock": "Out of stock",
+    "outOfStock": "Sold Out",
     "sale": "Sale",
     "new": "New",
     "continue": "Continue"
@@ -101,7 +101,8 @@
     "color": "Color",
     "quantity": "Quantity",
     "inStock": "In stock",
-    "outOfStock": "Out of stock"
+    "outOfStock": "Sold Out",
+    "soldOutNotice": "This product is sold out."
   },
   "Cart": {
     "title": "Shopping Cart",

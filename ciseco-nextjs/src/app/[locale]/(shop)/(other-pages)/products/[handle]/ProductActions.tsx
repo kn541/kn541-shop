@@ -149,7 +149,13 @@ export default function ProductActions({
       <div className="flex items-center gap-3">
         <span className="w-20 text-sm font-medium text-neutral-600 dark:text-neutral-400">수량</span>
         <div className="flex items-center justify-center rounded-full bg-neutral-100 px-2 py-1.5 dark:bg-neutral-800">
-          <NcInputNumber defaultValue={1} min={1} max={maxQty} onChange={(val) => setQty(val)} />
+          <NcInputNumber
+            defaultValue={1}
+            min={1}
+            max={maxQty}
+            disabled={isSoldout || stock <= 0}
+            onChange={(val) => setQty(val)}
+          />
         </div>
         {stock > 0 && (
           <span className="text-xs text-neutral-500 dark:text-neutral-400">

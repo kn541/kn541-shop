@@ -101,7 +101,8 @@
     "color": "색상",
     "quantity": "수량",
     "inStock": "재고 있음",
-    "outOfStock": "품절"
+    "outOfStock": "품절",
+    "soldOutNotice": "품절된 상품입니다."
   },
   "Cart": {
     "title": "장바구니",

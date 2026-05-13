@@ -44,6 +44,7 @@ export function MainProductCard(props: MainProductCardProps) {
   const { addItem } = useCart()
   const previewCtx = useMainCartPreviewOptional()
   const tCart = useTranslations('Cart')
+  const tProduct = useTranslations('Product')
   const compact = props.compact ?? false
   const [liked, setLiked] = useState(false)
   const [added, setAdded] = useState(false)
@@ -162,7 +163,7 @@ export function MainProductCard(props: MainProductCardProps) {
     e.preventDefault()
     e.stopPropagation()
     if (soldOut) {
-      toast.error('품절된 상품입니다.')
+      toast.error(tProduct('soldOutNotice'))
       return
     }
     if (openPreview) {
@@ -177,10 +178,6 @@ export function MainProductCard(props: MainProductCardProps) {
     const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
     if (!token) {
       router.push(`/${locale}`)
-      return
-    }
-    if (soldOut) {
-      toast.error('품절된 상품입니다.')
       return
     }
     if (!pid) {
@@ -220,11 +217,17 @@ export function MainProductCard(props: MainProductCardProps) {
     <article className={clsx('product-card shrink-0 text-kn541-black', compact && 'compact', props.className)}>
       <div className="thumb relative h-[320px] w-full overflow-hidden rounded-[10px] bg-[#e8e8e8]">
         <Link href={`/products/${pid}`} className="absolute inset-0 block">
-          <Image src={img} alt="" fill className="object-cover" sizes="280px" />
+          <Image
+            src={img}
+            alt=""
+            fill
+            className={clsx('object-cover', soldOut && 'grayscale')}
+            sizes="280px"
+          />
         </Link>
         {soldOut && (
-          <div className="pointer-events-none absolute inset-0 z-[2] flex items-center justify-center rounded-[10px] bg-black/45">
-            <span className="rounded-full bg-white/95 px-3 py-1 text-xs font-bold text-neutral-900">품절</span>
+          <div className="pointer-events-none absolute inset-0 z-[2] flex items-center justify-center rounded-[10px] bg-black/50">
+            <span className="text-sm font-bold tracking-wide text-white">{tProduct('outOfStock')}</span>
           </div>
         )}
         {(product.is_recommended || product.product_type === '002') && (
@@ -261,7 +264,7 @@ export function MainProductCard(props: MainProductCardProps) {
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={CART_ICON} alt="" width={18} height={17} className="h-[17px] w-[18px]" />
-        {soldOut ? '품절' : '담기'}
+        {soldOut ? tProduct('outOfStock') : '담기'}
       </button>
       <h3 className="mt-[17px] mb-[11px] min-h-[38px] overflow-hidden text-[16px] font-light leading-normal tracking-[-0.32px] text-kn541-black">
         <Link href={`/products/${pid}`}>

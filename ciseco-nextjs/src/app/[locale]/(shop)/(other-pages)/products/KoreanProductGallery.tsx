@@ -9,7 +9,25 @@ import { useState } from 'react'
  * - 모바일      → 메인 이미지 상단 + 하단 가로 스크롤 썸네일
  * - 외부 도메인(dbimg.co.kr 등) 지원: next/image 대신 <img> 사용
  */
-export default function KoreanProductGallery({ images }: { images: string[] }) {
+function SoldOutOverlay({ label, className }: { label: string; className?: string }) {
+  return (
+    <div
+      className={`pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-black/50 ${className ?? ''}`}
+    >
+      <span className="text-sm font-bold tracking-wide text-white">{label}</span>
+    </div>
+  )
+}
+
+export default function KoreanProductGallery({
+  images,
+  soldOut = false,
+  soldOutLabel = '',
+}: {
+  images: string[]
+  soldOut?: boolean
+  soldOutLabel?: string
+}) {
   // ★ Hook은 항상 최상단에서 호출 (조건부 return 이전)
   const [current, setCurrent] = useState(0)
 
@@ -19,16 +37,17 @@ export default function KoreanProductGallery({ images }: { images: string[] }) {
   if (images.length === 1) {
     return (
       <div
-        className="w-full overflow-hidden rounded-2xl bg-neutral-100 flex items-center justify-center"
+        className="relative w-full overflow-hidden rounded-2xl bg-neutral-100 flex items-center justify-center"
         style={{ minHeight: '300px', maxHeight: '600px' }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={images[0]}
           alt="상품 이미지"
-          className="w-full object-contain"
+          className={`w-full object-contain ${soldOut ? 'grayscale' : ''}`}
           style={{ maxHeight: '600px', display: 'block' }}
         />
+        {soldOut && soldOutLabel ? <SoldOutOverlay label={soldOutLabel} /> : null}
       </div>
     )
   }
@@ -71,9 +90,10 @@ export default function KoreanProductGallery({ images }: { images: string[] }) {
             key={current}
             src={images[current]}
             alt={`상품 이미지 ${current + 1}`}
-            className="w-full h-full object-contain"
+            className={`w-full h-full object-contain ${soldOut ? 'grayscale' : ''}`}
             style={{ maxHeight: '600px' }}
           />
+          {soldOut && soldOutLabel ? <SoldOutOverlay label={soldOutLabel} /> : null}
         </div>
       </div>
 
@@ -89,9 +109,10 @@ export default function KoreanProductGallery({ images }: { images: string[] }) {
             key={current}
             src={images[current]}
             alt={`상품 이미지 ${current + 1}`}
-            className="w-full object-contain"
+            className={`w-full object-contain ${soldOut ? 'grayscale' : ''}`}
             style={{ maxHeight: '400px' }}
           />
+          {soldOut && soldOutLabel ? <SoldOutOverlay label={soldOutLabel} /> : null}
         </div>
 
         {/* 하단 가로 스크롤 썸네일 */}

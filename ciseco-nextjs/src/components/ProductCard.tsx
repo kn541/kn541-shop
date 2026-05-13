@@ -35,6 +35,7 @@ const ProductCard: FC<Props> = ({ className = '', data, isLiked, hrefSearch, car
   const { title, price, status, rating, options, handle, selectedOptions, reviewNumber, featuredImage } = data
 
   const tCart = useTranslations('Cart')
+  const tProduct = useTranslations('Product')
 
   const pathname = usePathname()
   const locale   = pathname.split('/')[1] || 'ko'
@@ -51,8 +52,10 @@ const ProductCard: FC<Props> = ({ className = '', data, isLiked, hrefSearch, car
   const isFreeShipping = delivery?.sc_type === 1 || (delivery?.shipping_fee ?? 0) === 0
 
   const rawPs = String((data as { productStatus?: string }).productStatus ?? '').toUpperCase()
-  // 품절 여부 (목록 status + API product_status SOLDOUT)
+  const stockQty = Number((data as { stockQty?: number }).stockQty ?? 0) || 0
+  // 품절 여부 (재고 + 목록 status + API product_status SOLDOUT)
   const isSoldOut =
+    stockQty <= 0 ||
     status === '품절' ||
     status === '판매종료' ||
     rawPs === 'SOLDOUT' ||
@@ -94,7 +97,7 @@ const ProductCard: FC<Props> = ({ className = '', data, isLiked, hrefSearch, car
       return
     }
     if (isSoldOut) {
-      toast.error('품절된 상품입니다.')
+      toast.error(tProduct('soldOutNotice'))
       return
     }
 
@@ -172,7 +175,7 @@ const ProductCard: FC<Props> = ({ className = '', data, isLiked, hrefSearch, car
             <NcImage
               containerClassName="flex aspect-w-11 aspect-h-12 w-full h-0"
               src={featuredImage}
-              className="h-full w-full object-cover"
+              className={`h-full w-full object-cover ${isSoldOut ? 'grayscale' : ''}`}
               fill
               sizes="(max-width: 640px) 100vw, (max-width: 1200px) 50vw, 40vw"
               alt={title || '상품 이미지'}
@@ -182,8 +185,8 @@ const ProductCard: FC<Props> = ({ className = '', data, isLiked, hrefSearch, car
 
         {/* 품절 오버레이 */}
         {isSoldOut && (
-          <div className="absolute inset-0 flex items-center justify-center rounded-3xl bg-black/40">
-            <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-bold text-neutral-800">품절</span>
+          <div className="pointer-events-none absolute inset-0 z-[2] flex items-center justify-center rounded-3xl bg-black/50">
+            <span className="text-sm font-bold tracking-wide text-white">{tProduct('outOfStock')}</span>
           </div>
         )}
 
@@ -199,7 +202,7 @@ const ProductCard: FC<Props> = ({ className = '', data, isLiked, hrefSearch, car
             className="flex cursor-pointer items-center justify-center gap-2 rounded-full bg-neutral-900 px-4 py-2 text-xs/normal text-white shadow-lg hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <ShoppingBagIcon className="-ml-1 size-3.5" />
-            <span>{isSoldOut ? '품절' : '장바구니'}</span>
+            <span>{isSoldOut ? tProduct('outOfStock') : tProduct('addToCart')}</span>
           </button>
 
           <button

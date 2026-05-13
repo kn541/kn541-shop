@@ -17,6 +17,7 @@ import ProductStatus from '../ProductStatus'
 import KoreanProductGallery from '../KoreanProductGallery'
 import ProductActions from './ProductActions'
 import Link from 'next/link'
+import { getTranslations } from 'next-intl/server'
 
 export const dynamic = 'force-dynamic'
 
@@ -46,6 +47,8 @@ export default async function Page({
   params: Promise<{ handle: string; locale: string }>
 }) {
   const { handle, locale } = await params
+
+  const tProduct = await getTranslations({ locale, namespace: 'Product' })
 
   if (!UUID_RE.test(handle)) return notFound()
 
@@ -168,7 +171,11 @@ export default async function Page({
       <div className="flex flex-col gap-8 lg:flex-row lg:gap-10">
         {/* ★ 갤러리 — THUMBNAIL 타입만 전달 */}
         <div className="w-full lg:w-[55%]">
-          <KoreanProductGallery images={thumbnailSrcs} />
+          <KoreanProductGallery
+            images={thumbnailSrcs}
+            soldOut={isSoldoutOrUnavailable}
+            soldOutLabel={tProduct('outOfStock')}
+          />
         </div>
 
         <div className="w-full lg:w-[45%]">
@@ -180,6 +187,12 @@ export default async function Page({
             ) : null}
 
             <h1 className="text-2xl font-bold leading-snug sm:text-3xl">{title}</h1>
+
+            {isSoldoutOrUnavailable && (
+              <p className="rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-700 dark:border-neutral-600 dark:bg-neutral-800/80 dark:text-neutral-200">
+                {tProduct('soldOutNotice')}
+              </p>
+            )}
 
             <div className="flex items-center gap-3 flex-wrap">
               {reviewNumber > 0 && (

@@ -68,6 +68,7 @@ const ProductQuickView: FC<ProductQuickViewProps> = ({ className }) => {
   const { addItem } = useCart()
   const pathname = usePathname()
   const tCart = useTranslations('Cart')
+  const tProduct = useTranslations('Product')
 
   const [product, setProduct] = useState<any>(null)
   const [loading, setLoading] = useState(false)
@@ -144,7 +145,7 @@ const ProductQuickView: FC<ProductQuickViewProps> = ({ className }) => {
   // 구매 가능 여부
   const rawPs = String(product.productStatus ?? '').toUpperCase()
   const isSoldOut =
-    stockQty === 0 ||
+    stockQty <= 0 ||
     status === '품절' ||
     status === 'Sold Out' ||
     rawPs === 'SOLDOUT' ||
@@ -153,7 +154,7 @@ const ProductQuickView: FC<ProductQuickViewProps> = ({ className }) => {
 
   // 장바구니 담기
   const handleAddToCart = () => {
-    if (!canBuy) { toast.error('품절된 상품입니다.'); return }
+    if (!canBuy) { toast.error(tProduct('soldOutNotice')); return }
     if (kn541Options.length > 0 && !selectedOption) {
       toast.error('옵션을 선택해 주세요.')
       return
@@ -220,15 +221,15 @@ const ProductQuickView: FC<ProductQuickViewProps> = ({ className }) => {
                 src={mainImageSrc}
                 fill
                 sizes="(max-width: 768px) 100vw, 50vw"
-                className="h-full w-full object-cover"
+                className={`h-full w-full object-cover ${isSoldOut ? 'grayscale' : ''}`}
                 alt={title || '상품 이미지'}
                 priority
               />
             </div>
             {/* 품절 오버레이 */}
             {isSoldOut && (
-              <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/40">
-                <span className="rounded-full bg-white/90 px-4 py-2 text-sm font-bold text-neutral-800">품절</span>
+              <div className="pointer-events-none absolute inset-0 z-[2] flex items-center justify-center rounded-2xl bg-black/50">
+                <span className="text-sm font-bold tracking-wide text-white">{tProduct('outOfStock')}</span>
               </div>
             )}
             <LikeButton className="absolute end-3 top-3 z-10" />
@@ -280,7 +281,11 @@ const ProductQuickView: FC<ProductQuickViewProps> = ({ className }) => {
               )}
             </div>
 
-            {/* 배송비 / 배송일 */}
+            {isSoldOut && (
+              <p className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-600 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
+                {tProduct('soldOutNotice')}
+              </p>
+            )}
             <div className="rounded-xl border border-neutral-100 dark:border-neutral-700 px-4 py-3 text-sm text-neutral-600 dark:text-neutral-400 space-y-1.5">
               <div className="flex gap-2">
                 <span className="w-14 shrink-0 font-medium text-neutral-800 dark:text-neutral-200">배송비</span>
@@ -302,7 +307,7 @@ const ProductQuickView: FC<ProductQuickViewProps> = ({ className }) => {
                       key={opt.id}
                       type="button"
                       onClick={() => setSelectedOption(opt.id === selectedOption ? '' : opt.id)}
-                      disabled={opt.stock_qty === 0}
+                      disabled={isSoldOut || opt.stock_qty === 0}
                       className={[
                         'rounded-lg border px-3 py-2 text-xs font-medium transition-all',
                         opt.id === selectedOption
@@ -326,7 +331,13 @@ const ProductQuickView: FC<ProductQuickViewProps> = ({ className }) => {
             <div className="flex items-center gap-3">
               <span className="text-sm font-medium text-neutral-600 dark:text-neutral-400 w-8">수량</span>
               <div className="flex items-center justify-center rounded-full bg-neutral-100 px-2 py-1.5 dark:bg-neutral-800">
-                <NcInputNumber defaultValue={1} min={1} max={maxQty} onChange={(val) => setQty(val)} />
+                <NcInputNumber
+                  defaultValue={1}
+                  min={1}
+                  max={maxQty}
+                  disabled={!canBuy}
+                  onChange={(val) => setQty(val)}
+                />
               </div>
               {stockQty > 0 && stockQty <= 10 && (
                 <span className="text-xs text-orange-600 dark:text-orange-400">재고 {stockQty}개</span>
@@ -341,7 +352,7 @@ const ProductQuickView: FC<ProductQuickViewProps> = ({ className }) => {
               className="flex w-full items-center justify-center gap-2 rounded-full bg-neutral-900 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
             >
               <HugeiconsIcon icon={ShoppingBag03Icon} size={18} color="currentColor" strokeWidth={1.5} />
-              <span>{isSoldOut ? '품절' : '장바구니에 담기'}</span>
+              <span>{isSoldOut ? tProduct('outOfStock') : tProduct('addToCart')}</span>
             </button>
 
             {/* 상세 페이지 이동 */}

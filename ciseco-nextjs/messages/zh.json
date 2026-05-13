@@ -15,7 +15,7 @@
     "viewAll": "查看全部",
     "addToCart": "加入购物车",
     "buyNow": "立即购买",
-    "outOfStock": "已售罄",
+    "outOfStock": "售罄",
     "sale": "特卖",
     "new": "新品",
     "continue": "继续"
@@ -101,7 +101,8 @@
     "color": "颜色",
     "quantity": "数量",
     "inStock": "有库存",
-    "outOfStock": "已售罄"
+    "outOfStock": "售罄",
+    "soldOutNotice": "该商品已售罄。"
   },
   "Cart": {
     "title": "购物车",
