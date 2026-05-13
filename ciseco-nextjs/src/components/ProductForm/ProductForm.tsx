@@ -21,6 +21,7 @@ const ProductForm = ({
       (t) => (
         <NotifyAddToCart
           show={t.visible}
+          onContinue={() => toast.dismiss(t.id)}
           imageUrl={featuredImage?.src || ''}
           quantity={quantity}
           size={size}

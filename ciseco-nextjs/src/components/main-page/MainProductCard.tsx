@@ -11,7 +11,6 @@ import { useCart } from '@/lib/cart-context'
 import { Link } from '@/shared/link'
 import clsx from 'clsx'
 import Image from 'next/image'
-import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
 import { useTranslations } from 'next-intl'
@@ -38,9 +37,6 @@ type MainProductCardProps =
   | (Base & { mode: 'api'; product: Product })
 
 export function MainProductCard(props: MainProductCardProps) {
-  const pathname = usePathname()
-  const locale = pathname.split('/')[1] || 'ko'
-  const router = useRouter()
   const { addItem } = useCart()
   const previewCtx = useMainCartPreviewOptional()
   const tCart = useTranslations('Cart')
@@ -173,11 +169,6 @@ export function MainProductCard(props: MainProductCardProps) {
       }
       openPreview(buildPayload())
       setAdded(true)
-      return
-    }
-    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
-    if (!token) {
-      router.push(`/${locale}`)
       return
     }
     if (!pid) {

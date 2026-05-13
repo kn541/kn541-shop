@@ -2,9 +2,7 @@
 
 // KN541 상품 카드
 // fix: next-intl Link는 locale 자동 추가 → href에 locale 포함 금지 (/products/UUID만)
-// fix: router.push는 next/navigation → locale 명시 필요 (/${locale}/cart 등)
 // fix: 장바구니 버튼 버블링 방지 + useCart 실제 연동
-// fix: 폐쇄몰 비로그인 → 메인페이지
 
 import { TProductItem } from '@/data/data'
 import { useCart } from '@/lib/cart-context'
@@ -12,7 +10,6 @@ import NcImage from '@/shared/NcImage/NcImage'
 import { Link } from '@/shared/link'
 import { ArrowsPointingOutIcon, ShoppingBagIcon } from '@heroicons/react/24/outline'
 import { StarIcon } from '@heroicons/react/24/solid'
-import { usePathname, useRouter } from 'next/navigation'
 import { FC } from 'react'
 import toast from 'react-hot-toast'
 import { useTranslations } from 'next-intl'
@@ -37,9 +34,6 @@ const ProductCard: FC<Props> = ({ className = '', data, isLiked, hrefSearch, car
   const tCart = useTranslations('Cart')
   const tProduct = useTranslations('Product')
 
-  const pathname = usePathname()
-  const locale   = pathname.split('/')[1] || 'ko'
-  const router   = useRouter()
   const { addItem } = useCart()
   const { open: openAside, setProductQuickViewHandle } = useAside()
 
@@ -90,12 +84,6 @@ const ProductCard: FC<Props> = ({ className = '', data, isLiked, hrefSearch, car
     e.preventDefault()
     e.stopPropagation()
 
-    // 폐쇄몰: 비로그인 → 메인 페이지
-    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
-    if (!token) {
-      router.push(`/${locale}`)
-      return
-    }
     if (isSoldOut) {
       toast.error(tProduct('soldOutNotice'))
       return
