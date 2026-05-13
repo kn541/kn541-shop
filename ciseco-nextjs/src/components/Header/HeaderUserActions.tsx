@@ -1,12 +1,13 @@
 'use client'
 // KN541 쇼핑몰 — 헤더 우측 유저 액션 (단순화 v2)
 // - 비로그인: 로그인 / 회원가입 텍스트
-// - 로그인:  마이페이지 텍스트
-// - 알림/주문배송/회원명/로그아웃은 마이페이지 내부에서 처리
+// - 로그인:  로그아웃(로그인 자리) + 마이페이지
 // - hydration mismatch 방지: isMounted 패턴 유지
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useLocale } from 'next-intl'
+import { useRouter } from '@/i18n/navigation'
+import { toast } from 'react-hot-toast'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL
 
@@ -17,9 +18,19 @@ interface UserInfo {
 
 export default function HeaderUserActions() {
   const locale = useLocale()
+  const router = useRouter()
   const [isMounted, setIsMounted] = useState(false)
   const [user, setUser] = useState<UserInfo | null>(null)
   const [loading, setLoading] = useState(true)
+
+  const logout = useCallback(() => {
+    localStorage.removeItem('access_token')
+    localStorage.removeItem('refresh_token')
+    localStorage.removeItem('user_type')
+    setUser(null)
+    toast.success('로그아웃되었습니다')
+    router.push('/')
+  }, [router])
 
   useEffect(() => {
     setIsMounted(true)
@@ -71,13 +82,22 @@ export default function HeaderUserActions() {
     )
   }
 
-  /* ─── 로그인 → 마이페이지 ─── */
+  /* ─── 로그인 → 로그아웃(로그인 자리) + 마이페이지 ─── */
   return (
-    <a
-      href={`/${locale}/account`}
-      className="rounded-md px-2.5 py-1.5 text-sm text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800 whitespace-nowrap"
-    >
-      마이페이지
-    </a>
+    <div className="flex items-center text-sm">
+      <button
+        type="button"
+        onClick={logout}
+        className="rounded-md px-2.5 py-1.5 text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800 whitespace-nowrap"
+      >
+        로그아웃
+      </button>
+      <a
+        href={`/${locale}/account`}
+        className="rounded-md px-2.5 py-1.5 text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800 whitespace-nowrap"
+      >
+        마이페이지
+      </a>
+    </div>
   )
 }
