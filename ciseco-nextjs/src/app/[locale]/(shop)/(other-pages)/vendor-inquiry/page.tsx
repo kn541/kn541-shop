@@ -6,6 +6,8 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
 import Link from 'next/link'
 
+import { uploadVendorFileToStorage, validateVendorUploadFile } from '@/lib/vendor-files-upload'
+
 // Railway 백엔드 API URL (Vercel 환경변수에서 가져옴)
 const BASE = process.env.NEXT_PUBLIC_API_URL
 
@@ -52,6 +54,8 @@ const REFERRAL_PATHS = ['지인 소개', '인터넷 검색', 'SNS', '광고', '�
 
 export default function VendorInquiryPage() {
   const [form, setForm] = useState<FormState>(emptyForm)
+  const [bizRegFile, setBizRegFile] = useState<File | null>(null)
+  const [productBriefFile, setProductBriefFile] = useState<File | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
@@ -65,6 +69,22 @@ export default function VendorInquiryPage() {
       setError('개인정보 수집 및 이용에 동의해 주세요.')
       return
     }
+    if (!bizRegFile) {
+      setError('사업자등록증 파일을 첨부해 주세요.')
+      return
+    }
+    const bizRegErr = validateVendorUploadFile(bizRegFile)
+    if (bizRegErr) {
+      setError(bizRegErr)
+      return
+    }
+    if (productBriefFile) {
+      const briefErr = validateVendorUploadFile(productBriefFile)
+      if (briefErr) {
+        setError(briefErr)
+        return
+      }
+    }
     setError('')
     setSubmitting(true)
 
@@ -76,10 +96,32 @@ export default function VendorInquiryPage() {
     }
 
     try {
+      let bizRegFileUrl: string
+      let productBriefUrl: string | null = null
+      try {
+        bizRegFileUrl = await uploadVendorFileToStorage(bizRegFile)
+        if (productBriefFile) {
+          productBriefUrl = await uploadVendorFileToStorage(productBriefFile)
+        }
+      } catch (uploadErr) {
+        const msg =
+          uploadErr instanceof Error && uploadErr.message === 'SUPABASE_ENV_MISSING'
+            ? '파일 업로드 설정(Supabase)이 되어 있지 않습니다. 관리자에게 문의해 주세요.'
+            : uploadErr instanceof Error
+              ? uploadErr.message
+              : '파일 업로드 중 오류가 발생했습니다.'
+        setError(msg)
+        return
+      }
+
       const res = await fetch(`${BASE}/vendor-inquiry`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          biz_reg_file_url: bizRegFileUrl,
+          file_url: productBriefUrl,
+        }),
       })
 
       // HTTP 오류 처리
@@ -293,6 +335,52 @@ export default function VendorInquiryPage() {
                 className={textareaClass}
               />
             </Field>
+            <Field label="사업자등록증 첨부 *" className="sm:col-span-2">
+              <p className="mb-2 text-xs text-neutral-500">PDF, JPG, PNG / 최대 10MB</p>
+              <input
+                type="file"
+                accept=".pdf,image/jpeg,image/png,.jpg,.jpeg,.png"
+                required
+                className={fileInputClass}
+                onChange={e => {
+                  const f = e.target.files?.[0] ?? null
+                  setBizRegFile(f)
+                  if (f) {
+                    const v = validateVendorUploadFile(f)
+                    if (v) setError(v)
+                    else setError('')
+                  }
+                }}
+              />
+              {bizRegFile && (
+                <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+                  선택된 파일: <span className="font-medium text-neutral-800 dark:text-neutral-200">{bizRegFile.name}</span>
+                </p>
+              )}
+            </Field>
+            <Field label="상품소개서 첨부 (선택)" className="sm:col-span-2">
+              <p className="mb-2 text-xs text-neutral-500">PDF, JPG, PNG / 최대 10MB</p>
+              <input
+                type="file"
+                accept=".pdf,image/jpeg,image/png,.jpg,.jpeg,.png"
+                className={fileInputClass}
+                onChange={e => {
+                  const f = e.target.files?.[0] ?? null
+                  setProductBriefFile(f)
+                  if (f) {
+                    const v = validateVendorUploadFile(f)
+                    if (v) setError(v)
+                  } else {
+                    setError('')
+                  }
+                }}
+              />
+              {productBriefFile && (
+                <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+                  선택된 파일: <span className="font-medium text-neutral-800 dark:text-neutral-200">{productBriefFile.name}</span>
+                </p>
+              )}
+            </Field>
           </div>
         </section>
 
@@ -362,6 +450,9 @@ const inputClass =
 
 const textareaClass =
   'w-full rounded-xl border border-neutral-300 bg-white px-4 py-2.5 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder:text-neutral-500 resize-none'
+
+const fileInputClass =
+  'block w-full text-sm text-neutral-600 file:mr-4 file:rounded-lg file:border-0 file:bg-neutral-100 file:px-4 file:py-2 file:text-sm file:font-medium file:text-neutral-800 hover:file:bg-neutral-200 dark:text-neutral-400 dark:file:bg-neutral-700 dark:file:text-neutral-100 dark:hover:file:bg-neutral-600'
 
 function Field({
   label,
