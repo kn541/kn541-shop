@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'react-hot-toast'
+import { useTranslations } from 'next-intl'
 import { Link } from '@/components/Link'
 import WishlistItemCard, { type WishlistProduct } from '@/components/mypage/WishlistItemCard'
 import { mypageFetch, MypageApiError } from '@/lib/mypage/api'
@@ -38,6 +39,7 @@ function normalizeWishItem(raw: unknown): WishlistProduct | null {
 }
 
 export default function AccountWishlistsPage() {
+  const t = useTranslations('Account')
   const [items, setItems] = useState<WishlistProduct[]>([])
   const [loading, setLoading] = useState(true)
   const [removingId, setRemovingId] = useState<string | null>(null)
@@ -55,13 +57,13 @@ export default function AccountWishlistsPage() {
       setItems(next)
     } catch (e) {
       const msg =
-        e instanceof MypageApiError ? e.message : '위시리스트를 불러오지 못했습니다.'
+        e instanceof MypageApiError ? e.message : t('wishlistLoadError')
       toast.error(msg)
       setItems([])
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [t])
 
   useEffect(() => {
     void load()
@@ -74,10 +76,10 @@ export default function AccountWishlistsPage() {
         method: 'DELETE',
       })
       setItems(prev => prev.filter(p => p.product_id !== productId))
-      toast.success('위시리스트에서 삭제했습니다.')
+      toast.success(t('wishlistRemovedToast'))
     } catch (e) {
       const msg =
-        e instanceof MypageApiError ? e.message : '삭제에 실패했습니다.'
+        e instanceof MypageApiError ? e.message : t('wishlistRemoveError')
       toast.error(msg)
     } finally {
       setRemovingId(null)
@@ -87,22 +89,22 @@ export default function AccountWishlistsPage() {
   return (
     <div className="flex flex-col gap-y-10 sm:gap-y-12">
       <div>
-        <h1 className="text-2xl font-semibold sm:text-3xl">위시리스트</h1>
+        <h1 className="text-2xl font-semibold sm:text-3xl">{t('wishlists')}</h1>
         <p className="mt-4 text-neutral-500 dark:text-neutral-400">
-          관심 상품을 모아 보세요. 목록에서 바로 삭제할 수 있습니다.
+          {t('wishlistPageIntro')}
         </p>
       </div>
 
       {loading ? (
-        <p className="text-center text-neutral-500 dark:text-neutral-400">불러오는 중…</p>
+        <p className="text-center text-neutral-500 dark:text-neutral-400">{t('wishlistLoading')}</p>
       ) : items.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-6 rounded-2xl border border-dashed border-neutral-300 py-16 text-center dark:border-neutral-600">
-          <p className="text-lg text-neutral-600 dark:text-neutral-400">위시리스트가 비어있습니다.</p>
+          <p className="text-lg text-neutral-600 dark:text-neutral-400">{t('wishlistEmpty')}</p>
           <Link
             href="/products"
             className="inline-flex h-12 items-center justify-center rounded-full bg-neutral-900 px-8 text-sm font-semibold text-white hover:opacity-90 dark:bg-white dark:text-neutral-900"
           >
-            쇼핑하기
+            {t('wishlistShopCta')}
           </Link>
         </div>
       ) : (

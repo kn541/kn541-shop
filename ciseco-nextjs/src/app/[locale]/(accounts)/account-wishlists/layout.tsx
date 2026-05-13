@@ -1,10 +1,19 @@
 import type { Metadata } from 'next'
+import { getTranslations } from 'next-intl/server'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata: Metadata = {
-  title: '위시리스트',
-  description: '저장한 상품 목록',
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'Account' })
+  return {
+    title: t('wishlistMetaTitle'),
+    description: t('wishlistMetaDescription'),
+  }
 }
 
 export default function AccountWishlistsLayout({ children }: { children: React.ReactNode }) {

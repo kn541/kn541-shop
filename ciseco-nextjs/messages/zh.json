@@ -200,7 +200,16 @@
     "accountLoginPlease": "请先登录",
     "defaultDisplayName": "会员",
     "memberTypeUnknown": "未设置会员类型",
-    "memberTypeCode": "会员类型 {code}"
+    "memberTypeCode": "会员类型 {code}",
+    "wishlistMetaTitle": "收藏",
+    "wishlistMetaDescription": "已保存的商品列表",
+    "wishlistPageIntro": "集中查看心仪商品，可随时从列表中删除。",
+    "wishlistLoadError": "无法加载收藏列表。",
+    "wishlistRemovedToast": "已从收藏中移除。",
+    "wishlistRemoveError": "删除失败。",
+    "wishlistEmpty": "收藏还是空的。",
+    "wishlistLoading": "加载中…",
+    "wishlistShopCta": "去逛逛"
   },
   "Search": {
     "ariaLabel": "搜索商品",

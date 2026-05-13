@@ -8,7 +8,7 @@ import { HOME_TABS, type HomeNavTab } from '@/data/home-tabs'
 import { MAIN_PAGE_ASSETS } from '@/data/main-page-assets'
 import { usePathname, useRouter } from '@/i18n/navigation'
 import clsx from 'clsx'
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { FormEventHandler, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 const ICON = {
@@ -40,6 +40,7 @@ export type MainHeaderProps = {
 }
 
 export default function MainHeader({ categoryTabs }: MainHeaderProps) {
+  const tAccount = useTranslations('Account')
   const locale = useLocale()
   const pathname = usePathname()
   const router = useRouter()
@@ -144,7 +145,12 @@ export default function MainHeader({ categoryTabs }: MainHeaderProps) {
             </button>
           </form>
           <div className="header-actions flex items-center gap-4">
-            <Link href="/account-wishlists" className="block h-[20px] w-[23.72px] p-0">
+            <Link
+              href="/account-wishlists"
+              className="block h-[20px] w-[23.72px] p-0"
+              title={tAccount('wishlist')}
+              aria-label={tAccount('wishlist')}
+            >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={ICON.heart} alt="" width={24} height={20} className="size-full object-contain" />
             </Link>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useAuth } from '@/hooks/useAuth'
+import { useTranslations } from 'next-intl'
 import Avatar from '@/shared/Avatar/Avatar'
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
 import { UserCircle02Icon } from '@hugeicons/core-free-icons'
@@ -14,6 +15,7 @@ interface Props {
 
 export default function AvatarDropdown({ className }: Props) {
   const { user, logout } = useAuth()
+  const t = useTranslations('Account')
 
   const displayName = user?.name || user?.username || user?.email?.split('@')[0] || '회원'
 
@@ -74,7 +76,6 @@ export default function AvatarDropdown({ className }: Props) {
               </div>
             </Link>
 
-            {/* 위시리스트 */}
             <Link
               href={'/account-wishlists'}
               className="-m-3 flex items-center rounded-lg p-2 transition duration-150 ease-in-out hover:bg-neutral-100 focus:outline-hidden focus-visible:ring-3 focus-visible:ring-orange-500/50 dark:hover:bg-neutral-700"
@@ -85,7 +86,7 @@ export default function AvatarDropdown({ className }: Props) {
                 </svg>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium">위시리스트</p>
+                <p className="text-sm font-medium">{t('wishlist')}</p>
               </div>
             </Link>
 
