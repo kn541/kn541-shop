@@ -3,20 +3,31 @@
 // KN541 장바구니 담기 버튼 + 토스트 알림 — 한국어화
 // fix: "Added to cart!" → "장바구니에 담겼습니다!"
 // fix: "Qty N" → "수량 N"
-// fix: "View cart" → "장바구니 보기"
+// fix: 담기 후 토스트 — "쇼핑계속하기"로 닫기 (장바구니 이동 없음)
 
 import Prices from '@/components/Prices'
-import { Link } from '@/shared/link'
 import { Transition } from '@headlessui/react'
 import Image from 'next/image'
 import React, { ComponentType, ElementType, FC } from 'react'
 import toast from 'react-hot-toast'
+import { useTranslations } from 'next-intl'
 
 interface NotifyAddToCartProps extends AddToCardButtonProps {
   show: boolean
+  onContinue: () => void
 }
 
-export const NotifyAddToCart: FC<NotifyAddToCartProps> = ({ show, color, imageUrl, price, quantity, title, size }) => {
+export const NotifyAddToCart: FC<NotifyAddToCartProps> = ({
+  show,
+  onContinue,
+  color,
+  imageUrl,
+  price,
+  quantity,
+  title,
+  size,
+}) => {
+  const t = useTranslations('Cart')
   return (
     <Transition
       appear
@@ -30,8 +41,8 @@ export const NotifyAddToCart: FC<NotifyAddToCartProps> = ({ show, color, imageUr
       leaveFrom="opacity-100 translate-x-0"
       leaveTo="opacity-0 translate-x-20"
     >
-      {/* ★ "Added to cart!" → "장바구니에 담겼습니다!" */}
-      <p className="mt-1 block text-base leading-none font-semibold">장바구니에 담겼습니다!</p>
+      {/* ★ "Added to cart!" → localized */}
+      <p className="mt-1 block text-base leading-none font-semibold">{t('addedToCartToast')}</p>
 
       <div className="mt-6 flex">
         <div className="relative h-24 w-20 shrink-0 overflow-hidden rounded-xl bg-neutral-100">
@@ -56,10 +67,13 @@ export const NotifyAddToCart: FC<NotifyAddToCartProps> = ({ show, color, imageUr
             {/* ★ "Qty N" → "수량 N" */}
             <p className="text-gray-500 dark:text-neutral-400">{`수량 ${quantity}`}</p>
             <div className="flex">
-              {/* ★ "View cart" → "장바구니 보기" */}
-              <Link href={'/cart'} className="font-medium text-primary-600 dark:text-primary-500">
-                장바구니 보기
-              </Link>
+              <button
+                type="button"
+                onClick={onContinue}
+                className="font-medium text-primary-600 dark:text-primary-500"
+              >
+                {t('afterAddContinueShopping')}
+              </button>
             </div>
           </div>
         </div>
@@ -95,9 +109,10 @@ const AddToCardButton = ({
 }: AddToCardButtonProps) => {
   const notifyAddTocart = () => {
     toast.custom(
-      (t) => (
+      (tid) => (
         <NotifyAddToCart
-          show={t.visible}
+          show={tid.visible}
+          onContinue={() => toast.dismiss(tid.id)}
           imageUrl={imageUrl}
           quantity={quantity}
           size={size}

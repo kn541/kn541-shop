@@ -103,6 +103,8 @@
     "subtotal": "Subtotal",
     "checkout": "Check out",
     "viewCart": "View cart",
+    "addedToCartToast": "Added to cart!",
+    "afterAddContinueShopping": "Continue shopping",
     "continueShopping": "Continue Shopping",
     "continueShoppingLink": "Continue Shopping",
     "or": "or",

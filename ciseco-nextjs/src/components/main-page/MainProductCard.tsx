@@ -14,6 +14,7 @@ import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
+import { useTranslations } from 'next-intl'
 import './kn541-main.css'
 
 const CART_ICON = '/images/main-v1/icons/icon-cart-card.svg'
@@ -42,6 +43,7 @@ export function MainProductCard(props: MainProductCardProps) {
   const router = useRouter()
   const { addItem } = useCart()
   const previewCtx = useMainCartPreviewOptional()
+  const tCart = useTranslations('Cart')
   const compact = props.compact ?? false
   const [liked, setLiked] = useState(false)
   const [added, setAdded] = useState(false)
@@ -197,16 +199,18 @@ export function MainProductCard(props: MainProductCardProps) {
       stockQty: Number(product.stock_qty ?? 0),
     })
     toast.success(
-      <span>
-        장바구니에 담겼습니다!{' '}
-        <button
-          type="button"
-          className="font-semibold underline"
-          onClick={() => router.push(`/${locale}/cart`)}
-        >
-          장바구니 보기
-        </button>
-      </span>,
+      (toastItem) => (
+        <span>
+          {tCart('addedToCartToast')}{' '}
+          <button
+            type="button"
+            className="font-semibold underline"
+            onClick={() => toast.dismiss(toastItem.id)}
+          >
+            {tCart('afterAddContinueShopping')}
+          </button>
+        </span>
+      ),
       { duration: 3000 }
     )
     setAdded(true)

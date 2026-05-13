@@ -103,6 +103,8 @@
     "subtotal": "小计",
     "checkout": "去结算",
     "viewCart": "查看购物车",
+    "addedToCartToast": "已加入购物车！",
+    "afterAddContinueShopping": "继续购物",
     "continueShopping": "继续购物",
     "continueShoppingLink": "继续购物",
     "or": "或",

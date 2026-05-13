@@ -103,6 +103,8 @@
     "subtotal": "소계",
     "checkout": "결제하기",
     "viewCart": "장바구니 보기",
+    "addedToCartToast": "장바구니에 담겼습니다!",
+    "afterAddContinueShopping": "쇼핑계속하기",
     "continueShopping": "쇼핑 계속하기",
     "continueShoppingLink": "쇼핑 계속하기",
     "or": "또는",

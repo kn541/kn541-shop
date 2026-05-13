@@ -7,6 +7,7 @@ import { useCart } from '@/lib/cart-context'
 import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
+import { useTranslations } from 'next-intl'
 
 type Props = {
   payload: MainCartPreviewPayload | null
@@ -15,6 +16,7 @@ type Props = {
 
 export function CartPopup({ payload, onClose }: Props) {
   const { addItem } = useCart()
+  const t = useTranslations('Cart')
   const [qty, setQty] = useState(1)
 
   useEffect(() => {
@@ -54,8 +56,22 @@ export function CartPopup({ payload, onClose }: Props) {
       scType: payload.scType,
       stockQty: payload.stockQty,
     })
-    toast.success('장바구니에 담았습니다.')
     onClose()
+    toast.success(
+      (toastItem) => (
+        <span>
+          {t('addedToCartToast')}{' '}
+          <button
+            type="button"
+            className="font-semibold underline"
+            onClick={() => toast.dismiss(toastItem.id)}
+          >
+            {t('afterAddContinueShopping')}
+          </button>
+        </span>
+      ),
+      { duration: 3000 }
+    )
   }
 
   return (

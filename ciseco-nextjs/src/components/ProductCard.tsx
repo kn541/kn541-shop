@@ -15,6 +15,7 @@ import { StarIcon } from '@heroicons/react/24/solid'
 import { usePathname, useRouter } from 'next/navigation'
 import { FC } from 'react'
 import toast from 'react-hot-toast'
+import { useTranslations } from 'next-intl'
 import LikeButton from './LikeButton'
 import Prices from './Prices'
 import ProductStatus from './ProductStatus'
@@ -32,6 +33,8 @@ interface Props {
 
 const ProductCard: FC<Props> = ({ className = '', data, isLiked, hrefSearch, cartShopId }) => {
   const { title, price, status, rating, options, handle, selectedOptions, reviewNumber, featuredImage } = data
+
+  const tCart = useTranslations('Cart')
 
   const pathname = usePathname()
   const locale   = pathname.split('/')[1] || 'ko'
@@ -113,16 +116,18 @@ const ProductCard: FC<Props> = ({ className = '', data, isLiked, hrefSearch, car
     })
 
     toast.success(
-      <span>
-        장바구니에 담겼습니다!{' '}
-        <button
-          type="button"
-          className="font-semibold underline"
-          onClick={() => router.push(`/${locale}/cart`)}
-        >
-          장바구니 보기
-        </button>
-      </span>,
+      (toastItem) => (
+        <span>
+          {tCart('addedToCartToast')}{' '}
+          <button
+            type="button"
+            className="font-semibold underline"
+            onClick={() => toast.dismiss(toastItem.id)}
+          >
+            {tCart('afterAddContinueShopping')}
+          </button>
+        </span>
+      ),
       { duration: 3000 }
     )
   }

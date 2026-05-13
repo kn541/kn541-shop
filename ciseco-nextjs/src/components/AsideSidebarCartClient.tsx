@@ -52,15 +52,6 @@ export default function AsideSidebarCartClient() {
               <ButtonSecondary href="/cart">{t('viewCart')}</ButtonSecondary>
               <ButtonPrimary href="/checkout">{t('checkout')}</ButtonPrimary>
             </div>
-            <div className="mt-6 flex justify-center text-center text-sm text-neutral-500 dark:text-neutral-400">
-              <p className="text-xs">
-                {t('or')}{' '}
-                <Link href="/products" className="text-xs font-medium uppercase">
-                  {t('continueShoppingLink')}
-                  <span aria-hidden="true"> →</span>
-                </Link>
-              </p>
-            </div>
           </div>
         </section>
       </div>

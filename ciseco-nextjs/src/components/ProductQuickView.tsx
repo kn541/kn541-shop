@@ -28,6 +28,7 @@ import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { FC, useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
+import { useTranslations } from 'next-intl'
 import { useAside } from './aside'
 
 interface ProductQuickViewProps {
@@ -66,6 +67,7 @@ const ProductQuickView: FC<ProductQuickViewProps> = ({ className }) => {
   const { productQuickViewHandle: handle, close } = useAside()
   const { addItem } = useCart()
   const pathname = usePathname()
+  const tCart = useTranslations('Cart')
 
   const [product, setProduct] = useState<any>(null)
   const [loading, setLoading] = useState(false)
@@ -168,9 +170,22 @@ const ProductQuickView: FC<ProductQuickViewProps> = ({ className }) => {
       scType,
       stockQty,
     })
-    toast.success('장바구니에 담겼습니다!', { duration: 2500 })
-    // ★ close() — 인수 없음
     close()
+    toast.success(
+      (toastItem) => (
+        <span>
+          {tCart('addedToCartToast')}{' '}
+          <button
+            type="button"
+            className="font-semibold underline"
+            onClick={() => toast.dismiss(toastItem.id)}
+          >
+            {tCart('afterAddContinueShopping')}
+          </button>
+        </span>
+      ),
+      { duration: 3000 }
+    )
   }
 
   // 아코디언 데이터 (실제 상품 데이터 기반)

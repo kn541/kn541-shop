@@ -11,6 +11,7 @@ import { ShoppingBag03Icon } from '@hugeicons/core-free-icons'
 import { usePathname, useRouter } from 'next/navigation'
 import { useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
+import { useTranslations } from 'next-intl'
 
 interface Props {
   productId: string
@@ -65,6 +66,7 @@ export default function ProductActions({
   const router   = useRouter()
   const pathname = usePathname()
   const locale   = pathname.split('/')[1] || 'ko'
+  const tCart    = useTranslations('Cart')
   const { addItem, clearCart } = useCart()
   const [qty, setQty] = useState(1)
   const [colorSel, setColorSel] = useState('')
@@ -101,12 +103,18 @@ export default function ProductActions({
     runWithValidation(() => {
       addItem(cartPayload())
       toast.success(
-        <span>
-          장바구니에 담겼습니다!{' '}
-          <button type="button" className="font-semibold underline" onClick={() => router.push(`/${locale}/cart`)}>
-            장바구니 보기
-          </button>
-        </span>,
+        (toastItem) => (
+          <span>
+            {tCart('addedToCartToast')}{' '}
+            <button
+              type="button"
+              className="font-semibold underline"
+              onClick={() => toast.dismiss(toastItem.id)}
+            >
+              {tCart('afterAddContinueShopping')}
+            </button>
+          </span>
+        ),
         { duration: 3000 }
       )
     })
