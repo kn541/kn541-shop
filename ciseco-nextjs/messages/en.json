@@ -29,6 +29,13 @@
     "contact": "Contact",
     "templates": "Templates"
   },
+  "ProductSort": {
+    "newest": "Latest",
+    "sales_count": "Best Sellers",
+    "review_count": "Top Rated",
+    "price_asc": "Price: Low to High",
+    "price_desc": "Price: High to Low"
+  },
   "Home": {
     "heroTitle": "Trendy fashion\nin one place",
     "heroSubtitle": "Discover the latest collections",

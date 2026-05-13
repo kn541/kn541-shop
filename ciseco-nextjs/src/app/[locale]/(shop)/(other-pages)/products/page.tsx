@@ -3,6 +3,8 @@ import { Suspense } from 'react'
 import ProductsPageClient from './ProductsPageClient'
 import type { Metadata } from 'next'
 
+import { productSortToApiQuery, normalizeProductSortParam } from '@/lib/product-list-sort'
+
 const BASE =
   process.env.NEXT_PUBLIC_API_URL ||
   process.env.API_URL ||
@@ -56,16 +58,9 @@ async function fetchAllCategories(): Promise<CategoryInfo[]> {
   }
 }
 
-function parseSortParam(sort?: string): { sort_by?: string; sort_order?: string } {
-  switch (sort) {
-    case 'newest':    return { sort_by: 'created_at', sort_order: 'desc' }
-    case 'oldest':    return { sort_by: 'created_at', sort_order: 'asc' }
-    case 'price_asc': return { sort_by: 'sale_price', sort_order: 'asc' }
-    case 'price_desc':return { sort_by: 'sale_price', sort_order: 'desc' }
-    case 'name_asc':  return { sort_by: 'product_name', sort_order: 'asc' }
-    case 'name_desc': return { sort_by: 'product_name', sort_order: 'desc' }
-    default: return {}
-  }
+function parseSortParam(sort?: string): { sort_by: string; sort_order: string } {
+  const normalized = normalizeProductSortParam(sort ?? undefined)
+  return productSortToApiQuery(normalized)
 }
 
 function mapProduct(p: any) {
@@ -113,8 +108,8 @@ async function fetchProducts(params: {
     })
     if (params.categoryId) qs.set('category_id', params.categoryId)
     const sortParams = parseSortParam(params.sort)
-    if (sortParams.sort_by) qs.set('sort_by', sortParams.sort_by)
-    if (sortParams.sort_order) qs.set('sort_order', sortParams.sort_order)
+    qs.set('sort_by', sortParams.sort_by)
+    qs.set('sort_order', sortParams.sort_order)
 
     const res = await fetch(`${BASE}/products?${qs}`, { cache: 'no-store' })
     if (!res.ok) return { products: [], hasNext: false }

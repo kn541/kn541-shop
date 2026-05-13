@@ -29,6 +29,13 @@
     "contact": "문의",
     "templates": "템플릿"
   },
+  "ProductSort": {
+    "newest": "최신순",
+    "sales_count": "판매량순",
+    "review_count": "상품평순",
+    "price_asc": "낮은가격순",
+    "price_desc": "높은가격순"
+  },
   "Home": {
     "heroTitle": "트렌디한 패션을\n한 곳에서",
     "heroSubtitle": "최신 컬렉션을 만나보세요",

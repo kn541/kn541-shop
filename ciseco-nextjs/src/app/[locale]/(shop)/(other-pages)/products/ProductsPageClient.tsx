@@ -8,6 +8,7 @@ import ScrollToTop from '@/components/ScrollToTop'
 import { FilterSortByMenuListBox } from '@/components/FilterSortByMenu'
 import { Divider } from '@/components/Divider'
 import type { CategoryInfo } from './page'
+import { applyProductSortToSearchParams, normalizeProductSortParam } from '@/lib/product-list-sort'
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || 'https://kn541-production.up.railway.app'
@@ -111,7 +112,7 @@ export default function ProductsPageClient({
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const activeCid = searchParams.get('cid')
-  const activeSort = searchParams.get('sort') || ''
+  const activeSort = normalizeProductSortParam(searchParams.get('sort'))
 
   // ★ 무한스크롤 상태
   const [products, setProducts] = useState<ProductItem[]>(initialProducts)
@@ -135,10 +136,7 @@ export default function ProductsPageClient({
       const nextPage = page + 1
       const qs = new URLSearchParams({ page: String(nextPage), size: String(PAGE_SIZE) })
       if (activeCid) qs.set('category_id', activeCid)
-      if (activeSort === 'newest') { qs.set('sort_by', 'created_at'); qs.set('sort_order', 'desc') }
-      else if (activeSort === 'oldest') { qs.set('sort_by', 'created_at'); qs.set('sort_order', 'asc') }
-      else if (activeSort === 'price_asc') { qs.set('sort_by', 'sale_price'); qs.set('sort_order', 'asc') }
-      else if (activeSort === 'price_desc') { qs.set('sort_by', 'sale_price'); qs.set('sort_order', 'desc') }
+      applyProductSortToSearchParams(qs, activeSort)
 
       const res = await fetch(`${API_BASE}/products?${qs}`)
       if (!res.ok) throw new Error('fetch failed')
