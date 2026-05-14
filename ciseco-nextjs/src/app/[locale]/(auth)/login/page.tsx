@@ -5,7 +5,8 @@
 
 import { Suspense, useState, useTransition } from 'react'
 import Image from 'next/image'
-import { useRouter } from '@/i18n/navigation'
+import { Link, useRouter } from '@/i18n/navigation'
+import { useTranslations } from 'next-intl'
 import { useSearchParams } from 'next/navigation'
 import { PasswordChangePanel } from '@/components/auth/PasswordChangePanel'
 
@@ -15,6 +16,7 @@ const LOGO_URL = 'https://ghtkropmnrelkxivzpim.supabase.co/storage/v1/object/pub
 // useSearchParams를 사용하는 실제 폼 컴포넌트 — Suspense 안에서만 렌더링
 function LoginForm() {
   const router = useRouter()
+  const t = useTranslations('Auth')
   const searchParams = useSearchParams()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -155,10 +157,16 @@ function LoginForm() {
         {isPending ? '로그인 중...' : '로그인'}
       </button>
 
-      <div className="text-right mt-0.5">
-        <a href="/ko/forgot-password" className="text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors">
-          비밀번호 찾기
-        </a>
+      <div className="mt-0.5 text-center text-xs text-neutral-400 dark:text-neutral-500">
+        <Link href="/forgot-username" className="hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors">
+          {t('findUsernameLink')}
+        </Link>
+        <span className="mx-1.5 text-neutral-300 dark:text-neutral-600" aria-hidden>
+          |
+        </span>
+        <Link href="/forgot-password" className="hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors">
+          {t('forgotPasswordLink')}
+        </Link>
       </div>
     </form>
     </>

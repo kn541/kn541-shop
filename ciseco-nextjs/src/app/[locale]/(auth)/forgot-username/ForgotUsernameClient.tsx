@@ -4,7 +4,6 @@ import ButtonPrimary from '@/shared/Button/ButtonPrimary'
 import { Button } from '@/shared/Button/Button'
 import { Field, FieldGroup, Fieldset, Label } from '@/shared/fieldset'
 import { Input } from '@/shared/input'
-import { Link } from '@/shared/link'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import { useRouter } from '@/i18n/navigation'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -24,18 +23,16 @@ function readDetail(json: unknown): string {
   return ''
 }
 
-export default function ForgotPasswordClient() {
+export default function ForgotUsernameClient() {
   const t = useTranslations('Auth')
   const router = useRouter()
 
   const [step, setStep] = useState<Step>(1)
-  const [accountUsername, setAccountUsername] = useState('')
   const [phone, setPhone] = useState('')
   const [code, setCode] = useState('')
-  const [newPassword, setNewPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
+  const [maskedUsername, setMaskedUsername] = useState('')
   const [sending, setSending] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
+  const [confirming, setConfirming] = useState(false)
   const [deadlineMs, setDeadlineMs] = useState<number | null>(null)
   const [tick, setTick] = useState(0)
 
@@ -62,10 +59,6 @@ export default function ForgotPasswordClient() {
       toast.error(t('forgotPasswordApiMissing'))
       return
     }
-    if (!accountUsername.trim()) {
-      toast.error(t('forgotPasswordUsernameInvalid'))
-      return
-    }
     const digits = phone.replace(/\D/g, '')
     if (digits.length < 10) {
       toast.error(t('forgotPasswordPhoneInvalid'))
@@ -73,14 +66,14 @@ export default function ForgotPasswordClient() {
     }
     setSending(true)
     try {
-      const res = await fetch(`${BASE}/auth/password-reset/request`, {
+      const res = await fetch(`${BASE}/auth/find-username/request`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: accountUsername.trim(), phone: digits }),
+        body: JSON.stringify({ phone: digits }),
       })
       const json = await res.json().catch(() => ({}))
       if (!res.ok) {
-        toast.error(readDetail(json) || t('forgotPasswordSendError'))
+        toast.error(readDetail(json) || t('forgotUsernameSendError'))
         return
       }
       if (json?.status === 'success') {
@@ -89,7 +82,7 @@ export default function ForgotPasswordClient() {
         setStep(2)
         setCode('')
       } else {
-        toast.error(t('forgotPasswordSendError'))
+        toast.error(t('forgotUsernameSendError'))
       }
     } catch {
       toast.error(t('forgotPasswordNetworkError'))
@@ -98,7 +91,7 @@ export default function ForgotPasswordClient() {
     }
   }
 
-  const confirmReset = async () => {
+  const confirmCode = async () => {
     if (!BASE) {
       toast.error(t('forgotPasswordApiMissing'))
       return
@@ -111,36 +104,32 @@ export default function ForgotPasswordClient() {
       toast.error(t('forgotPasswordCodeInvalid'))
       return
     }
-    if (newPassword !== confirmPassword) {
-      toast.error(t('forgotPasswordMismatch'))
-      return
-    }
-    setSubmitting(true)
+    setConfirming(true)
     try {
-      const res = await fetch(`${BASE}/auth/password-reset/confirm`, {
+      const res = await fetch(`${BASE}/auth/find-username/confirm`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           phone: phone.replace(/\D/g, ''),
           code: code.trim(),
-          new_password: newPassword,
         }),
       })
       const json = await res.json().catch(() => ({}))
       if (!res.ok) {
-        toast.error(readDetail(json) || t('forgotPasswordResetError'))
+        toast.error(readDetail(json) || t('forgotUsernameConfirmError'))
         return
       }
       if (json?.status === 'success') {
-        toast.success(t('forgotPasswordSuccessToast'))
-        router.push('/login')
+        const u = typeof json?.data?.username === 'string' ? json.data.username : ''
+        setMaskedUsername(u || '—')
+        setStep(3)
       } else {
-        toast.error(t('forgotPasswordResetError'))
+        toast.error(t('forgotUsernameConfirmError'))
       }
     } catch {
       toast.error(t('forgotPasswordNetworkError'))
     } finally {
-      setSubmitting(false)
+      setConfirming(false)
     }
   }
 
@@ -158,10 +147,10 @@ export default function ForgotPasswordClient() {
 
         <header className="mx-auto mb-10 max-w-2xl pt-14 text-center sm:mb-12">
           <h1 className="text-2xl font-semibold text-neutral-900 sm:text-3xl md:text-4xl dark:text-neutral-100">
-            {t('forgotPasswordTitle')}
+            {t('findUsernameTitle')}
           </h1>
           <p className="mt-3 text-sm text-neutral-600 sm:text-base dark:text-neutral-300">
-            {t('forgotPasswordHintSms')}
+            {t('findUsernameHint')}
           </p>
         </header>
 
@@ -169,17 +158,6 @@ export default function ForgotPasswordClient() {
           {step === 1 && (
             <Fieldset>
               <FieldGroup>
-                <Field>
-                  <Label>{t('forgotPasswordUsernameLabel')}</Label>
-                  <Input
-                    type="text"
-                    name="username"
-                    autoComplete="username"
-                    placeholder={t('forgotPasswordUsernamePlaceholder')}
-                    value={accountUsername}
-                    onChange={(e) => setAccountUsername(e.target.value)}
-                  />
-                </Field>
                 <Field>
                   <Label>{t('forgotPasswordPhoneLabel')}</Label>
                   <Input
@@ -232,10 +210,10 @@ export default function ForgotPasswordClient() {
                   <ButtonPrimary
                     type="button"
                     className="w-full sm:flex-1"
-                    disabled={code.length !== 6}
-                    onClick={() => setStep(3)}
+                    disabled={code.length !== 6 || confirming}
+                    onClick={() => void confirmCode()}
                   >
-                    {t('forgotPasswordNext')}
+                    {confirming ? t('findUsernameConfirming') : t('forgotPasswordNext')}
                   </ButtonPrimary>
                 </div>
               </FieldGroup>
@@ -243,48 +221,19 @@ export default function ForgotPasswordClient() {
           )}
 
           {step === 3 && (
-            <Fieldset>
-              <FieldGroup>
-                <Field>
-                  <Label>{t('password')}</Label>
-                  <Input
-                    type="password"
-                    autoComplete="new-password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                  />
-                </Field>
-                <Field>
-                  <Label>{t('confirmPassword')}</Label>
-                  <Input
-                    type="password"
-                    autoComplete="new-password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                  />
-                </Field>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <Button type="button" outline className="w-full sm:flex-1" onClick={() => setStep(2)}>
-                    {t('forgotPasswordPrev')}
-                  </Button>
-                  <ButtonPrimary
-                    type="button"
-                    className="w-full sm:flex-1"
-                    disabled={submitting || !newPassword}
-                    onClick={() => void confirmReset()}
-                  >
-                    {submitting ? t('forgotPasswordSubmitting') : t('forgotPasswordSubmit')}
-                  </ButtonPrimary>
-                </div>
-              </FieldGroup>
-            </Fieldset>
+            <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-5 py-6 text-center dark:border-neutral-700 dark:bg-neutral-800/50">
+              <p className="text-sm text-neutral-600 dark:text-neutral-400">{t('findUsernameResultLabel')}</p>
+              <p className="mt-3 text-2xl font-bold tracking-wide text-neutral-900 dark:text-white">{maskedUsername}</p>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+                <ButtonPrimary type="button" className="w-full sm:w-auto sm:min-w-[140px]" onClick={() => router.push('/login')}>
+                  {t('findUsernameGoLogin')}
+                </ButtonPrimary>
+                <Button type="button" outline className="w-full sm:w-auto sm:min-w-[140px]" onClick={() => router.push('/forgot-password')}>
+                  {t('findUsernameGoPasswordReset')}
+                </Button>
+              </div>
+            </div>
           )}
-
-          <p className="text-center text-sm text-neutral-600 dark:text-neutral-400">
-            <Link href="/login" className="text-primary-600 underline">
-              {t('signIn')}
-            </Link>
-          </p>
         </div>
       </div>
     </div>
