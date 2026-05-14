@@ -119,7 +119,15 @@
     "remove": "删除",
     "quantity": "数量",
     "orderSummary": "订单摘要",
-    "shippingTaxNote": "运费和税费将在结算时计算。"
+    "shippingTaxNote": "运费和税费将在结算时计算。",
+    "lineItemCount": "共 {count} 件商品",
+    "selectedCount": "已选 {count} 件",
+    "selectAllWithCounts": "全选 ({selected}/{total})",
+    "deleteSelectedWithCount": "删除所选 ({count})",
+    "deleteSelectedConfirmTitle": "删除所选商品",
+    "deleteSelectedConfirmMessage": "要从购物车中删除所选的 {count} 件商品吗？",
+    "deleteItemConfirmTitle": "删除商品",
+    "deleteItemConfirmMessage": "要从购物车中删除该商品吗？"
   },
   "Checkout": {
     "title": "结算",

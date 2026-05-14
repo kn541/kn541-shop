@@ -1,6 +1,6 @@
 'use client'
 // KN541 장바구니 페이지
-// fix: 폐쇄몰 — 비로그인 시 메인 페이지로 이동
+// fix: 폐쇄몰 — 비로그인 시 로그인 페이지로 이동
 // fix: locale 동적화, NcInputNumber key 추가
 
 import { ConfirmDeleteDialog } from '@/components/common/ConfirmDeleteDialog'
@@ -10,7 +10,8 @@ import { Link } from '@/shared/link'
 import { TrashIcon, ShoppingBagIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline'
 import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
-import { useRouter, usePathname } from 'next/navigation'
+import { useRouter } from '@/i18n/navigation'
+import { useLocale, useTranslations } from 'next-intl'
 import { useCart, calcItemShipping } from '@/lib/cart-context'
 import toast from 'react-hot-toast'
 
@@ -19,9 +20,9 @@ type PendingCartDelete =
   | { kind: 'selected' }
 
 export default function CartPage() {
-  const router   = useRouter()
-  const pathname = usePathname()
-  const locale   = pathname.split('/')[1] || 'ko'
+  const router = useRouter()
+  const locale = useLocale()
+  const t = useTranslations('Cart')
   const [pendingDelete, setPendingDelete] = useState<PendingCartDelete | null>(null)
   const pendingDeleteRef = useRef<PendingCartDelete | null>(null)
   const {
@@ -31,16 +32,16 @@ export default function CartPage() {
     selectedPrice, selectedShipping, selectedTotal,
   } = useCart()
 
-  // ★ 비로그인 가드 — 폐쇄몰: 로그인 없으면 메인으로
+  // ★ 비로그인 가드 — 폐쇄몰: 로그인 없으면 로그인으로
   const [authChecked, setAuthChecked] = useState(false)
   useEffect(() => {
     const token = localStorage.getItem('access_token')
     if (!token) {
-      router.replace(`/${locale}`)
+      router.replace('/login')
       return
     }
     setAuthChecked(true)
-  }, [locale, router])
+  }, [router])
 
   // 인증 확인 전 로딩
   if (!authChecked) {
@@ -79,8 +80,11 @@ export default function CartPage() {
     <div className="bg-white dark:bg-neutral-900">
       <main className="container py-16 lg:pt-20 lg:pb-28">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100 lg:text-4xl">장바구니</h1>
-          <p className="mt-2 text-sm text-neutral-500">총 {items.length}개 상품</p>
+          <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100 lg:text-4xl">{t('title')}</h1>
+          <p className="mt-2 text-sm text-neutral-500">{t('lineItemCount', { count: items.length })}</p>
+          {selectedCount > 0 && (
+            <p className="mt-1 text-sm font-medium text-primary-600">{t('selectedCount', { count: selectedCount })}</p>
+          )}
         </div>
 
         {soldOutIds.size > 0 && (
@@ -97,7 +101,7 @@ export default function CartPage() {
               <label className="flex cursor-pointer items-center gap-2.5 text-sm font-medium text-neutral-700 dark:text-neutral-300">
                 <input type="checkbox" checked={isAllSelected} onChange={toggleSelectAll}
                   className="h-4 w-4 cursor-pointer rounded border-neutral-300 text-primary-600 focus:ring-primary-500" />
-                전체선택 ({selectedCount}/{items.length})
+                {t('selectAllWithCounts', { selected: selectedCount, total: items.length })}
               </label>
               {selectedCount > 0 && (
                 <button
@@ -109,7 +113,7 @@ export default function CartPage() {
                   className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
                 >
                   <TrashIcon className="h-3.5 w-3.5" />
-                  선택삭제 ({selectedCount})
+                  {t('deleteSelectedWithCount', { count: selectedCount })}
                 </button>
               )}
             </div>
@@ -289,6 +293,20 @@ export default function CartPage() {
           pendingDeleteRef.current = null
           setPendingDelete(null)
         }}
+        title={
+          pendingDelete?.kind === 'selected'
+            ? t('deleteSelectedConfirmTitle')
+            : pendingDelete?.kind === 'item'
+              ? t('deleteItemConfirmTitle')
+              : undefined
+        }
+        message={
+          pendingDelete?.kind === 'selected'
+            ? t('deleteSelectedConfirmMessage', { count: selectedCount })
+            : pendingDelete?.kind === 'item'
+              ? t('deleteItemConfirmMessage')
+              : undefined
+        }
         onConfirm={async () => {
           const p = pendingDeleteRef.current
           if (p?.kind === 'item') removeItem(p.id)

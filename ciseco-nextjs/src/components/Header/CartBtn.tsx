@@ -3,15 +3,25 @@
 
 import { useCart } from '@/lib/cart-context'
 import { useAside } from '../aside'
+import { useRouter } from '@/i18n/navigation'
 
 export default function CartBtn() {
+  const router = useRouter()
   const { open: openAside } = useAside()
   const { totalCount } = useCart()
+
+  const onCartClick = () => {
+    if (typeof window !== 'undefined' && !localStorage.getItem('access_token')) {
+      router.push('/login')
+      return
+    }
+    openAside('cart')
+  }
 
   return (
     <button
       type="button"
-      onClick={() => openAside('cart')}
+      onClick={onCartClick}
       aria-label="장바구니"
       className="relative inline-flex items-center rounded-md px-2.5 py-1.5 text-sm text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800 whitespace-nowrap"
     >

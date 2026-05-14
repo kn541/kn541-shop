@@ -119,7 +119,15 @@
     "remove": "Remove",
     "quantity": "Quantity",
     "orderSummary": "Order summary",
-    "shippingTaxNote": "Shipping and taxes calculated at checkout."
+    "shippingTaxNote": "Shipping and taxes calculated at checkout.",
+    "lineItemCount": "{count} items in cart",
+    "selectedCount": "{count} selected",
+    "selectAllWithCounts": "Select all ({selected}/{total})",
+    "deleteSelectedWithCount": "Delete selected ({count})",
+    "deleteSelectedConfirmTitle": "Remove selected items",
+    "deleteSelectedConfirmMessage": "Remove {count} selected item(s) from your cart?",
+    "deleteItemConfirmTitle": "Remove item",
+    "deleteItemConfirmMessage": "Remove this item from your cart?"
   },
   "Checkout": {
     "title": "Checkout",

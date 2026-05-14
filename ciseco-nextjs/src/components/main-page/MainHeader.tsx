@@ -103,6 +103,14 @@ export default function MainHeader({ categoryTabs }: MainHeaderProps) {
     if (trimmed) router.push(`/search?q=${encodeURIComponent(trimmed)}`)
   }
 
+  const openCartOrLogin = useCallback(() => {
+    if (typeof window !== 'undefined' && !localStorage.getItem('access_token')) {
+      router.push('/login')
+      return
+    }
+    openAside('cart')
+  }, [router, openAside])
+
   const currentLang = LANGS.find((l) => l.code === locale) ?? LANGS[0]
 
   return (
@@ -158,7 +166,7 @@ export default function MainHeader({ categoryTabs }: MainHeaderProps) {
               type="button"
               className="block h-[21px] w-[22px] border-0 bg-transparent p-0"
               aria-label="장바구니"
-              onClick={() => openAside('cart')}
+              onClick={openCartOrLogin}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={ICON.cart} alt="" width={22} height={21} className="size-full object-contain" />
@@ -256,7 +264,7 @@ export default function MainHeader({ categoryTabs }: MainHeaderProps) {
           type="button"
           className="btn-cart ml-[15px] border-0 bg-transparent p-0"
           aria-label="장바구니"
-          onClick={() => openAside('cart')}
+          onClick={openCartOrLogin}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={ICON.cart} alt="" width={23} height={22} className="h-[22px] w-[23px]" />
