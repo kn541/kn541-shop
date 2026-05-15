@@ -7,7 +7,6 @@ import type {
   CouponItem, CouponListResponse,
   ShopTemplate, UrlCheckResponse,
   DividendItem, DividendSummaryResponse, DividendHistoryResponse,
-  DownlineMember, DownlineTreeResponse,
   WithdrawalItem, WithdrawalListResponse,
 } from './types'
 
@@ -145,22 +144,6 @@ export const MOCK_DIVIDEND_HISTORY: DividendHistoryResponse = {
     { dividend_id: 8,  dividend_type: 'AGIT',   dividend_type_label: '아지트', dividend_date: '2026-03-25', amount: 5_000, source_order_no: null, source_member_masked: null, depth: null },
   ],
   total: 8, page: 1, size: 20, total_amount: 66_400,
-}
-
-export const MOCK_DOWNLINE: DownlineTreeResponse = {
-  root_user_id: 'user-001',
-  total_count: 24, max_depth: 4,
-  by_depth: { 1: 5, 2: 8, 3: 7, 4: 4 },
-  members: [
-    { user_id: 'u-101', username_masked: '홍**', member_no_masked: 'M***101', joined_at: '2026-02-15', depth: 1, parent_username_masked: null, downline_count: 3 },
-    { user_id: 'u-102', username_masked: '김**', member_no_masked: 'M***102', joined_at: '2026-02-20', depth: 1, parent_username_masked: null, downline_count: 5 },
-    { user_id: 'u-103', username_masked: '이**', member_no_masked: 'M***103', joined_at: '2026-03-01', depth: 1, parent_username_masked: null, downline_count: 0 },
-    { user_id: 'u-104', username_masked: '박**', member_no_masked: 'M***104', joined_at: '2026-03-05', depth: 1, parent_username_masked: null, downline_count: 2 },
-    { user_id: 'u-105', username_masked: '정**', member_no_masked: 'M***105', joined_at: '2026-03-10', depth: 1, parent_username_masked: null, downline_count: 1 },
-    { user_id: 'u-201', username_masked: '김**', member_no_masked: 'M***201', joined_at: '2026-03-01', depth: 2, parent_username_masked: '홍**', downline_count: 2 },
-    { user_id: 'u-202', username_masked: '신**', member_no_masked: 'M***202', joined_at: '2026-03-03', depth: 2, parent_username_masked: '홍**', downline_count: 1 },
-    { user_id: 'u-203', username_masked: '한**', member_no_masked: 'M***203', joined_at: '2026-03-05', depth: 2, parent_username_masked: '김**', downline_count: 3 },
-  ] as DownlineMember[],
 }
 
 export const MOCK_WITHDRAWALS: WithdrawalListResponse = {

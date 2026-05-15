@@ -319,20 +319,16 @@ export interface DividendHistoryResponse {
 
 export interface DownlineMember {
   user_id: string
-  username_masked: string          // '홍**'
-  member_no_masked: string         // 'M***123'
+  /** 성명 마스킹 (예: 홍*동) */
+  name_masked: string
+  /** 8자리 회원번호 — 그대로 표시 */
+  member_no: string
+  user_type: string
+  user_type_label: string
   joined_at: string
   depth: number
-  parent_username_masked: string | null
+  /** 직접 추천(1단) 인원 — 자식 노드 수 */
   downline_count: number
-}
-
-export interface DownlineTreeResponse {
-  root_user_id: string
-  members: DownlineMember[]
-  total_count: number
-  max_depth: number
-  by_depth: Record<number, number>
 }
 
 export interface WithdrawRequest {
