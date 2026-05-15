@@ -4,7 +4,7 @@
 // fix: 카드정보 / 결제일시 / 결제수단 상세 노출
 
 import { Suspense, useEffect, useState } from 'react'
-import { usePathname, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import ButtonPrimary from '@/shared/Button/ButtonPrimary'
 import { Link } from '@/shared/link'
 import {
@@ -89,8 +89,6 @@ function RowItem({ label, value, highlight }: { label: string; value: React.Reac
 
 function OrderContent() {
   const params   = useSearchParams()
-  const pathname = usePathname()
-  const locale   = pathname.split('/')[1] || 'ko'
 
   const orderId = params.get('order_id')
   const [order, setOrder]     = useState<OrderDetail | null>(null)
@@ -116,6 +114,8 @@ function OrderContent() {
   const shipping = order?.shipping_fee ?? 0
   const total    = order?.total_amount ?? (subtotal + shipping)
   const isVA     = isVirtualAccount(order?.payment_method)
+  /** 쿼리 또는 주문 조회 응답의 UUID — next-intl Link는 locale 없이 경로만 전달 */
+  const detailOrderId = orderId ?? order?.order_id ?? ''
 
   return (
     <main className="container py-16 lg:py-24">
@@ -329,16 +329,16 @@ function OrderContent() {
         <div className={`mt-8 flex flex-col gap-3 sm:flex-row transition-all duration-700 delay-500 ${
           show ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
         }`}>
-          <ButtonPrimary href={`/${locale}`} className="flex-1">
+          <ButtonPrimary href="/" className="flex-1">
             <HomeIcon className="mr-2 h-5 w-5" />홈으로 가기
           </ButtonPrimary>
-          {orderId && (
-            <Link href={`/${locale}/mypage/orders/${orderId}`}
+          {detailOrderId ? (
+            <Link href={`/orders/${detailOrderId}`}
               className="flex flex-1 items-center justify-center gap-2 rounded-full border border-neutral-300 px-6 py-3 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50 dark:border-neutral-600 dark:text-neutral-300">
               <ClipboardDocumentListIcon className="h-5 w-5" />주문 상세 보기
             </Link>
-          )}
-          <Link href={`/${locale}/products`}
+          ) : null}
+          <Link href="/products"
             className="flex flex-1 items-center justify-center gap-2 rounded-full border border-neutral-300 px-6 py-3 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50 dark:border-neutral-600 dark:text-neutral-300">
             <ShoppingBagIcon className="h-5 w-5" />쇼핑 계속하기
           </Link>

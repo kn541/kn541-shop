@@ -4,7 +4,8 @@
 // fix: locale 동적화 (/ko/ 하드코딩 제거)
 
 import { Suspense, useEffect, useRef, useState } from 'react'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
+import { useRouter } from '@/i18n/navigation'
 import { CheckCircleIcon } from '@heroicons/react/24/outline'
 import { useCart } from '@/lib/cart-context'
 
@@ -21,8 +22,6 @@ function Spinner() {
 
 function SuccessContent() {
   const router       = useRouter()
-  const pathname     = usePathname()
-  const locale       = pathname.split('/')[1] || 'ko'
   const searchParams = useSearchParams()
   const { clearCart } = useCart()
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
@@ -68,7 +67,8 @@ function SuccessContent() {
 
         const targetOrderId = internalOrderId ?? data?.data?.order_id ?? ''
         setTimeout(() => {
-          router.replace(`/${locale}/order-successful${targetOrderId ? `?order_id=${targetOrderId}` : ''}`)
+          const qs = targetOrderId ? `?order_id=${encodeURIComponent(String(targetOrderId))}` : ''
+          router.replace(`/order-successful${qs}`)
         }, 2000)
       } catch (err: any) {
         setStatus('error')
@@ -95,7 +95,7 @@ function SuccessContent() {
         <div className="text-5xl">⚠️</div>
         <h2 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">결제 승인 실패</h2>
         <p className="max-w-sm text-sm text-neutral-500">{errorMsg}</p>
-        <button onClick={() => router.push(`/${locale}/checkout`)}
+        <button onClick={() => router.push('/checkout')}
           className="mt-4 rounded-xl bg-primary-600 px-6 py-3 text-sm font-medium text-white transition hover:bg-primary-700">
           다시 시도하기
         </button>
