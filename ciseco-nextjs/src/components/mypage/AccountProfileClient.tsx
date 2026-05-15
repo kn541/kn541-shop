@@ -4,9 +4,14 @@
  */
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'react-hot-toast'
+import { useRouter } from '@/i18n/navigation'
 import { useProfile } from '@/lib/mypage/useProfile'
 import { getAuthHeader } from '@/lib/mypage/auth'
 import { mypageFetch, MypageApiError } from '@/lib/mypage/api'
+import {
+  KN541_CART_SELECTED_STORAGE_KEY,
+  KN541_CART_STORAGE_KEY,
+} from '@/lib/cart-context'
 import BigButton from '@/components/mypage/BigButton'
 import {
   checkPasswordPolicy,
@@ -70,7 +75,15 @@ const readOnlyBoxClass =
 const cardClass =
   'rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900'
 
+const WITHDRAW_REASONS = [
+  { code: 'SERVICE' as const, label: '서비스 불만족' },
+  { code: 'OTHER_SERVICE' as const, label: '다른 서비스 이용' },
+  { code: 'PERSONAL' as const, label: '개인 사정' },
+  { code: 'OTHER' as const, label: '기타 (직접 입력)' },
+]
+
 export default function AccountProfileClient() {
+  const router = useRouter()
   const { data, loading, reload } = useProfile()
 
   const [name, setName] = useState('')
@@ -93,6 +106,11 @@ export default function AccountProfileClient() {
   const [cfPwHangulMsg, setCfPwHangulMsg] = useState('')
 
   const [saving, setSaving] = useState(false)
+
+  const [withdrawOpen, setWithdrawOpen] = useState(false)
+  const [withdrawReasonCode, setWithdrawReasonCode] = useState<string>('SERVICE')
+  const [withdrawReasonDetail, setWithdrawReasonDetail] = useState('')
+  const [withdrawSubmitting, setWithdrawSubmitting] = useState(false)
 
   useEffect(() => {
     if (!data) return
@@ -191,6 +209,54 @@ export default function AccountProfileClient() {
       }
     } finally {
       setSaving(false)
+    }
+  }
+
+  useEffect(() => {
+    if (!withdrawOpen) return
+    setWithdrawReasonCode('SERVICE')
+    setWithdrawReasonDetail('')
+  }, [withdrawOpen])
+
+  const clearSessionAndGoLogin = useCallback(() => {
+    if (typeof window === 'undefined') return
+    localStorage.removeItem('access_token')
+    localStorage.removeItem('refresh_token')
+    localStorage.removeItem('user_type')
+    localStorage.removeItem(KN541_CART_STORAGE_KEY)
+    localStorage.removeItem(KN541_CART_SELECTED_STORAGE_KEY)
+  }, [])
+
+  const submitWithdraw = async () => {
+    if (!BASE) {
+      toast.error('설정을 불러올 수 없습니다.')
+      return
+    }
+    if (withdrawReasonCode === 'OTHER' && withdrawReasonDetail.trim().length < 2) {
+      toast.error('기타 사유를 입력해 주세요.')
+      return
+    }
+    setWithdrawSubmitting(true)
+    try {
+      await mypageFetch<unknown>('/auth/withdraw', {
+        method: 'POST',
+        body: JSON.stringify({
+          reason_code: withdrawReasonCode,
+          reason_detail: withdrawReasonCode === 'OTHER' ? withdrawReasonDetail.trim() : null,
+        }),
+      })
+      setWithdrawOpen(false)
+      toast.success('회원 탈퇴가 완료되었습니다')
+      clearSessionAndGoLogin()
+      router.push('/login')
+    } catch (e) {
+      if (e instanceof MypageApiError) {
+        toast.error(e.message)
+      } else {
+        toast.error('탈퇴 처리에 실패했습니다.')
+      }
+    } finally {
+      setWithdrawSubmitting(false)
     }
   }
 
@@ -406,6 +472,98 @@ export default function AccountProfileClient() {
       <BigButton fullWidth onClick={() => void saveAll()} disabled={saving}>
         {saving ? '저장 중…' : '저장하기'}
       </BigButton>
+
+      <div className="flex flex-col items-center gap-1 border-t border-neutral-200 pt-6 dark:border-neutral-700">
+        <button
+          type="button"
+          className="text-sm font-semibold text-red-600 hover:underline dark:text-red-400"
+          onClick={() => setWithdrawOpen(true)}
+        >
+          회원 탈퇴
+        </button>
+      </div>
+
+      {withdrawOpen ? (
+        <div
+          className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 p-4 sm:items-center"
+          role="presentation"
+          onClick={() => {
+            if (!withdrawSubmitting) setWithdrawOpen(false)
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="withdraw-dialog-title"
+            className="w-full max-w-md rounded-2xl border border-neutral-200 bg-white p-6 shadow-xl dark:border-neutral-700 dark:bg-neutral-900"
+            onClick={e => e.stopPropagation()}
+          >
+            <h2
+              id="withdraw-dialog-title"
+              className="text-lg font-bold text-neutral-900 dark:text-neutral-100"
+            >
+              정말 탈퇴하시겠습니까?
+            </h2>
+            <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+              탈퇴 시 모든 서비스 이용이 중단됩니다
+            </p>
+
+            <label className="mt-5 mb-1.5 block text-xs font-medium text-neutral-700 dark:text-neutral-300">
+              탈퇴 사유
+            </label>
+            <select
+              className={inputClass}
+              value={withdrawReasonCode}
+              onChange={e => setWithdrawReasonCode(e.target.value)}
+              disabled={withdrawSubmitting}
+            >
+              {WITHDRAW_REASONS.map(r => (
+                <option key={r.code} value={r.code}>
+                  {r.label}
+                </option>
+              ))}
+            </select>
+
+            {withdrawReasonCode === 'OTHER' ? (
+              <div className="mt-3">
+                <label className="mb-1.5 block text-xs font-medium text-neutral-700 dark:text-neutral-300">
+                  기타 사유 입력
+                </label>
+                <textarea
+                  className={`${inputClass} min-h-[88px] resize-y py-3`}
+                  rows={3}
+                  placeholder="탈퇴 사유를 입력해 주세요"
+                  value={withdrawReasonDetail}
+                  onChange={e => setWithdrawReasonDetail(e.target.value)}
+                  disabled={withdrawSubmitting}
+                />
+              </div>
+            ) : null}
+
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                className="flex-1 rounded-xl border border-neutral-300 py-3 text-sm font-semibold text-neutral-800 hover:bg-neutral-50 dark:border-neutral-600 dark:text-neutral-200 dark:hover:bg-neutral-800"
+                disabled={withdrawSubmitting}
+                onClick={() => setWithdrawOpen(false)}
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                className="flex-1 rounded-xl bg-red-600 py-3 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+                disabled={
+                  withdrawSubmitting ||
+                  (withdrawReasonCode === 'OTHER' && withdrawReasonDetail.trim().length < 2)
+                }
+                onClick={() => void submitWithdraw()}
+              >
+                {withdrawSubmitting ? '처리 중…' : '탈퇴하기'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }
