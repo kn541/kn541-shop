@@ -34,6 +34,7 @@ interface OrderDetail {
   created_at: string
   items: {
     item_id: string
+    product_code?: string | null
     product_name: string
     option_name?: string
     quantity: number
@@ -154,6 +155,9 @@ export default function OrderDetailPage() {
                 <div className="flex flex-1 items-center justify-between">
                   <div>
                     <p className="line-clamp-1 text-sm font-medium">{item.product_name}</p>
+                    {item.product_code && (
+                      <p className="text-xs text-neutral-400 font-mono">상품코드 {item.product_code}</p>
+                    )}
                     {item.option_name && <p className="text-xs text-neutral-400">{item.option_name}</p>}
                     <p className="text-xs text-neutral-400">
                       {item.sale_price.toLocaleString('ko-KR')}원 × {item.quantity}

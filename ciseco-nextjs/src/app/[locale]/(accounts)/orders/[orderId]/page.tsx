@@ -178,6 +178,9 @@ export default function OrderDetailPage({
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="font-medium">{lineName(row)}</p>
+                    {row.product_code && (
+                      <p className="text-xs text-neutral-400 font-mono">상품코드 {row.product_code}</p>
+                    )}
                     <p className="text-sm text-neutral-500">
                       수량 {lineQty(row)} · {Number(linePrice(row)).toLocaleString('ko-KR')}원
                     </p>

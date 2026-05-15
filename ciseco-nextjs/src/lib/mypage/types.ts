@@ -61,6 +61,7 @@ export interface OrderListResponse {
 /** GET /mypage/orders/{id} — 백엔드 필드 유연 매핑 */
 export interface OrderDetailLineItem {
   product_id?: string
+  product_code?: string | null
   product_name?: string
   name?: string
   thumbnail_url?: string | null

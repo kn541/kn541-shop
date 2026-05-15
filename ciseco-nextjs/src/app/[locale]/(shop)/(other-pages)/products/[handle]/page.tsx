@@ -236,6 +236,12 @@ export default async function Page({
             <div className="rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
               <table className="w-full text-sm">
                 <tbody>
+                  {p.productCode && (
+                    <tr className="border-b border-neutral-100 dark:border-neutral-700">
+                      <td className="px-4 py-2.5 w-28 font-medium text-neutral-500 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-800">상품코드</td>
+                      <td className="px-4 py-2.5 text-neutral-800 dark:text-neutral-200 font-mono">{p.productCode}</td>
+                    </tr>
+                  )}
                   {p.vendor && (
                     <tr className="border-b border-neutral-100 dark:border-neutral-700">
                       <td className="px-4 py-2.5 w-28 font-medium text-neutral-500 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-800">브랜드</td>
