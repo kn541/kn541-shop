@@ -4,6 +4,7 @@
 
 import NcInputNumber from '@/components/NcInputNumber'
 import { ProductDetailWishlistHeart } from '@/components/ProductDetailWishlistHeart'
+import { ProductDetailShareButton } from '@/components/ProductDetailShareButton'
 import ProductColorOptions from '@/components/ProductForm/ProductColorOptions'
 import ProductSizeOptions from '@/components/ProductForm/ProductSizeOptions'
 import { useCart } from '@/lib/cart-context'
@@ -175,7 +176,10 @@ export default function ProductActions({
           className="flex min-h-[52px] min-w-0 flex-1 items-center justify-center gap-2 rounded-full bg-neutral-900 px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 sm:px-6">
           바로구매
         </button>
-        <ProductDetailWishlistHeart productId={productId} />
+        <div className="flex flex-col items-center gap-2">
+          <ProductDetailWishlistHeart productId={productId} />
+          <ProductDetailShareButton title={productName} price={price} imageUrl={productImage} />
+        </div>
       </div>
     </div>
   )
