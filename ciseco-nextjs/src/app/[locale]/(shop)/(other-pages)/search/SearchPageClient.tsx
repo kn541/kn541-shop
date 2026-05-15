@@ -5,6 +5,7 @@ import type { Product } from '@/lib/api/products'
 import type { TProductItem } from '@/data/data'
 import { mypageFetch, MypageApiError } from '@/lib/mypage/api'
 import ProductCard from '@/components/ProductCard'
+import { FilterSortByMenuListBox } from '@/components/FilterSortByMenu'
 import ButtonCircle from '@/shared/Button/ButtonCircle'
 import { useRouter } from '@/i18n/navigation'
 import { Search01Icon } from '@hugeicons/core-free-icons'
@@ -22,6 +23,7 @@ import { getPaginationItems } from '@/utils/paginationRange'
 import { useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { PRODUCT_LIST_PAGE_SIZE } from '@/lib/product-list-constants'
+import { normalizeProductSortParam, productSortToApiQuery, type ProductSortValue } from '@/lib/product-list-sort'
 
 const PAGE_SIZE = PRODUCT_LIST_PAGE_SIZE
 
@@ -42,12 +44,13 @@ export default function SearchPageClient() {
   const router = useRouter()
   const qRaw = searchParams.get('q')?.trim() ?? ''
   const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10) || 1)
+  const sort = normalizeProductSortParam(searchParams.get('sort'))
   const [loading, setLoading] = useState(false)
   const [items, setItems] = useState<TProductItem[]>([])
   const [total, setTotal] = useState(0)
   const [hasNext, setHasNext] = useState(false)
 
-  const runSearch = useCallback(async (q: string, pageNum: number) => {
+  const runSearch = useCallback(async (q: string, pageNum: number, sortKey: ProductSortValue) => {
     if (!q) {
       setItems([])
       setTotal(0)
@@ -56,11 +59,14 @@ export default function SearchPageClient() {
     }
     setLoading(true)
     try {
+      const { sort_by, sort_order } = productSortToApiQuery(sortKey)
       const params = new URLSearchParams({
         keyword: q,
         page: String(pageNum),
         size: String(PAGE_SIZE),
         include_total: pageNum === 1 ? 'true' : 'false',
+        sort_by,
+        sort_order,
       })
       const data = await mypageFetch<ProductListPayload>(`/products?${params.toString()}`)
       const rawItems = data?.items ?? []
@@ -90,8 +96,8 @@ export default function SearchPageClient() {
   }, [])
 
   useEffect(() => {
-    void runSearch(qRaw, page)
-  }, [qRaw, page, runSearch])
+    void runSearch(qRaw, page, sort)
+  }, [qRaw, page, sort, runSearch])
 
   const totalPages = useMemo(() => {
     if (total > 0) return Math.max(1, Math.ceil(total / PAGE_SIZE))
@@ -108,6 +114,7 @@ export default function SearchPageClient() {
     const q = new URLSearchParams()
     if (qRaw) q.set('q', qRaw)
     if (p > 1) q.set('page', String(p))
+    q.set('sort', sort)
     const qs = q.toString()
     return qs ? `/search?${qs}` : '/search'
   }
@@ -123,7 +130,14 @@ export default function SearchPageClient() {
               e.preventDefault()
               const fd = new FormData(e.currentTarget)
               const input = String(fd.get('q') ?? '').trim()
-              router.push(input ? `/search?q=${encodeURIComponent(input)}` : '/search')
+              if (!input) {
+                router.push('/search')
+                return
+              }
+              const q = new URLSearchParams()
+              q.set('q', input)
+              q.set('sort', sort)
+              router.push(`/search?${q.toString()}`)
             }}
           >
             <fieldset className="text-neutral-500 dark:text-neutral-300">
@@ -160,6 +174,12 @@ export default function SearchPageClient() {
           <p className="text-sm text-neutral-500 dark:text-neutral-400">
             &quot;{qRaw}&quot; 검색 결과 {total.toLocaleString('ko-KR')}건
           </p>
+        )}
+
+        {qRaw && (
+          <div className="flex justify-end">
+            <FilterSortByMenuListBox />
+          </div>
         )}
 
         {loading && (

@@ -1,14 +1,17 @@
 'use client'
 
-import { MainProductCard } from '@/components/main-page/MainProductCard'
+import ProductCard from '@/components/ProductCard'
+import { FilterSortByMenuListBox } from '@/components/FilterSortByMenu'
 import {
   fetchAllShopPublicItems,
-  fetchShopPublicList,
   mapShopListItemToProduct,
   type ShopListKind,
   type ShopPublicListItem,
 } from '@/lib/api/shopPublicLists'
+import { adaptProduct } from '@/lib/adapters'
 import { PRODUCT_LIST_PAGE_SIZE } from '@/lib/product-list-constants'
+import type { ProductSortValue } from '@/lib/product-list-sort'
+import { normalizeProductSortParam } from '@/lib/product-list-sort'
 import {
   Pagination,
   PaginationGap,
@@ -18,34 +21,44 @@ import {
   PaginationPrevious,
 } from '@/shared/Pagination/Pagination'
 import { getPaginationItems } from '@/utils/paginationRange'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { usePathname, useSearchParams } from 'next/navigation'
+import { useEffect, useMemo, useState } from 'react'
 
 const PAGE_SIZE = PRODUCT_LIST_PAGE_SIZE
 
-export type SortMode = 'api' | 'newest' | 'price_asc' | 'price_desc'
-
-function sortItems(items: ShopPublicListItem[], mode: SortMode): ShopPublicListItem[] {
+function sortShopItems(items: ShopPublicListItem[], sort: ProductSortValue): ShopPublicListItem[] {
   const copy = [...items]
-  if (mode === 'newest') {
-    copy.sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))
-    return copy
-  }
-  if (mode === 'price_asc') {
-    copy.sort((a, b) => Number(a.sale_price) - Number(b.sale_price))
-    return copy
-  }
-  if (mode === 'price_desc') {
-    copy.sort((a, b) => Number(b.sale_price) - Number(a.sale_price))
-    return copy
+  const sales = (r: ShopPublicListItem) => Number(r.sort_sales_count ?? 0)
+  const reviews = (r: ShopPublicListItem) => Number(r.sort_review_count ?? 0)
+  const tie = (a: ShopPublicListItem, b: ShopPublicListItem) =>
+    String(b.created_at).localeCompare(String(a.created_at))
+
+  switch (sort) {
+    case 'newest':
+      copy.sort((a, b) => tie(a, b))
+      break
+    case 'sales_count':
+      copy.sort((a, b) => sales(b) - sales(a) || tie(a, b))
+      break
+    case 'review_count':
+      copy.sort((a, b) => reviews(b) - reviews(a) || tie(a, b))
+      break
+    case 'price_asc':
+      copy.sort((a, b) => Number(a.sale_price) - Number(b.sale_price) || tie(a, b))
+      break
+    case 'price_desc':
+      copy.sort((a, b) => Number(b.sale_price) - Number(a.sale_price) || tie(a, b))
+      break
+    default:
+      copy.sort((a, b) => tie(a, b))
   }
   return copy
 }
 
-function buildQuery(page: number, sort: SortMode) {
+function buildQuery(page: number, sort: ProductSortValue) {
   const q = new URLSearchParams()
   if (page > 1) q.set('page', String(page))
-  if (sort !== 'api') q.set('sort', sort)
+  q.set('sort', sort)
   const s = q.toString()
   return s ? `?${s}` : ''
 }
@@ -59,107 +72,50 @@ export default function ShopListingPageClient({
   title: string
   description: string
 }) {
-  const router = useRouter()
   const pathname = usePathname()
   const sp = useSearchParams()
 
   const urlPage = Math.max(1, parseInt(sp.get('page') || '1', 10) || 1)
-  const urlSort = (sp.get('sort') || 'api') as SortMode
-  const sort: SortMode = ['api', 'newest', 'price_asc', 'price_desc'].includes(urlSort) ? urlSort : 'api'
+  const urlSort = normalizeProductSortParam(sp.get('sort'))
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-
-  /** API 순서 모드: 현재 페이지 원본 */
-  const [pageItems, setPageItems] = useState<ShopPublicListItem[]>([])
+  const [sortedAll, setSortedAll] = useState<ShopPublicListItem[]>([])
   const [total, setTotal] = useState(0)
 
-  /** 정렬 모드: 전체 목록 (fetch 후) */
-  const [sortedBuffer, setSortedBuffer] = useState<ShopPublicListItem[] | null>(null)
-  const [bestMeta, setBestMeta] = useState<{ weight?: { qty: number; order: number; sales: number }; window_days?: number } | null>(null)
-
-  const syncUrl = useCallback(
-    (page: number, nextSort: SortMode) => {
-      router.replace(`${pathname}${buildQuery(page, nextSort)}`, { scroll: false })
-    },
-    [pathname, router],
-  )
-
-  const loadApiPage = useCallback(
-    async (page: number) => {
+  useEffect(() => {
+    let cancelled = false
+    const run = async () => {
       setLoading(true)
       setError(null)
-      setSortedBuffer(null)
-      try {
-        const res = await fetchShopPublicList(kind, page, PAGE_SIZE)
-        setPageItems(res.items)
-        setTotal(res.total)
-        if (kind === 'best') {
-          setBestMeta({ weight: res.weight, window_days: res.window_days })
-        }
-      } catch (e) {
-        setError(e instanceof Error ? e.message : '목록을 불러오지 못했습니다.')
-        setPageItems([])
-        setTotal(0)
-      } finally {
-        setLoading(false)
-      }
-    },
-    [kind],
-  )
-
-  const loadSortedAll = useCallback(
-    async (mode: SortMode) => {
-      setLoading(true)
-      setError(null)
-      setSortedBuffer(null)
+      setSortedAll([])
       try {
         const res = await fetchAllShopPublicItems(kind)
-        setSortedBuffer(sortItems(res.items, mode))
+        if (cancelled) return
+        setSortedAll(sortShopItems(res.items, urlSort))
         setTotal(res.total)
-        if (kind === 'best') {
-          setBestMeta({ weight: res.weight, window_days: res.window_days })
-        }
       } catch (e) {
+        if (cancelled) return
         setError(e instanceof Error ? e.message : '목록을 불러오지 못했습니다.')
-        setSortedBuffer([])
+        setSortedAll([])
         setTotal(0)
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
-    },
-    [kind],
-  )
-
-  useEffect(() => {
-    if (sort === 'api') {
-      void loadApiPage(urlPage)
     }
-  }, [sort, urlPage, loadApiPage])
-
-  useEffect(() => {
-    if (sort !== 'api') {
-      void loadSortedAll(sort)
+    void run()
+    return () => {
+      cancelled = true
     }
-  }, [sort, loadSortedAll])
+  }, [kind, urlSort])
 
   const displayItems = useMemo(() => {
-    if (sort === 'api') {
-      return pageItems
-    }
-    if (!sortedBuffer) return []
-    const sliceFrom = (urlPage - 1) * PAGE_SIZE
-    return sortedBuffer.slice(sliceFrom, sliceFrom + PAGE_SIZE)
-  }, [sort, pageItems, sortedBuffer, urlPage])
+    const start = (urlPage - 1) * PAGE_SIZE
+    return sortedAll.slice(start, start + PAGE_SIZE)
+  }, [sortedAll, urlPage])
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
-
-  const onSortChange = (next: SortMode) => {
-    syncUrl(1, next)
-  }
-
   const pageItemsRange = getPaginationItems(urlPage, totalPages)
-
   const isValueUpEmpty = kind === 'value-up' && !loading && total === 0
 
   return (
@@ -167,33 +123,11 @@ export default function ShopListingPageClient({
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100 md:text-3xl">{title}</h1>
-          <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400 md:text-base">{description}</p>
-          {kind === 'best' && bestMeta?.window_days != null && (
-            <p className="mt-1 text-xs text-neutral-400">
-              집계: 최근 {bestMeta.window_days}일 판매 기준
-              {bestMeta.weight
-                ? ` · 가중치 수량 ${(bestMeta.weight.qty * 100).toFixed(0)}% / 주문 ${(bestMeta.weight.order * 100).toFixed(0)}% / 매출 ${(bestMeta.weight.sales * 100).toFixed(0)}%`
-                : ''}
-              {` · 부족 시 누적 인기로 보충`}
-            </p>
-          )}
+          {description ? (
+            <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400 md:text-base">{description}</p>
+          ) : null}
         </div>
-        {!isValueUpEmpty && (
-          <label className="flex shrink-0 items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300">
-            <span className="whitespace-nowrap text-neutral-500">정렬</span>
-            <select
-              className="rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-900"
-              value={sort}
-              onChange={(e) => onSortChange(e.target.value as SortMode)}
-              aria-label="상품 정렬"
-            >
-              <option value="api">추천순</option>
-              <option value="newest">신상품순</option>
-              <option value="price_asc">가격 낮은순</option>
-              <option value="price_desc">가격 높은순</option>
-            </select>
-          </label>
-        )}
+        {!isValueUpEmpty && <FilterSortByMenuListBox className="ml-auto sm:ml-0" />}
       </div>
 
       {error && (
@@ -219,16 +153,16 @@ export default function ShopListingPageClient({
 
       {!isValueUpEmpty && !loading && displayItems.length > 0 && (
         <>
-          <div className="best-grid grid grid-cols-2 justify-center gap-x-5 gap-y-8 md:grid-cols-3 xl:grid-cols-5 xl:gap-x-8">
+          <div className="grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 xl:gap-x-8">
             {displayItems.map((row) => (
-              <MainProductCard key={row.product_id} mode="api" product={mapShopListItemToProduct(row)} compact />
+              <ProductCard key={row.product_id} data={adaptProduct(mapShopListItemToProduct(row)) as any} />
             ))}
           </div>
 
           {totalPages > 1 && (
             <div className="mt-14 flex justify-center">
               <Pagination className="mx-auto">
-                <PaginationPrevious href={urlPage > 1 ? `${pathname}${buildQuery(urlPage - 1, sort)}` : null} />
+                <PaginationPrevious href={urlPage > 1 ? `${pathname}${buildQuery(urlPage - 1, urlSort)}` : null} />
                 <PaginationList>
                   {pageItemsRange.map((item, idx) =>
                     item === 'gap' ? (
@@ -236,7 +170,7 @@ export default function ShopListingPageClient({
                     ) : (
                       <PaginationPage
                         key={item}
-                        href={`${pathname}${buildQuery(item as number, sort)}`}
+                        href={`${pathname}${buildQuery(item as number, urlSort)}`}
                         current={item === urlPage}
                       >
                         {item}
@@ -245,16 +179,11 @@ export default function ShopListingPageClient({
                   )}
                 </PaginationList>
                 <PaginationNext
-                  href={urlPage < totalPages ? `${pathname}${buildQuery(urlPage + 1, sort)}` : null}
+                  href={urlPage < totalPages ? `${pathname}${buildQuery(urlPage + 1, urlSort)}` : null}
                 />
               </Pagination>
             </div>
           )}
-
-          <p className="mt-6 text-center text-xs text-neutral-400">
-            {total.toLocaleString('ko-KR')}개 중 {(urlPage - 1) * PAGE_SIZE + 1}–
-            {Math.min(urlPage * PAGE_SIZE, total).toLocaleString('ko-KR')} 표시
-          </p>
         </>
       )}
     </main>

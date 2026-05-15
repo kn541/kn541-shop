@@ -70,6 +70,7 @@ import {
   getProducts as apiGetProducts,
   getProductsByCategory,
 } from '@/lib/api/products'
+import { normalizeProductSortParam, productSortToApiQuery } from '@/lib/product-list-sort'
 
 // ─── 더미 상품 데이터 (폴백용) ───────────────────────────────────
 function getDummyProducts() {
@@ -377,12 +378,15 @@ export async function getProducts(params?: {
   const category_id = isUuidCategoryId(params?.categoryId) ? params.categoryId : undefined
 
   try {
+    const { sort_by, sort_order } = productSortToApiQuery(normalizeProductSortParam(params?.sort))
     const result = await apiGetProducts({
       size,
       page,
       keyword: params?.q,
       category_id,
       include_total: page === 1,
+      sort_by,
+      sort_order,
     })
     return {
       products: adaptProducts(result.items),

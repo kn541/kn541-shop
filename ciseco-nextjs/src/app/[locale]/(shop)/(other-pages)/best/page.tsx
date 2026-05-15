@@ -4,7 +4,7 @@ import { Suspense } from 'react'
 
 export const metadata: Metadata = {
   title: '베스트 상품 | KN541',
-  description: '최근 인기 상품과 누적 베스트 상품을 만나보세요.',
+  description: '지금 주목받는 인기 상품을 만나보세요.',
 }
 
 export default function BestProductsPage() {
@@ -16,11 +16,7 @@ export default function BestProductsPage() {
         </div>
       }
     >
-      <ShopListingPageClient
-        kind="best"
-        title="베스트"
-        description="최근 14일 인기 상품입니다. 데이터가 부족할 때는 누적 인기 상품으로 자동 보충됩니다."
-      />
+      <ShopListingPageClient kind="best" title="베스트" description="" />
     </Suspense>
   )
 }

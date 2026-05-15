@@ -38,6 +38,10 @@ export interface ShopPublicListItem {
   round_end_at?: string | null
   created_at: string
   best_source?: '14d' | 'all'
+  /** v_product_list_ext — 정렬용 (없으면 0 취급) */
+  sort_sales_count?: number | null
+  sort_review_count?: number | null
+  sort_review_avg?: number | null
 }
 
 export interface ShopPublicListResponse {
