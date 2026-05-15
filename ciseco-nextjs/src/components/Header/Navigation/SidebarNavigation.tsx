@@ -1,9 +1,9 @@
 'use client'
 
-import { Divider } from '@/components/Divider'
+// KN541 모바일 사이드바 네비게이션
+// 2026-05-15: 영문 텍스트 + SNS + 템플릿 버튼 제거 (#39)
+
 import { TNavigationItem } from '@/data/navigation'
-import ButtonPrimary from '@/shared/Button/ButtonPrimary'
-import SocialsList from '@/shared/SocialsList/SocialsList'
 import { useRouter } from '@/i18n/navigation'
 import { Link } from '@/shared/link'
 import { Disclosure, DisclosureButton, DisclosurePanel, useClose } from '@headlessui/react'
@@ -91,7 +91,7 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ data }) => {
           <HugeiconsIcon icon={Search01Icon} size={24} color="currentColor" strokeWidth={1.5} />
           <input
             type="search"
-            placeholder="Type and press enter"
+            placeholder="검색어를 입력해 주세요"
             className="w-full border-none bg-transparent text-sm focus:ring-0 focus:outline-hidden"
           />
         </div>
@@ -102,24 +102,8 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ data }) => {
 
   return (
     <div>
-      <span>Discover the most outstanding articles on all topics of life. Write your stories and share them</span>
-
-      <div className="mt-4 flex items-center justify-between">
-        <SocialsList />
-      </div>
-      <div className="mt-5">{renderSearchForm()}</div>
+      <div>{renderSearchForm()}</div>
       <ul className="flex flex-col gap-y-1 px-2 py-6">{data?.map(_renderItem)}</ul>
-      <Divider className="mb-6" />
-
-      {/* FOR OUR DEMO */}
-      <ButtonPrimary
-        href="https://themeforest.net/item/ciseco-shop-ecommerce-nextjs-template/44210635"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="px-8!"
-      >
-        Buy this template
-      </ButtonPrimary>
     </div>
   )
 }
