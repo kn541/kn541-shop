@@ -1,13 +1,13 @@
 'use client'
 // KN541 쇼핑몰 — 회원가입 페이지
-// fix: router.push('/ko') → router.push('/') (next-intl이 자동으로 locale 추가)
+// fix: next-intl Link/useRouter — locale 경로는 '/' 기준 사용
 
 import { Suspense, useState, useTransition, useCallback, useRef, useEffect } from 'react'
 import Image from 'next/image'
-import { useRouter } from '@/i18n/navigation'
+import { Link } from '@/i18n/navigation'
 import { useSearchParams } from 'next/navigation'
+import { LockClosedIcon } from '@heroicons/react/24/solid'
 import { checkPasswordPolicy, isPasswordValid, passwordContainsHangul, stripHangulFromPassword } from '@/lib/passwordPolicy'
-import { HANGUL_CHARS_RE, USERNAME_OK_RE, isUsernameFormatValid, sanitizeUsernameInput } from '@/lib/usernamePolicy'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL
 const LOGO_URL = 'https://ghtkropmnrelkxivzpim.supabase.co/storage/v1/object/public/brands/white_logo.png'
@@ -89,7 +89,6 @@ export default function SignupPage() {
 }
 
 function SignupPageContent() {
-  const router = useRouter()
   const searchParams = useSearchParams()
 
   const [memberType, setMemberType] = useState<MemberType>('normal')
@@ -106,10 +105,8 @@ function SignupPageContent() {
   const [globalError, setGlobalError] = useState('')
 
   const [name, setName] = useState('')
-  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [passwordConfirm, setPasswordConfirm] = useState('')
-  const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [recommenderCode, setRecommenderCode] = useState('')
   const [agreeTerms, setAgreeTerms] = useState(false)
@@ -121,13 +118,12 @@ function SignupPageContent() {
   const [accountNo, setAccountNo] = useState('')
   const [accountHolder, setAccountHolder] = useState('')
 
-  const [usernameFormatErr, setUsernameFormatErr] = useState('')
   const [passwordHangulErr, setPasswordHangulErr] = useState('')
   const [confirmHangulErr, setConfirmHangulErr] = useState('')
 
-  const [usernameDup, setUsernameDup] = useState<DupState>('idle')
-  const [emailDup, setEmailDup] = useState<DupState>('idle')
   const [phoneDup, setPhoneDup] = useState<DupState>('idle')
+  /** 가입 완료 후 회원번호 안내 (토큰은 저장하지 않음 — 로그인 페이지에서 회원번호로 로그인) */
+  const [doneMemberNo, setDoneMemberNo] = useState<string | null>(null)
   const dupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const checkDuplicate = useCallback(async (field: string, value: string, setter: (s: DupState) => void) => {
@@ -151,32 +147,13 @@ function SignupPageContent() {
 
   const passwordMatch = password && passwordConfirm && password === passwordConfirm
 
-  const updateUsernameField = useCallback(
-    (raw: string) => {
-      const v = sanitizeUsernameInput(raw)
-      if (HANGUL_CHARS_RE.test(raw) || raw !== v) {
-        setUsernameFormatErr('영문, 숫자만 입력 가능합니다')
-      } else if (v.length > 0 && !isUsernameFormatValid(v)) {
-        setUsernameFormatErr('아이디는 4~20자 영문, 숫자만 사용할 수 있습니다')
-      } else {
-        setUsernameFormatErr('')
-      }
-      setUsername(v)
-      checkDuplicate('username', v, setUsernameDup)
-    },
-    [checkDuplicate]
-  )
-
   const validate = () => {
     if (!name.trim()) return '이름을 입력해주세요.'
-    if (!username.trim() && !email.trim() && !phone.trim()) return '아이디, 이메일, 휴대폰 중 하나는 필수입니다.'
-    if (username.trim() && !USERNAME_OK_RE.test(username.trim())) return '아이디는 4~20자 영문, 숫자만 사용할 수 있습니다.'
+    if (!phone.trim()) return '휴대폰 번호를 입력해주세요.'
+    if (phoneDup === 'dup') return '이미 사용 중인 휴대폰 번호입니다.'
     if (!password) return '비밀번호를 입력해주세요.'
     if (!isPasswordValid(password)) return '비밀번호 요건을 확인해 주세요. (8자 이상, 숫자 또는 특수문자 포함, 한글 불가)'
     if (password !== passwordConfirm) return '비밀번호가 일치하지 않습니다.'
-    if (usernameDup === 'dup') return '이미 사용 중인 아이디입니다.'
-    if (emailDup === 'dup') return '이미 사용 중인 이메일입니다.'
-    if (phoneDup === 'dup') return '이미 사용 중인 휴대폰 번호입니다.'
     if (memberType === 'startup' && !agitCode) return '소속 아지트를 선택해주세요.'
     if (!agreeTerms || !agreePrivacy) return '필수 약관에 동의해주세요.'
     return ''
@@ -195,8 +172,6 @@ function SignupPageContent() {
           password,
           user_type: memberType === 'startup' ? USER_TYPE_PAID_MEMBER : USER_TYPE_MEMBER,
         }
-        if (username.trim()) body.username = username.trim()
-        if (email.trim()) body.email = email.trim()
         if (phone.trim()) body.phone = phone.trim().replace(/-/g, '')
         if (recommenderCode.trim()) body.recommender_code = recommenderCode.trim()
         if (memberType === 'startup') {
@@ -218,30 +193,12 @@ function SignupPageContent() {
           return
         }
 
-        const { access_token, refresh_token, user_type: userTypeFromApi } = json?.data ?? {}
-        if (access_token) {
-          localStorage.setItem('access_token', access_token)
-          if (refresh_token) localStorage.setItem('refresh_token', refresh_token)
-          if (userTypeFromApi != null && String(userTypeFromApi) !== '') {
-            localStorage.setItem('user_type', String(userTypeFromApi))
-          } else {
-            try {
-              const part = access_token.split('.')[1]
-              if (part) {
-                const payload = JSON.parse(atob(part.replace(/-/g, '+').replace(/_/g, '/')))
-                const ut = payload?.user_type
-                if (ut != null && String(ut) !== '') localStorage.setItem('user_type', String(ut))
-                else localStorage.removeItem('user_type')
-              }
-            } catch {
-              localStorage.removeItem('user_type')
-            }
-          }
-          // ★ fix: '/ko' → '/' (next-intl useRouter가 자동으로 locale 추가)
-          router.push('/')
-        } else {
-          setGlobalError('가입 처리 중 오류가 발생했습니다.')
+        const memberNo = json?.data?.member_no
+        if (memberNo != null && String(memberNo).trim() !== '') {
+          setDoneMemberNo(String(memberNo).trim())
+          return
         }
+        setGlobalError('가입 처리 중 오류가 발생했습니다.')
       } catch {
         setGlobalError('서버 연결에 실패했습니다.')
       }
@@ -261,12 +218,48 @@ function SignupPageContent() {
     return null
   }
 
+  if (doneMemberNo) {
+    return (
+      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex items-start justify-center px-4 py-12">
+        <div className="w-full max-w-[420px]">
+          <div className="flex justify-center mb-8">
+            <Link href="/" className="block">
+              <Image
+                src={LOGO_URL}
+                alt="KN541"
+                width={400}
+                height={133}
+                style={{ width: '240px', height: 'auto' }}
+                className="object-contain"
+                priority
+              />
+            </Link>
+          </div>
+          <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-sm border border-neutral-100 dark:border-neutral-800 px-8 py-10 text-center">
+            <p className="text-lg font-bold text-neutral-900 dark:text-white mb-6">회원가입이 완료되었습니다!</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400 mb-2">회원번호</p>
+            <p className="text-3xl sm:text-4xl font-black tracking-widest text-primary-600 dark:text-primary-400 mb-4 tabular-nums">
+              {doneMemberNo}
+            </p>
+            <p className="text-sm text-neutral-600 dark:text-neutral-300 mb-8">이 번호로 로그인하세요.</p>
+            <Link
+              href="/login"
+              className="inline-flex w-full items-center justify-center rounded-xl bg-neutral-900 dark:bg-white px-4 py-3 text-sm font-semibold text-white dark:text-neutral-900 hover:bg-neutral-700 dark:hover:bg-neutral-100 transition-colors"
+            >
+              로그인하기
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex items-start justify-center px-4 py-12">
       <div className="w-full max-w-[420px]">
 
         <div className="flex justify-center mb-8">
-          <a href="/ko" className="block">
+          <Link href="/" className="block">
             <Image
               src={LOGO_URL}
               alt="KN541"
@@ -276,7 +269,7 @@ function SignupPageContent() {
               className="object-contain"
               priority
             />
-          </a>
+          </Link>
         </div>
 
         {/* 회원유형 탭 */}
@@ -334,23 +327,31 @@ function SignupPageContent() {
             </div>
 
             <div>
-              <label className={labelCls}>아이디</label>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1.5">4~20자 영문, 숫자만 입력 가능합니다</p>
-              <div className="flex items-center gap-2">
+              <label className={labelCls}>회원번호(로그인 아이디)</label>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1.5">가입 완료 시 8자리 번호가 부여됩니다. 직접 입력할 수 없습니다.</p>
+              <div className="relative">
+                <LockClosedIcon className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-neutral-400" aria-hidden />
                 <input
                   type="text"
-                  value={username}
-                  onInput={e => updateUsernameField(e.currentTarget.value)}
-                  placeholder="영문, 숫자 (4~20자)"
-                  className={`${inputCls} ${usernameFormatErr ? 'border-red-500 ring-1 ring-red-500/30' : ''}`}
+                  disabled
+                  readOnly
+                  value=""
+                  placeholder="자동 발급됩니다"
+                  aria-label="회원번호는 가입 완료 시 자동 발급됩니다"
+                  className="w-full cursor-not-allowed rounded-xl border border-neutral-200 bg-neutral-200/80 py-3 pl-10 pr-4 text-sm text-neutral-500 placeholder-neutral-400 focus:outline-none dark:border-neutral-600 dark:bg-neutral-800/90 dark:text-neutral-400"
                 />
-                <DupIcon state={usernameDup} />
               </div>
-              {usernameFormatErr ? (
-                <p className="text-xs text-red-500 mt-1">{usernameFormatErr}</p>
-              ) : (
-                <DupMsg state={usernameDup} okMsg="사용 가능한 아이디입니다." dupMsg="이미 사용 중인 아이디입니다." />
-              )}
+            </div>
+
+            <div>
+              <label className={labelCls}>휴대폰 <span className="text-red-400">*</span></label>
+              <div className="flex items-center gap-2">
+                <input type="tel" value={phone}
+                  onChange={e => { setPhone(e.target.value); checkDuplicate('phone', e.target.value.replace(/-/g, ''), setPhoneDup) }}
+                  placeholder="010-0000-0000" className={inputCls} />
+                <DupIcon state={phoneDup} />
+              </div>
+              <DupMsg state={phoneDup} okMsg="사용 가능한 번호입니다." dupMsg="이미 등록된 번호입니다." />
             </div>
 
             <div>
@@ -393,28 +394,6 @@ function SignupPageContent() {
               </div>
               {confirmHangulErr ? <p className="text-xs text-red-500 mt-1">{confirmHangulErr}</p> : null}
               {passwordConfirm && !passwordMatch && <p className="text-xs text-red-500 mt-1">비밀번호가 일치하지 않습니다.</p>}
-            </div>
-
-            <div>
-              <label className={labelCls}>이메일</label>
-              <div className="flex items-center gap-2">
-                <input type="email" value={email}
-                  onChange={e => { setEmail(e.target.value); checkDuplicate('email', e.target.value, setEmailDup) }}
-                  placeholder="example@email.com" className={inputCls} />
-                <DupIcon state={emailDup} />
-              </div>
-              <DupMsg state={emailDup} okMsg="사용 가능한 이메일입니다." dupMsg="이미 등록된 이메일입니다." />
-            </div>
-
-            <div>
-              <label className={labelCls}>휴대폰</label>
-              <div className="flex items-center gap-2">
-                <input type="tel" value={phone}
-                  onChange={e => { setPhone(e.target.value); checkDuplicate('phone', e.target.value.replace(/-/g, ''), setPhoneDup) }}
-                  placeholder="010-0000-0000" className={inputCls} />
-                <DupIcon state={phoneDup} />
-              </div>
-              <DupMsg state={phoneDup} okMsg="사용 가능한 번호입니다." dupMsg="이미 등록된 번호입니다." />
             </div>
 
             <div>
@@ -499,7 +478,9 @@ function SignupPageContent() {
 
         <p className="text-center text-sm text-neutral-500 dark:text-neutral-400 mt-6">
           이미 계정이 있으신가요?{' '}
-          <a href="/ko/login" className="font-semibold text-neutral-900 dark:text-white hover:underline">로그인</a>
+          <Link href="/login" className="font-semibold text-neutral-900 dark:text-white hover:underline">
+            로그인
+          </Link>
         </p>
       </div>
     </div>

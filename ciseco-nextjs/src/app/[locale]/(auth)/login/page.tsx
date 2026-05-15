@@ -35,7 +35,7 @@ function LoginForm() {
     e.preventDefault()
     setError('')
     if (!username.trim() || !password.trim()) {
-      setError('아이디와 비밀번호를 입력해주세요.')
+      setError('회원번호(아이디), 이메일, 또는 휴대폰과 비밀번호를 입력해주세요.')
       return
     }
     startTransition(async () => {
@@ -132,7 +132,7 @@ function LoginForm() {
         type="text"
         value={username}
         onChange={e => setUsername(e.target.value)}
-        placeholder="아이디 또는 이메일"
+        placeholder="회원번호(8자리) · 아이디 · 이메일 · 휴대폰"
         autoComplete="username"
         className="w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 px-4 py-3 text-sm text-neutral-900 dark:text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
       />
