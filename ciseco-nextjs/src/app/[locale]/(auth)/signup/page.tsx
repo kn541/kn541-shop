@@ -2,14 +2,20 @@
 // KN541 쇼핑몰 — 회원가입 페이지
 // fix: router.push('/ko') → router.push('/') (next-intl이 자동으로 locale 추가)
 
-import { useState, useTransition, useCallback, useRef } from 'react'
+import { Suspense, useState, useTransition, useCallback, useRef, useEffect } from 'react'
 import Image from 'next/image'
 import { useRouter } from '@/i18n/navigation'
+import { useSearchParams } from 'next/navigation'
 import { checkPasswordPolicy, isPasswordValid, passwordContainsHangul, stripHangulFromPassword } from '@/lib/passwordPolicy'
 import { HANGUL_CHARS_RE, USERNAME_OK_RE, isUsernameFormatValid, sanitizeUsernameInput } from '@/lib/usernamePolicy'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL
 const LOGO_URL = 'https://ghtkropmnrelkxivzpim.supabase.co/storage/v1/object/public/brands/white_logo.png'
+
+/** system_codes user_type — 일반회원 */
+const USER_TYPE_MEMBER = '002'
+/** system_codes user_type — 창업·유료(MLM) */
+const USER_TYPE_PAID_MEMBER = '006'
 
 type MemberType = 'normal' | 'startup'
 type DupState = 'idle' | 'checking' | 'ok' | 'dup' | 'error'
@@ -69,8 +75,33 @@ const inputCls = "w-full rounded-xl border border-neutral-200 dark:border-neutra
 const labelCls = "block text-xs font-semibold text-neutral-500 dark:text-neutral-400 mb-1.5 uppercase tracking-wide"
 
 export default function SignupPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex items-center justify-center px-4">
+          <p className="text-sm text-neutral-500">로딩 중...</p>
+        </div>
+      }
+    >
+      <SignupPageContent />
+    </Suspense>
+  )
+}
+
+function SignupPageContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+
   const [memberType, setMemberType] = useState<MemberType>('normal')
+
+  /** /signup?type=paid · /signup?user_type=006 등으로 창업회원 가입 진입 */
+  useEffect(() => {
+    const t = (searchParams.get('type') || '').toLowerCase()
+    const ut = (searchParams.get('user_type') || '').trim()
+    if (t === 'paid' || t === 'startup' || ut === USER_TYPE_PAID_MEMBER || ut === '6') {
+      setMemberType('startup')
+    }
+  }, [searchParams])
   const [isPending, startTransition] = useTransition()
   const [globalError, setGlobalError] = useState('')
 
@@ -162,7 +193,7 @@ export default function SignupPage() {
         const body: Record<string, unknown> = {
           name,
           password,
-          user_type: memberType === 'startup' ? '006' : '002',
+          user_type: memberType === 'startup' ? USER_TYPE_PAID_MEMBER : USER_TYPE_MEMBER,
         }
         if (username.trim()) body.username = username.trim()
         if (email.trim()) body.email = email.trim()
@@ -187,20 +218,24 @@ export default function SignupPage() {
           return
         }
 
-        const { access_token, refresh_token } = json?.data ?? {}
+        const { access_token, refresh_token, user_type: userTypeFromApi } = json?.data ?? {}
         if (access_token) {
           localStorage.setItem('access_token', access_token)
           if (refresh_token) localStorage.setItem('refresh_token', refresh_token)
-          try {
-            const part = access_token.split('.')[1]
-            if (part) {
-              const payload = JSON.parse(atob(part.replace(/-/g, '+').replace(/_/g, '/')))
-              const ut = payload?.user_type
-              if (ut != null && String(ut) !== '') localStorage.setItem('user_type', String(ut))
-              else localStorage.removeItem('user_type')
+          if (userTypeFromApi != null && String(userTypeFromApi) !== '') {
+            localStorage.setItem('user_type', String(userTypeFromApi))
+          } else {
+            try {
+              const part = access_token.split('.')[1]
+              if (part) {
+                const payload = JSON.parse(atob(part.replace(/-/g, '+').replace(/_/g, '/')))
+                const ut = payload?.user_type
+                if (ut != null && String(ut) !== '') localStorage.setItem('user_type', String(ut))
+                else localStorage.removeItem('user_type')
+              }
+            } catch {
+              localStorage.removeItem('user_type')
             }
-          } catch {
-            localStorage.removeItem('user_type')
           }
           // ★ fix: '/ko' → '/' (next-intl useRouter가 자동으로 locale 추가)
           router.push('/')
