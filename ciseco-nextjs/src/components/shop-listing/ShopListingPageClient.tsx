@@ -8,6 +8,7 @@ import {
   type ShopListKind,
   type ShopPublicListItem,
 } from '@/lib/api/shopPublicLists'
+import { PRODUCT_LIST_PAGE_SIZE } from '@/lib/product-list-constants'
 import {
   Pagination,
   PaginationGap,
@@ -20,7 +21,7 @@ import { getPaginationItems } from '@/utils/paginationRange'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = PRODUCT_LIST_PAGE_SIZE
 
 export type SortMode = 'api' | 'newest' | 'price_asc' | 'price_desc'
 
@@ -218,7 +219,7 @@ export default function ShopListingPageClient({
 
       {!isValueUpEmpty && !loading && displayItems.length > 0 && (
         <>
-          <div className="best-grid grid grid-cols-2 justify-center gap-x-8 gap-y-10 md:grid-cols-3 xl:grid-cols-4">
+          <div className="best-grid grid grid-cols-2 justify-center gap-x-5 gap-y-8 md:grid-cols-3 xl:grid-cols-5 xl:gap-x-8">
             {displayItems.map((row) => (
               <MainProductCard key={row.product_id} mode="api" product={mapShopListItemToProduct(row)} compact />
             ))}

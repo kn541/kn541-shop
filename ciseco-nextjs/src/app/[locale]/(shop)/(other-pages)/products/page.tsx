@@ -1,8 +1,9 @@
-// KN541 상품목록 페이지 — 무한스크롤
+// KN541 상품목록 — 페이지네이션 (?page=), 첫 페이지만 total 카운트
 import { Suspense } from 'react'
 import ProductsPageClient from './ProductsPageClient'
 import type { Metadata } from 'next'
 
+import { PRODUCT_LIST_PAGE_SIZE } from '@/lib/product-list-constants'
 import { productSortToApiQuery, normalizeProductSortParam } from '@/lib/product-list-sort'
 
 const BASE =
@@ -10,7 +11,7 @@ const BASE =
   process.env.API_URL ||
   'https://kn541-production.up.railway.app'
 
-const PAGE_SIZE = 20
+export const PAGE_SIZE = PRODUCT_LIST_PAGE_SIZE
 
 export const metadata: Metadata = {
   title: '상품목록 | KN541',
@@ -100,11 +101,13 @@ async function fetchProducts(params: {
   page: number
   size: number
   sort?: string
+  includeTotal: boolean
 }) {
   try {
     const qs = new URLSearchParams({
       size: String(params.size),
       page: String(params.page),
+      include_total: params.includeTotal ? 'true' : 'false',
     })
     if (params.categoryId) qs.set('category_id', params.categoryId)
     const sortParams = parseSortParam(params.sort)
@@ -112,13 +115,14 @@ async function fetchProducts(params: {
     qs.set('sort_order', sortParams.sort_order)
 
     const res = await fetch(`${BASE}/products?${qs}`, { cache: 'no-store' })
-    if (!res.ok) return { products: [], hasNext: false }
+    if (!res.ok) return { products: [], hasNext: false, total: 0 }
     const data = await res.json()
     const items = data?.data?.items ?? []
-    const hasNext = data?.data?.has_next ?? false
-    return { products: items.map(mapProduct), hasNext }
+    const hasNext = Boolean(data?.data?.has_next)
+    const total = Number(data?.data?.total) || 0
+    return { products: items.map(mapProduct), hasNext, total }
   } catch {
-    return { products: [], hasNext: false }
+    return { products: [], hasNext: false, total: 0 }
   }
 }
 
@@ -127,11 +131,13 @@ export default async function ProductsPage({
 }: {
   searchParams: Promise<{ cid?: string; page?: string; sort?: string }>
 }) {
-  const { cid, sort } = await searchParams
+  const { cid, sort, page: pageRaw } = await searchParams
+  const page = Math.max(1, parseInt(String(pageRaw ?? '1'), 10) || 1)
+  const includeTotal = page === 1
 
-  const [allCategories, { products, hasNext }] = await Promise.all([
+  const [allCategories, { products, hasNext, total }] = await Promise.all([
     fetchAllCategories(),
-    fetchProducts({ categoryId: cid, page: 1, size: PAGE_SIZE, sort }),
+    fetchProducts({ categoryId: cid, page, size: PAGE_SIZE, sort, includeTotal }),
   ])
 
   const currentCategory = cid
@@ -168,10 +174,10 @@ export default async function ProductsPage({
         currentCategory={currentCategory}
         breadcrumbs={breadcrumbs}
         childCategories={childCategories}
-        hasNextInitial={hasNext}
-        currentPage={1}
-        totalPages={0}
-        total={0}
+        currentPage={page}
+        pageSize={PAGE_SIZE}
+        total={total}
+        hasNext={hasNext}
       />
     </Suspense>
   )

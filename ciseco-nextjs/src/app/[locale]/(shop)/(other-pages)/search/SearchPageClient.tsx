@@ -20,15 +20,21 @@ import {
 } from '@/shared/Pagination/Pagination'
 import { getPaginationItems } from '@/utils/paginationRange'
 import { useSearchParams } from 'next/navigation'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { PRODUCT_LIST_PAGE_SIZE } from '@/lib/product-list-constants'
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = PRODUCT_LIST_PAGE_SIZE
+
+function searchTotalCacheKey(q: string) {
+  return `kn541_search_total:${q}`
+}
 
 interface ProductListPayload {
   items: Product[]
   total: number
   page: number
   size: number
+  has_next?: boolean
 }
 
 export default function SearchPageClient() {
@@ -39,11 +45,13 @@ export default function SearchPageClient() {
   const [loading, setLoading] = useState(false)
   const [items, setItems] = useState<TProductItem[]>([])
   const [total, setTotal] = useState(0)
+  const [hasNext, setHasNext] = useState(false)
 
   const runSearch = useCallback(async (q: string, pageNum: number) => {
     if (!q) {
       setItems([])
       setTotal(0)
+      setHasNext(false)
       return
     }
     setLoading(true)
@@ -52,18 +60,29 @@ export default function SearchPageClient() {
         keyword: q,
         page: String(pageNum),
         size: String(PAGE_SIZE),
+        include_total: pageNum === 1 ? 'true' : 'false',
       })
       const data = await mypageFetch<ProductListPayload>(`/products?${params.toString()}`)
       const rawItems = data?.items ?? []
       setItems(adaptProducts(rawItems))
-      setTotal(data?.total ?? rawItems.length)
+      setHasNext(Boolean(data?.has_next))
+      let nextTotal = Number(data?.total) || 0
+      if (pageNum === 1 && typeof window !== 'undefined' && nextTotal > 0) {
+        sessionStorage.setItem(searchTotalCacheKey(q), String(nextTotal))
+      } else if (pageNum > 1 && nextTotal === 0 && typeof window !== 'undefined') {
+        const cached = sessionStorage.getItem(searchTotalCacheKey(q))
+        if (cached) nextTotal = parseInt(cached, 10) || 0
+      }
+      setTotal(nextTotal)
     } catch (e) {
       if (e instanceof MypageApiError && e.status === 401) {
         setItems([])
         setTotal(0)
+        setHasNext(false)
       } else {
         setItems([])
         setTotal(0)
+        setHasNext(false)
       }
     } finally {
       setLoading(false)
@@ -74,8 +93,16 @@ export default function SearchPageClient() {
     void runSearch(qRaw, page)
   }, [qRaw, page, runSearch])
 
-  const totalPages = Math.ceil(total / PAGE_SIZE)
+  const totalPages = useMemo(() => {
+    if (total > 0) return Math.max(1, Math.ceil(total / PAGE_SIZE))
+    if (hasNext) return Math.max(page + 1, page)
+    return Math.max(1, page)
+  }, [total, hasNext, page])
+
   const pageItems = getPaginationItems(page, totalPages)
+
+  const showSearchPagination =
+    items.length > 0 && (page > 1 || hasNext || (total > 0 && total > PAGE_SIZE))
 
   const searchHref = (p: number) => {
     const q = new URLSearchParams()
@@ -147,13 +174,13 @@ export default function SearchPageClient() {
 
         {!loading && items.length > 0 && (
           <>
-            <div className="grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 xl:gap-x-8">
               {items.map(item => (
                 <ProductCard data={item} key={item.id} />
               ))}
             </div>
 
-            {totalPages > 1 && (
+            {showSearchPagination && (
               <div className="mt-12 flex justify-center lg:mt-16">
                 <Pagination className="mx-auto">
                   <PaginationPrevious href={page > 1 ? searchHref(page - 1) : null} />
@@ -172,7 +199,13 @@ export default function SearchPageClient() {
                       )
                     )}
                   </PaginationList>
-                  <PaginationNext href={page < totalPages ? searchHref(page + 1) : null} />
+                  <PaginationNext
+                    href={
+                      page < totalPages || (total === 0 && hasNext)
+                        ? searchHref(page + 1)
+                        : null
+                    }
+                  />
                 </Pagination>
               </div>
             )}

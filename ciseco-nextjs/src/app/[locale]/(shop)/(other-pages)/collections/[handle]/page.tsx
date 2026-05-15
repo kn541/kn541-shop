@@ -3,6 +3,7 @@ import { FilterSortByMenuListBox } from '@/components/FilterSortByMenu'
 import { FiltersMenuTabs } from '@/components/FiltersMenu'
 import ProductCard from '@/components/ProductCard'
 import { getCollectionByHandle, getProducts } from '@/data/data'
+import { PRODUCT_LIST_PAGE_SIZE } from '@/lib/product-list-constants'
 import {
   Pagination,
   PaginationGap,
@@ -13,7 +14,7 @@ import {
 } from '@/shared/Pagination/Pagination'
 import { getPaginationItems } from '@/utils/paginationRange'
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = PRODUCT_LIST_PAGE_SIZE
 
 export default async function Page({
   params,
@@ -29,13 +30,20 @@ export default async function Page({
   const collection = await getCollectionByHandle(handle)
   const categoryId = collection?.id
 
-  const { products, total, size } = await getProducts({
+  const { products, total, size, hasNext } = await getProducts({
     page,
     size: PAGE_SIZE,
     categoryId,
   })
-  const totalPages = Math.ceil(total / size)
+  const totalPages =
+    total > 0
+      ? Math.max(1, Math.ceil(total / size))
+      : hasNext
+        ? Math.max(page + 1, page)
+        : Math.max(1, page)
   const pageItems = getPaginationItems(page, totalPages)
+  const showPagination =
+    (products?.length ?? 0) > 0 && (page > 1 || hasNext || (total > 0 && total > size))
 
   return (
     <main>
@@ -48,12 +56,12 @@ export default async function Page({
       <Divider className="mt-8" />
 
       {/* LOOP ITEMS */}
-      <div className="mt-8 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:mt-10 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="mt-8 grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 xl:gap-x-8 lg:mt-10">
         {products?.map((produc) => <ProductCard data={produc} key={produc.id} />)}
       </div>
 
       {/* PAGINATION */}
-      {totalPages > 1 && (
+      {showPagination && (
         <div className="mt-20 flex justify-center lg:mt-24">
           <Pagination className="mx-auto">
             <PaginationPrevious href={page > 1 ? `?page=${page - 1}` : null} />
@@ -68,7 +76,11 @@ export default async function Page({
                 )
               )}
             </PaginationList>
-            <PaginationNext href={page < totalPages ? `?page=${page + 1}` : null} />
+            <PaginationNext
+              href={
+                page < totalPages || (total === 0 && hasNext) ? `?page=${page + 1}` : null
+              }
+            />
           </Pagination>
         </div>
       )}

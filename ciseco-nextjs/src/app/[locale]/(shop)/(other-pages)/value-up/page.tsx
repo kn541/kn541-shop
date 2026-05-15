@@ -2,6 +2,7 @@
 import { Suspense } from 'react'
 import ProductsPageClient from '../products/ProductsPageClient'
 import type { Metadata } from 'next'
+import { PRODUCT_LIST_PAGE_SIZE } from '@/lib/product-list-constants'
 
 export const metadata: Metadata = {
   title: '밸류업 | KN541',
@@ -9,7 +10,6 @@ export const metadata: Metadata = {
 }
 
 const BASE = process.env.NEXT_PUBLIC_API_URL || 'https://kn541-production.up.railway.app'
-const PAGE_SIZE = 20
 
 function mapProduct(p: any) {
   const pid = String(p.product_id || p.id || '')
@@ -41,7 +41,7 @@ function mapProduct(p: any) {
 
 async function fetchValueUp(page: number) {
   try {
-    const qs = new URLSearchParams({ page: String(page), size: String(PAGE_SIZE) })
+    const qs = new URLSearchParams({ page: String(page), size: String(PRODUCT_LIST_PAGE_SIZE) })
     const res = await fetch(`${BASE}/public/products/value-up?${qs}`, { cache: 'no-store' })
     if (!res.ok) return { products: [], total: 0 }
     const json = await res.json()
@@ -61,7 +61,7 @@ export default async function ValueUpProductsPage({
   const { page: pageParam } = await searchParams
   const currentPage = Math.max(1, Number(pageParam) || 1)
   const { products, total } = await fetchValueUp(currentPage)
-  const totalPages = Math.ceil(total / PAGE_SIZE) || 1
+  const hasNext = currentPage * PRODUCT_LIST_PAGE_SIZE < total
 
   return (
     <Suspense
@@ -77,8 +77,9 @@ export default async function ValueUpProductsPage({
         breadcrumbs={[]}
         childCategories={[]}
         currentPage={currentPage}
-        totalPages={totalPages}
+        pageSize={PRODUCT_LIST_PAGE_SIZE}
         total={total}
+        hasNext={hasNext}
         pageTitle="밸류업"
       />
     </Suspense>

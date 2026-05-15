@@ -18,7 +18,7 @@ export async function GET(
   }
   if (!UPSTREAM) {
     return NextResponse.json(
-      { status: 'success', data: { items: [], total: 0, page: 1, size: 20 } },
+      { status: 'success', data: { items: [], total: 0, page: 1, size: 25 } },
       { status: 200 },
     )
   }

@@ -55,6 +55,7 @@ import avatarImage3 from '@/images/users/avatar3.jpg'
 import avatarImage4 from '@/images/users/avatar4.jpg'
 import { shuffleArray } from '@/utils/shuffleArray'
 import { adaptCategories, adaptCategory, adaptProduct, adaptProducts } from '@/lib/adapters'
+import { PRODUCT_LIST_PAGE_SIZE } from '@/lib/product-list-constants'
 import {
   getCategories,
   getCategoryById,
@@ -348,7 +349,7 @@ export async function getCollectionByHandle(handle: string) {
   return dummy.find((c) => c.handle === handleNorm) ?? dummy[0]
 }
 
-const PRODUCT_LIST_DEFAULT_SIZE = 20
+const PRODUCT_LIST_DEFAULT_SIZE = PRODUCT_LIST_PAGE_SIZE
 
 function isUuidCategoryId(id: string | undefined): id is string {
   if (!id) return false
@@ -360,6 +361,7 @@ export type GetProductsListResult = {
   total: number
   page: number
   size: number
+  hasNext: boolean
 }
 
 export async function getProducts(params?: {
@@ -380,12 +382,14 @@ export async function getProducts(params?: {
       page,
       keyword: params?.q,
       category_id,
+      include_total: page === 1,
     })
     return {
       products: adaptProducts(result.items),
-      total: Number(result.total) || result.items.length,
+      total: Number(result.total) || 0,
       page,
       size,
+      hasNext: Boolean(result.has_next),
     }
   } catch {
     const dummy = getDummyProducts()
@@ -394,6 +398,7 @@ export async function getProducts(params?: {
       total: dummy.length,
       page: 1,
       size,
+      hasNext: false,
     }
   }
 }

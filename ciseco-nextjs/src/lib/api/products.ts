@@ -107,8 +107,11 @@ export async function getProducts(params?: {
   product_status?: string
   /** system_codes product_type (예: 동사가치 VALUE_ACT = 005) */
   product_type?: string
+  /** False면 total 카운트 생략(목록만 size+1로 has_next 판별) */
+  include_total?: boolean
 }): Promise<ProductListResponse> {
   const query = new URLSearchParams()
+  const page = params?.page ?? 1
   if (params?.page) query.set('page', String(params.page))
   if (params?.size) query.set('size', String(params.size))
   if (params?.category_id) query.set('category_id', params.category_id)
@@ -119,6 +122,9 @@ export async function getProducts(params?: {
   if (params?.keyword) query.set('keyword', params.keyword)
   if (params?.product_status) query.set('product_status', params.product_status)
   if (params?.product_type) query.set('product_type', params.product_type)
+
+  const includeTotal = params?.include_total ?? page === 1
+  query.set('include_total', includeTotal ? 'true' : 'false')
 
   const url = `${BASE}/products${query.toString() ? `?${query}` : ''}`
   const res = await fetch(url, { next: { revalidate: 60 } })
