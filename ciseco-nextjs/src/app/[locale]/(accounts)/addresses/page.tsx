@@ -5,6 +5,7 @@ import { useRouter } from '@/i18n/navigation'
 import { useTranslations } from 'next-intl'
 import ButtonPrimary from '@/shared/Button/ButtonPrimary'
 import ButtonSecondary from '@/shared/Button/ButtonSecondary'
+import { Dialog, DialogActions, DialogBody, DialogTitle } from '@/shared/dialog'
 import { toast } from 'react-hot-toast'
 import KakaoAddressInput, { type AddressValue } from '@/components/common/KakaoAddressSearch'
 import { ConfirmDeleteDialog } from '@/components/common/ConfirmDeleteDialog'
@@ -50,6 +51,12 @@ export default function AddressesPage() {
   const [form, setForm] = useState(EMPTY_FORM)
   const [address, setAddress] = useState<AddressValue>(EMPTY_ADDR)
   const [pendingDeleteAddressId, setPendingDeleteAddressId] = useState<string | null>(null)
+
+  /** 배송지 수정 모달 */
+  const [editOpen, setEditOpen] = useState(false)
+  const [editId, setEditId] = useState<string | null>(null)
+  const [editForm, setEditForm] = useState(EMPTY_FORM)
+  const [editAddr, setEditAddr] = useState<AddressValue>(EMPTY_ADDR)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -151,6 +158,57 @@ export default function AddressesPage() {
     setShowForm(false)
     setForm(EMPTY_FORM)
     setAddress(EMPTY_ADDR)
+  }
+
+  function openEditModal(addr: MyAddress) {
+    setEditId(addr.id)
+    setEditForm({
+      recipient_name: addr.recipient_name,
+      recipient_phone: addr.recipient_phone,
+      delivery_memo: addr.delivery_memo ?? '',
+      is_default: addr.is_default,
+    })
+    setEditAddr({
+      zipcode: addr.zip_code,
+      address1: addr.address1,
+      address2: addr.address2 ?? '',
+    })
+    setEditOpen(true)
+  }
+
+  function closeEditModal() {
+    setEditOpen(false)
+    setEditId(null)
+    setEditForm(EMPTY_FORM)
+    setEditAddr(EMPTY_ADDR)
+  }
+
+  async function saveEditedAddress() {
+    if (!editId) return
+    if (!editForm.recipient_name || !editForm.recipient_phone || !editAddr.address1) {
+      toast.error('필수 항목을 입력해 주세요.')
+      return
+    }
+    try {
+      await mypageFetch<unknown>(`/my/addresses/${encodeURIComponent(editId)}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          recipient_name: editForm.recipient_name,
+          recipient_phone: editForm.recipient_phone,
+          zip_code: editAddr.zipcode,
+          address1: editAddr.address1,
+          address2: editAddr.address2 || undefined,
+          delivery_memo: editForm.delivery_memo || undefined,
+          is_default: editForm.is_default,
+        }),
+      })
+      toast.success('배송지가 수정되었습니다.')
+      closeEditModal()
+      await load()
+    } catch (e) {
+      const msg = e instanceof MypageApiError ? e.message : '수정에 실패했습니다.'
+      toast.error(msg)
+    }
   }
 
   const inp =
@@ -261,6 +319,13 @@ export default function AddressesPage() {
                   )}
                 </div>
                 <div className="flex flex-wrap justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => openEditModal(addr)}
+                    className="rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-xs font-medium hover:bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-900 dark:hover:bg-neutral-800"
+                  >
+                    수정
+                  </button>
                   {!addr.is_default && (
                     <button
                       type="button"
@@ -290,6 +355,61 @@ export default function AddressesPage() {
           if (pendingDeleteAddressId) await deleteAddress(pendingDeleteAddressId)
         }}
       />
+
+      <Dialog open={editOpen} onClose={closeEditModal} size="lg">
+        <DialogTitle>배송지 수정</DialogTitle>
+        <DialogBody className="max-h-[min(70vh,520px)] space-y-4 overflow-y-auto sm:max-h-[min(75vh,560px)]">
+          <div>
+            <label className={lbl}>받는 분 *</label>
+            <input
+              type="text"
+              className={inp}
+              placeholder="이름"
+              value={editForm.recipient_name}
+              onChange={e => setEditForm(p => ({ ...p, recipient_name: e.target.value }))}
+            />
+          </div>
+          <div>
+            <label className={lbl}>연락처 *</label>
+            <input
+              type="tel"
+              className={inp}
+              placeholder="010-0000-0000"
+              value={editForm.recipient_phone}
+              onChange={e => setEditForm(p => ({ ...p, recipient_phone: e.target.value }))}
+            />
+          </div>
+          <KakaoAddressInput
+            value={editAddr}
+            onChange={setEditAddr}
+            label="주소 *"
+            inputClassName={inp}
+            labelClassName={lbl}
+          />
+          <div>
+            <label className={lbl}>배송 메모</label>
+            <input
+              type="text"
+              className={inp}
+              placeholder="택배 기사님께 전달할 메모"
+              value={editForm.delivery_memo}
+              onChange={e => setEditForm(p => ({ ...p, delivery_memo: e.target.value }))}
+            />
+          </div>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={editForm.is_default}
+              onChange={e => setEditForm(p => ({ ...p, is_default: e.target.checked }))}
+            />
+            기본 배송지로 설정
+          </label>
+        </DialogBody>
+        <DialogActions>
+          <ButtonSecondary onClick={closeEditModal}>취소</ButtonSecondary>
+          <ButtonPrimary onClick={() => void saveEditedAddress()}>저장</ButtonPrimary>
+        </DialogActions>
+      </Dialog>
     </div>
   )
 }

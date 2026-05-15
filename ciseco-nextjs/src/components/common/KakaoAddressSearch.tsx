@@ -32,6 +32,7 @@ declare global {
         width?: string | number
         height?: string | number
         animation?: boolean
+        zIndex?: number
       }) => { open: () => void }
     }
   }
@@ -93,6 +94,8 @@ export async function openKakaoAddress(
         onComplete({ zipcode: data.zonecode, address1: address + suffix })
       },
       animation: true,
+      /** 모달(Headless Dialog z-50 등) 위에 우편번호 레이어가 오도록 */
+      zIndex: 100_000,
     }).open()
   } catch (e) {
     console.error('[KakaoAddress] 스크립트 로드 실패:', e)
