@@ -2,11 +2,12 @@
 
 // 디자인 원본 .hero — PC 370px / 모바일 380px, 전환 450ms, 자동 5초 (작업지시 v1 §5)
 // 데이터: GET /public/hero-banners (v_active_hero_banners)
+// 2026-05-15: 좌우 화살표 네비게이션 추가 (#27)
 
 import type { HeroBanner } from '@/lib/api/designPublic'
 import Image from 'next/image'
 import clsx from 'clsx'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import './kn541-main.css'
 
 const INTERVAL_MS = 5000
@@ -21,6 +22,24 @@ function HeroDivider() {
   )
 }
 
+/* ← 화살표 SVG */
+function ChevronLeft() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12.5 15L7.5 10L12.5 5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+/* → 화살표 SVG */
+function ChevronRight() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M7.5 15L12.5 10L7.5 5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
 type HeroSliderProps = {
   slides: HeroBanner[]
 }
@@ -29,6 +48,14 @@ export function HeroSlider({ slides }: HeroSliderProps) {
   const SLIDE_COUNT = slides.length
   const [index, setIndex] = useState(0)
   const [paused, setPaused] = useState(false)
+
+  const goPrev = useCallback(() => {
+    setIndex((i) => (i - 1 + SLIDE_COUNT) % SLIDE_COUNT)
+  }, [SLIDE_COUNT])
+
+  const goNext = useCallback(() => {
+    setIndex((i) => (i + 1) % SLIDE_COUNT)
+  }, [SLIDE_COUNT])
 
   useEffect(() => {
     if (paused || SLIDE_COUNT <= 1) return
@@ -99,6 +126,29 @@ export function HeroSlider({ slides }: HeroSliderProps) {
           )
         })}
       </div>
+
+      {/* ← → 좌우 화살표 네비게이션 (#27) */}
+      {SLIDE_COUNT > 1 && (
+        <>
+          <button
+            type="button"
+            className="absolute left-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/30 transition-colors hover:bg-black/50 md:left-5 md:h-12 md:w-12"
+            aria-label="이전 배너"
+            onClick={goPrev}
+          >
+            <ChevronLeft />
+          </button>
+          <button
+            type="button"
+            className="absolute right-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/30 transition-colors hover:bg-black/50 md:right-5 md:h-12 md:w-12"
+            aria-label="다음 배너"
+            onClick={goNext}
+          >
+            <ChevronRight />
+          </button>
+        </>
+      )}
+
       <div
         className={clsx(
           'absolute bottom-[21px] z-10 flex items-center gap-1.5',
