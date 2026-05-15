@@ -357,5 +357,13 @@ export interface WithdrawalItem {
 export interface WithdrawalListResponse {
   items: WithdrawalItem[]
   total: number
-  status_counts: Record<'REQUESTED' | 'APPROVED' | 'PAID' | 'REJECTED', number>
+  page?: number
+  size?: number
+  status_counts: {
+    ALL: number
+    REQUESTED: number
+    APPROVED: number
+    PAID: number
+    REJECTED: number
+  }
 }

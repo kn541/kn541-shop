@@ -5,7 +5,8 @@ import { useRouter } from '@/i18n/navigation'
 import { toast } from 'react-hot-toast'
 import BigButton from '@/components/mypage/BigButton'
 import L3Guard from '@/components/mypage/L3Guard'
-import { MOCK_DIVIDEND_SUMMARY } from '@/lib/mypage/mocks'
+import { mypageFetch, MypageApiError } from '@/lib/mypage/api'
+import { useWithdrawableBalance } from '@/lib/mypage/useWithdrawableBalance'
 
 const BANKS = [
   '국민은행', '신한은행', '우리은행', '하나은행', '농협은행',
@@ -27,17 +28,25 @@ function Step1Form({
   onChange,
   onNext,
   balance,
+  balanceLoading,
 }: {
   form: FormState
   onChange: (f: FormState) => void
   onNext: () => void
   balance: number
+  balanceLoading: boolean
 }) {
   const amountNum = Number(form.amount.replace(/,/g, ''))
   const overBalance = amountNum > balance
   const underMin = amountNum > 0 && amountNum < 10_000
   const canNext =
-    !overBalance && !underMin && amountNum > 0 && form.bank && form.account.trim() && form.holder.trim()
+    !balanceLoading &&
+    !overBalance &&
+    !underMin &&
+    amountNum > 0 &&
+    form.bank &&
+    form.account.trim() &&
+    form.holder.trim()
 
   const inputStyle = {
     width: '100%',
@@ -67,7 +76,9 @@ function Step1Form({
         }}
       >
         <span style={{ color: 'var(--mp-color-text-muted)' }}>출금 가능 잔액</span>
-        <strong style={{ color: '#7C3AED' }}>{balance.toLocaleString('ko-KR')}원</strong>
+        <strong style={{ color: '#7C3AED' }}>
+          {balanceLoading ? '…' : `${balance.toLocaleString('ko-KR')}원`}
+        </strong>
       </div>
 
       <div style={{ marginBottom: 20 }}>
@@ -97,7 +108,8 @@ function Step1Form({
         <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
           <button
             type="button"
-            onClick={() => setAmount(balance)}
+            onClick={() => !balanceLoading && setAmount(balance)}
+            disabled={balanceLoading}
             style={{
               padding: '6px 14px',
               border: '1px solid var(--mp-color-primary)',
@@ -116,15 +128,15 @@ function Step1Form({
               key={a}
               type="button"
               onClick={() => setAmount(a)}
-              disabled={a > balance}
+              disabled={balanceLoading || a > balance}
               style={{
                 padding: '6px 14px',
                 border: '1px solid var(--mp-color-border)',
                 borderRadius: 20,
                 fontSize: 14,
-                background: a > balance ? '#F5F5F5' : '#fff',
-                color: a > balance ? 'var(--mp-color-text-muted)' : 'var(--mp-color-text)',
-                cursor: a > balance ? 'not-allowed' : 'pointer',
+                background: balanceLoading || a > balance ? '#F5F5F5' : '#fff',
+                color: balanceLoading || a > balance ? 'var(--mp-color-text-muted)' : 'var(--mp-color-text)',
+                cursor: balanceLoading || a > balance ? 'not-allowed' : 'pointer',
               }}
             >
               {(a / 10_000).toLocaleString()}만원
@@ -278,14 +290,31 @@ function NewWithdrawContent() {
   const [step, setStep] = useState<1 | 2>(1)
   const [form, setForm] = useState<FormState>({ amount: '', bank: '', account: '', holder: '' })
   const [submitting, startTransition] = useTransition()
+  const { balance, loading: balLoading, error: balError } = useWithdrawableBalance()
 
-  const balance = MOCK_DIVIDEND_SUMMARY.withdrawable_balance
+  const effectiveBalance = balance ?? 0
+  const balanceLoading = balLoading && balance === null
 
   const handleSubmit = () => {
     startTransition(async () => {
-      await new Promise(r => setTimeout(r, 1_000))
-      toast.success('출금 신청이 완료됐습니다. 영업일 기준 2~3일 내 처리됩니다.')
-      router.replace('/withdraw')
+      const amountNum = Math.floor(Number(String(form.amount).replace(/,/g, '')))
+      try {
+        await mypageFetch<unknown>('/mypage/withdraw', {
+          method: 'POST',
+          body: JSON.stringify({
+            requested_amount: amountNum,
+            bank_name: form.bank.trim(),
+            bank_account: form.account.replace(/\D/g, ''),
+            account_holder: form.holder.trim(),
+            dividend_type: 'EQUITY',
+          }),
+        })
+        toast.success('출금 신청이 완료됐습니다. 영업일 기준 2~3일 내 처리됩니다.')
+        router.replace('/withdraw')
+      } catch (e) {
+        const msg = e instanceof MypageApiError ? e.message : '출금 신청에 실패했습니다.'
+        toast.error(msg)
+      }
     })
   }
 
@@ -294,6 +323,22 @@ function NewWithdrawContent() {
       <h1 className="text-2xl font-semibold sm:text-3xl">
         {step === 1 ? '새 출금 신청' : '출금 내용 확인'}
       </h1>
+
+      {balError ? (
+        <div
+          style={{
+            margin: '12px 16px 0',
+            padding: '12px 14px',
+            borderRadius: 'var(--mp-radius)',
+            background: '#FEF2F2',
+            border: '1px solid #FECACA',
+            color: '#991B1B',
+            fontSize: 14,
+          }}
+        >
+          {balError}
+        </div>
+      ) : null}
 
       <div
         style={{
@@ -362,7 +407,13 @@ function NewWithdrawContent() {
       </div>
 
       {step === 1 && (
-        <Step1Form form={form} onChange={setForm} onNext={() => setStep(2)} balance={balance} />
+        <Step1Form
+          form={form}
+          onChange={setForm}
+          onNext={() => setStep(2)}
+          balance={effectiveBalance}
+          balanceLoading={balanceLoading}
+        />
       )}
       {step === 2 && (
         <Step2Confirm form={form} onPrev={() => setStep(1)} onSubmit={handleSubmit} submitting={submitting} />

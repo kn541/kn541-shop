@@ -7,7 +7,6 @@ import type {
   CouponItem, CouponListResponse,
   ShopTemplate, UrlCheckResponse,
   DividendItem, DividendSummaryResponse, DividendHistoryResponse,
-  WithdrawalItem, WithdrawalListResponse,
 } from './types'
 
 // ──── Phase 4 ─────────────────────────────────────────────────────────────
@@ -146,11 +145,3 @@ export const MOCK_DIVIDEND_HISTORY: DividendHistoryResponse = {
   total: 8, page: 1, size: 20, total_amount: 66_400,
 }
 
-export const MOCK_WITHDRAWALS: WithdrawalListResponse = {
-  total: 2,
-  status_counts: { REQUESTED: 1, APPROVED: 0, PAID: 1, REJECTED: 0 },
-  items: [
-    { withdrawal_id: 1, requested_amount: 500_000, status: 'REQUESTED', status_label: '처리 중', bank_name: '국민은행', bank_account_masked: '***-5678', requested_at: '2026-04-10T09:00:00', reviewed_at: null, paid_at: null, rejected_reason: null },
-    { withdrawal_id: 2, requested_amount: 300_000, status: 'PAID', status_label: '지급 완료', bank_name: '기업은행', bank_account_masked: '***-9012', requested_at: '2026-03-15T09:00:00', reviewed_at: '2026-03-15T14:00:00', paid_at: '2026-03-17T11:00:00', rejected_reason: null },
-  ] as WithdrawalItem[],
-}
