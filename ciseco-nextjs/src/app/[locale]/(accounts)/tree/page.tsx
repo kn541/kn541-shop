@@ -17,6 +17,13 @@ const DEPTH_COLORS = ['#7C3AED', '#1D4ED8', '#C2410C', '#047857', '#B45309']
 
 const MAX_WAVE_DEPTH = 14
 const MAX_NODES = 2000
+const MIN_DISPLAY_DEPTH = 1
+const MAX_DISPLAY_DEPTH = 14
+
+function clampDisplayDepth(n: number): number {
+  if (!Number.isFinite(n)) return MIN_DISPLAY_DEPTH
+  return Math.min(MAX_DISPLAY_DEPTH, Math.max(MIN_DISPLAY_DEPTH, Math.floor(n)))
+}
 
 function initialExpandedIds(root: ShopMlmNode): Set<string> {
   const s = new Set<string>()
@@ -67,13 +74,15 @@ function TreeBranch({
   node,
   expandedIds,
   onToggle,
+  maxDisplayDepth,
 }: {
   node: ShopMlmNode
   expandedIds: Set<string>
   onToggle: (userId: string) => void
+  maxDisplayDepth: number
 }) {
   const c = DEPTH_COLORS[(node.depth - 1 + DEPTH_COLORS.length) % DEPTH_COLORS.length]
-  const hasChildren = node.children.length > 0
+  const hasChildren = node.children.length > 0 && node.depth < maxDisplayDepth
   const open = expandedIds.has(node.user_id)
 
   return (
@@ -111,7 +120,13 @@ function TreeBranch({
       {open && hasChildren && (
         <div className="ml-3 border-l border-neutral-200 pl-3 dark:border-neutral-700">
           {node.children.map(ch => (
-            <TreeBranch key={ch.user_id} node={ch} expandedIds={expandedIds} onToggle={onToggle} />
+            <TreeBranch
+              key={ch.user_id}
+              node={ch}
+              expandedIds={expandedIds}
+              onToggle={onToggle}
+              maxDisplayDepth={maxDisplayDepth}
+            />
           ))}
         </div>
       )}
@@ -128,6 +143,8 @@ function TreeContent() {
   const [truncated, setTruncated] = useState(false)
   const [root, setRoot] = useState<ShopMlmNode | null>(null)
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set())
+  /** 표시 단계 (1 = 직접 추천만 … 14) */
+  const [displayMaxDepth, setDisplayMaxDepth] = useState(MIN_DISPLAY_DEPTH)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -165,16 +182,20 @@ function TreeContent() {
   }, [load])
 
   const flat = useMemo(() => (root ? flattenDownline(root) : []), [root])
-  const stats = useMemo(() => statsFromFlat(flat), [flat])
+  const flatFiltered = useMemo(
+    () => flat.filter(m => m.depth <= displayMaxDepth),
+    [flat, displayMaxDepth]
+  )
+  const stats = useMemo(() => statsFromFlat(flatFiltered), [flatFiltered])
 
   const byDepth = useMemo(() => {
     const m: Record<number, ShopMlmNode[]> = {}
-    for (const x of flat) {
+    for (const x of flatFiltered) {
       m[x.depth] = m[x.depth] ?? []
       m[x.depth].push(x)
     }
     return m
-  }, [flat])
+  }, [flatFiltered])
 
   const depthKeys = useMemo(
     () =>
@@ -238,6 +259,39 @@ function TreeContent() {
         </div>
       </div>
 
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-3 dark:border-neutral-700 dark:bg-neutral-900">
+        <span className="text-sm font-semibold text-neutral-700 dark:text-neutral-200">단계:</span>
+        <button
+          type="button"
+          aria-label="단계 감소"
+          disabled={displayMaxDepth <= MIN_DISPLAY_DEPTH}
+          onClick={() => setDisplayMaxDepth(d => clampDisplayDepth(d - 1))}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-neutral-200 bg-neutral-50 text-lg font-bold text-neutral-700 hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
+        >
+          −
+        </button>
+        <input
+          type="number"
+          min={MIN_DISPLAY_DEPTH}
+          max={MAX_DISPLAY_DEPTH}
+          value={displayMaxDepth}
+          onChange={e => setDisplayMaxDepth(clampDisplayDepth(Number(e.target.value)))}
+          className="h-9 w-16 rounded-lg border border-neutral-200 bg-white px-2 text-center text-sm font-semibold tabular-nums focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:border-neutral-600 dark:bg-neutral-950 dark:text-white"
+        />
+        <button
+          type="button"
+          aria-label="단계 증가"
+          disabled={displayMaxDepth >= MAX_DISPLAY_DEPTH}
+          onClick={() => setDisplayMaxDepth(d => clampDisplayDepth(d + 1))}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-neutral-200 bg-neutral-50 text-lg font-bold text-neutral-700 hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
+        >
+          +
+        </button>
+        <span className="text-xs text-neutral-500 dark:text-neutral-400">
+          {MIN_DISPLAY_DEPTH}~{MAX_DISPLAY_DEPTH}단계까지 표시 · 기본 {MIN_DISPLAY_DEPTH}단계(직접 추천)
+        </span>
+      </div>
+
       <div className="flex flex-wrap gap-4 border-b border-neutral-200 bg-white py-3.5 text-sm text-neutral-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400">
         <span>
           전체 하선 <strong className="text-neutral-900 dark:text-neutral-100">{stats.total_count}명</strong>
@@ -266,10 +320,14 @@ function TreeContent() {
       </div>
 
       <div className="pb-8">
-        {stats.total_count === 0 ? (
+        {flat.length === 0 ? (
           <div className="py-12 text-center">
             <div className="mb-3 text-5xl">🌱</div>
             <div className="text-lg text-neutral-500 dark:text-neutral-400">아직 하선 회원이 없어요.</div>
+          </div>
+        ) : stats.total_count === 0 ? (
+          <div className="py-12 text-center text-sm text-neutral-500 dark:text-neutral-400">
+            선택한 단계({displayMaxDepth}단계)에 해당하는 하선이 없습니다. 단계를 늘려 보세요.
           </div>
         ) : view === 'list' ? (
           depthKeys.map(d => (
@@ -304,7 +362,13 @@ function TreeContent() {
               <p className="text-sm text-neutral-500">직접 추천한 하선이 없습니다.</p>
             ) : (
               root.children.map(ch => (
-                <TreeBranch key={ch.user_id} node={ch} expandedIds={expandedIds} onToggle={toggleExpand} />
+                <TreeBranch
+                  key={ch.user_id}
+                  node={ch}
+                  expandedIds={expandedIds}
+                  onToggle={toggleExpand}
+                  maxDisplayDepth={displayMaxDepth}
+                />
               ))
             )}
           </div>
