@@ -102,7 +102,13 @@
     "quantity": "수량",
     "inStock": "재고 있음",
     "outOfStock": "품절",
-    "soldOutNotice": "품절된 상품입니다."
+    "soldOutNotice": "품절된 상품입니다.",
+    "wishlistAddedToast": "찜 목록에 추가했습니다",
+    "wishlistRemovedToast": "찜 목록에서 제거했습니다",
+    "wishlistLoginRequired": "로그인이 필요합니다",
+    "wishlistToggleError": "처리에 실패했습니다",
+    "wishlistAriaAdd": "찜하기",
+    "wishlistAriaRemove": "찜 해제"
   },
   "Cart": {
     "title": "장바구니",

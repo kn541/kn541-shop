@@ -102,7 +102,13 @@
     "quantity": "Quantity",
     "inStock": "In stock",
     "outOfStock": "Sold Out",
-    "soldOutNotice": "This product is sold out."
+    "soldOutNotice": "This product is sold out.",
+    "wishlistAddedToast": "Added to favorites.",
+    "wishlistRemovedToast": "Removed from favorites.",
+    "wishlistLoginRequired": "Please sign in to continue.",
+    "wishlistToggleError": "Something went wrong.",
+    "wishlistAriaAdd": "Add to favorites",
+    "wishlistAriaRemove": "Remove from favorites"
   },
   "Cart": {
     "title": "Shopping Cart",

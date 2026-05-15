@@ -12,8 +12,8 @@
 // feat: 배송비 정보 표시
 // feat: KN541 옵션(add_price 기반) 선택 UI
 
-import LikeButton from '@/components/LikeButton'
 import NcInputNumber from '@/components/NcInputNumber'
+import { ProductDetailWishlistHeart } from '@/components/ProductDetailWishlistHeart'
 import Prices from '@/components/Prices'
 import { getProductById } from '@/lib/api/products'
 import { adaptProduct } from '@/lib/adapters'
@@ -232,7 +232,6 @@ const ProductQuickView: FC<ProductQuickViewProps> = ({ className }) => {
                 <span className="text-sm font-bold tracking-wide text-white">{tProduct('outOfStock')}</span>
               </div>
             )}
-            <LikeButton className="absolute end-3 top-3 z-10" />
           </div>
 
           {/* 서브 이미지 (최대 2장) */}
@@ -344,16 +343,19 @@ const ProductQuickView: FC<ProductQuickViewProps> = ({ className }) => {
               )}
             </div>
 
-            {/* 장바구니 담기 버튼 */}
-            <button
-              type="button"
-              onClick={handleAddToCart}
-              disabled={!canBuy}
-              className="flex w-full items-center justify-center gap-2 rounded-full bg-neutral-900 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
-            >
-              <HugeiconsIcon icon={ShoppingBag03Icon} size={18} color="currentColor" strokeWidth={1.5} />
-              <span>{isSoldOut ? tProduct('outOfStock') : tProduct('addToCart')}</span>
-            </button>
+            {/* 장바구니 + 찜하기 */}
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleAddToCart}
+                disabled={!canBuy}
+                className="flex min-h-[52px] min-w-0 flex-1 items-center justify-center gap-2 rounded-full bg-neutral-900 px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 sm:px-6"
+              >
+                <HugeiconsIcon icon={ShoppingBag03Icon} size={18} color="currentColor" strokeWidth={1.5} />
+                <span>{isSoldOut ? tProduct('outOfStock') : tProduct('addToCart')}</span>
+              </button>
+              <ProductDetailWishlistHeart productId={String(productId)} />
+            </div>
 
             {/* 상세 페이지 이동 */}
             <Link

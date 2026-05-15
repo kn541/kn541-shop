@@ -102,7 +102,13 @@
     "quantity": "数量",
     "inStock": "有库存",
     "outOfStock": "售罄",
-    "soldOutNotice": "该商品已售罄。"
+    "soldOutNotice": "该商品已售罄。",
+    "wishlistAddedToast": "已加入收藏。",
+    "wishlistRemovedToast": "已从收藏移除。",
+    "wishlistLoginRequired": "请先登录。",
+    "wishlistToggleError": "操作失败。",
+    "wishlistAriaAdd": "加入收藏",
+    "wishlistAriaRemove": "取消收藏"
   },
   "Cart": {
     "title": "购物车",

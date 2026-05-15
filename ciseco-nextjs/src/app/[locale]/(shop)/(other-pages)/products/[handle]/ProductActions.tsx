@@ -3,6 +3,7 @@
 // fix: isSoldout prop 추가 (page.tsx에서 전달하는 종합 품절 판단값)
 
 import NcInputNumber from '@/components/NcInputNumber'
+import { ProductDetailWishlistHeart } from '@/components/ProductDetailWishlistHeart'
 import ProductColorOptions from '@/components/ProductForm/ProductColorOptions'
 import ProductSizeOptions from '@/components/ProductForm/ProductSizeOptions'
 import { useCart } from '@/lib/cart-context'
@@ -164,16 +165,17 @@ export default function ProductActions({
         )}
       </div>
 
-      <div className="flex gap-3 pt-2">
+      <div className="flex flex-wrap items-center gap-3 pt-2">
         <button type="button" onClick={handleAddToCart} disabled={buttonsDisabled}
-          className="flex flex-1 items-center justify-center gap-2 rounded-full bg-primary-600 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50">
+          className="flex min-h-[52px] min-w-0 flex-1 items-center justify-center gap-2 rounded-full bg-primary-600 px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50 sm:px-6">
           <HugeiconsIcon icon={ShoppingBag03Icon} size={18} color="currentColor" strokeWidth={1.5} className="hidden sm:block" />
           <span>장바구니에 담기</span>
         </button>
         <button type="button" onClick={handleBuyNow} disabled={buttonsDisabled}
-          className="flex flex-1 items-center justify-center gap-2 rounded-full bg-neutral-900 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200">
+          className="flex min-h-[52px] min-w-0 flex-1 items-center justify-center gap-2 rounded-full bg-neutral-900 px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 sm:px-6">
           바로구매
         </button>
+        <ProductDetailWishlistHeart productId={productId} />
       </div>
     </div>
   )
