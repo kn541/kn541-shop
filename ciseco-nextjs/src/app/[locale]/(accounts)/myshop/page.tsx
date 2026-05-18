@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from '@/shared/dialog'
 import { toast } from 'react-hot-toast'
+import L3Guard from '@/components/mypage/L3Guard'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL || 'https://kn541-production.up.railway.app'
 
@@ -76,7 +77,7 @@ interface FindProductRow {
 
 type TabType = 'info' | 'products' | 'dashboard' | 'share'
 
-export default function MyShopPage() {
+function MyShopPageContent() {
   const router = useRouter()
   const [tab, setTab] = useState<TabType>('info')
   const [shop, setShop] = useState<Shop | null>(null)
@@ -607,5 +608,13 @@ export default function MyShopPage() {
         }}
       />
     </div>
+  )
+}
+
+export default function MyShopPage() {
+  return (
+    <L3Guard embedded title="내 쇼핑몰" lockBenefits={['마이샵 개설·상품 진열', '방문·주문 실적 대시보드']}>
+      <MyShopPageContent />
+    </L3Guard>
   )
 }

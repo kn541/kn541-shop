@@ -28,8 +28,6 @@ export default function PackagesPageClient({ initialProducts }: { initialProduct
   const { clearCart, addItem } = useCart()
   const [authChecked, setAuthChecked] = useState(false)
 
-  const isPaidMember = profile?.user_type === '006'
-
   useEffect(() => {
     if (typeof window === 'undefined') return
     if (!isLoggedIn()) {
@@ -80,21 +78,6 @@ export default function PackagesPageClient({ initialProducts }: { initialProduct
     return (
       <div className="flex items-center justify-center py-20">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary-500 border-t-transparent" />
-      </div>
-    )
-  }
-
-  if (!isPaidMember) {
-    return (
-      <div className="flex flex-col gap-y-6">
-        <h1 className="text-2xl font-semibold sm:text-3xl">{title}</h1>
-        <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-8 text-center dark:border-neutral-700 dark:bg-neutral-900/50">
-          <p className="text-lg font-medium text-neutral-800 dark:text-neutral-200">창업회원 전용 메뉴입니다.</p>
-          <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
-            유료(창업) 회원만 패키지 상품을 구매할 수 있습니다.
-          </p>
-          <p className="mt-4 text-xs text-neutral-400">고객센터: 070-4436-0928 (KN541)</p>
-        </div>
       </div>
     )
   }

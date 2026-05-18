@@ -255,6 +255,8 @@
     "packages": "套餐商品",
     "dividends": "分红",
     "referralTree": "推荐树",
+    "withdraw": "提现申请",
+    "upgradePaid": "升级付费会员",
     "changePassword": "修改密码",
     "billing": "支付信息",
     "accountHeaderLoading": "正在加载会员信息…",

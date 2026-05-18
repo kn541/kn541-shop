@@ -255,6 +255,8 @@
     "packages": "패키지상품",
     "dividends": "배당 현황",
     "referralTree": "추천인 트리",
+    "withdraw": "출금 신청",
+    "upgradePaid": "유료회원 전환",
     "changePassword": "비밀번호 변경",
     "billing": "결제 정보",
     "accountHeaderLoading": "회원 정보를 불러오는 중…",

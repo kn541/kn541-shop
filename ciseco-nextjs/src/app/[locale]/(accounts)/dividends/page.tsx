@@ -109,7 +109,7 @@ export default function DividendsPage() {
   return (
     <L3Guard
       embedded
-      title="수당 현황"
+      title="배당 현황"
       lockBenefits={['541 배당 실시간 확인', '동사가치 · 아지트 배당 내역', '출금 신청 및 조직도 조회']}
     >
       <DashboardContent />

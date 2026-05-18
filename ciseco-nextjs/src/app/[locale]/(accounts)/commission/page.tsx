@@ -6,8 +6,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from '@/i18n/navigation'
 import { toast } from 'react-hot-toast'
+import L3Guard from '@/components/mypage/L3Guard'
 import { mypageFetch, MypageApiError } from '@/lib/mypage/api'
-import { useProfile } from '@/lib/mypage/useProfile'
 
 interface CommissionItem {
   commission_id: string
@@ -56,16 +56,13 @@ function formatDate(iso: string) {
   return d.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })
 }
 
-export default function CommissionPage() {
+function CommissionContent() {
   const router = useRouter()
-  const { data: profile, loading: profileLoading } = useProfile()
   const months = useMemo(() => monthOptions(14), [])
   const [month, setMonth] = useState(() => months[0] ?? '')
   const [loading, setLoading] = useState(true)
   const [rows, setRows] = useState<CommissionItem[]>([])
   const [monthTotal, setMonthTotal] = useState<number>(0)
-
-  const isStartup = profile?.user_type === '006'
 
   const load = useCallback(async () => {
     if (!month) return
@@ -93,13 +90,8 @@ export default function CommissionPage() {
   }, [month, router])
 
   useEffect(() => {
-    if (profileLoading) return
-    if (!isStartup) {
-      setLoading(false)
-      return
-    }
     void load()
-  }, [profileLoading, isStartup, load])
+  }, [load])
 
   const statusColor: Record<string, string> = {
     PENDING:    'text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20',
@@ -107,31 +99,6 @@ export default function CommissionPage() {
     PROCESSING: 'text-blue-600 bg-blue-50 dark:bg-blue-900/20',
     CANCELLED:  'text-neutral-400 bg-neutral-100 dark:bg-neutral-800',
     REVERSAL:   'text-red-500 bg-red-50 dark:bg-red-900/20',
-  }
-
-  if (profileLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary-500 border-t-transparent" />
-      </div>
-    )
-  }
-
-  if (!isStartup) {
-    return (
-      <div className="flex flex-col gap-y-6">
-        <h1 className="text-2xl font-semibold sm:text-3xl">수당 현황</h1>
-        <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-8 text-center dark:border-neutral-700 dark:bg-neutral-900/50">
-          <p className="text-lg font-medium text-neutral-800 dark:text-neutral-200">
-            창업회원 전용 메뉴입니다.
-          </p>
-          <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
-            서초그린케어(창업) 회원만 월별 수당 내역을 확인할 수 있습니다.
-          </p>
-          <p className="mt-4 text-xs text-neutral-400">고객센터: 070-4436-0928 (KN541)</p>
-        </div>
-      </div>
-    )
   }
 
   return (
@@ -208,5 +175,13 @@ export default function CommissionPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function CommissionPage() {
+  return (
+    <L3Guard embedded title="수당 현황" lockBenefits={['월별 수당 내역 조회', '수당 유형·상태별 확인']}>
+      <CommissionContent />
+    </L3Guard>
   )
 }

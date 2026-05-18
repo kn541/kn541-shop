@@ -255,6 +255,8 @@
     "packages": "Package Products",
     "dividends": "Dividends",
     "referralTree": "Referral tree",
+    "withdraw": "Withdraw",
+    "upgradePaid": "Upgrade to paid member",
     "changePassword": "Change password",
     "billing": "Billing",
     "accountHeaderLoading": "Loading your profile…",

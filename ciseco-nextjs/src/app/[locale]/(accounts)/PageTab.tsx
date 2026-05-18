@@ -2,81 +2,88 @@
 
 import { Link } from '@/components/Link'
 import { usePathname } from '@/i18n/navigation'
+import { useEffectiveUserType } from '@/hooks/useEffectiveUserType'
+import { UPGRADE_PAID_PATH } from '@/lib/mypage/memberAccess'
 import { useTranslations } from 'next-intl'
-import { useAuth } from '@/hooks/useAuth'
-import { useEffect, useState } from 'react'
 
-/** JWT에 없을 때 보조 (TASK 3: localStorage user_type) */
-function useEffectiveUserType(jwtType: string | undefined): string {
-  const [t, setT] = useState('')
-  useEffect(() => {
-    const ls = typeof window !== 'undefined' ? localStorage.getItem('user_type') || '' : ''
-    setT((jwtType || '').trim() || ls.trim())
-  }, [jwtType])
-  return t || jwtType || ''
+type LinkItem = {
+  nameKey:
+    | 'settings'
+    | 'wishlists'
+    | 'ordersHistory'
+    | 'points'
+    | 'coupons'
+    | 'packages'
+    | 'commission'
+    | 'dividends'
+    | 'referralTree'
+    | 'myshop'
+    | 'withdraw'
+    | 'addresses'
+    | 'upgradePaid'
+  link: string
+  paidOnly?: boolean
+  generalOnly?: boolean
 }
 
-const links = [
-  { nameKey: 'settings' as const, link: '/account' },
-  { nameKey: 'wishlists' as const, link: '/account-wishlists' },
-  { nameKey: 'ordersHistory' as const, link: '/orders' },
-  { nameKey: 'points' as const, link: '/points' },
-  { nameKey: 'coupons' as const, link: '/coupons' },
-  { nameKey: 'packages' as const, link: '/packages' },
-  { nameKey: 'commission' as const, link: '/commission' },
-  { nameKey: 'dividends' as const, link: '/dividends' },
-  { nameKey: 'referralTree' as const, link: '/tree' },
-  { nameKey: 'myshop' as const, link: '/myshop' },
-  { nameKey: 'addresses' as const, link: '/addresses' },
-] as const
+const links: LinkItem[] = [
+  { nameKey: 'settings', link: '/account' },
+  { nameKey: 'wishlists', link: '/account-wishlists' },
+  { nameKey: 'ordersHistory', link: '/orders' },
+  { nameKey: 'points', link: '/points' },
+  { nameKey: 'coupons', link: '/coupons' },
+  { nameKey: 'packages', link: '/packages' },
+  { nameKey: 'commission', link: '/commission', paidOnly: true },
+  { nameKey: 'dividends', link: '/dividends', paidOnly: true },
+  { nameKey: 'referralTree', link: '/tree', paidOnly: true },
+  { nameKey: 'myshop', link: '/myshop', paidOnly: true },
+  { nameKey: 'withdraw', link: '/withdraw', paidOnly: true },
+  { nameKey: 'addresses', link: '/addresses' },
+  { nameKey: 'upgradePaid', link: UPGRADE_PAID_PATH, generalOnly: true },
+]
 
 type PageTabVariant = 'tabs' | 'sidebar'
 
 interface PageTabProps {
-  /** 기본: 계정 페이지 상단 가로 탭. sidebar: 마이페이지 좌측 세로 메뉴 */
   variant?: PageTabVariant
 }
 
 const PageTab = ({ variant = 'tabs' }: PageTabProps) => {
   const t = useTranslations('Account')
   const pathname = usePathname()
-  const { user } = useAuth()
-  const effectiveUserType = useEffectiveUserType(user?.user_type)
+  const { loading, isPaidMember, isGeneralMember } = useEffectiveUserType()
 
-  const visibleLinks = links.filter(item => {
-    if (item.link === '/packages' && effectiveUserType !== '006') {
-      return false
-    }
-    if (item.link === '/myshop' && effectiveUserType !== '006') {
-      return false
-    }
-    if (['/commission', '/dividends', '/tree'].includes(item.link) && effectiveUserType !== '006') {
-      return false
-    }
+  const visibleLinks = links.filter((item) => {
+    if (item.paidOnly && !isPaidMember) return false
+    if (item.generalOnly && !isGeneralMember) return false
     return true
   })
 
-  const linkIsActive = (item: (typeof links)[number]) => {
+  const linkIsActive = (item: LinkItem) => {
     let isActive = pathname === item.link
-    if (item.link === '/orders' && pathname.includes('/orders/')) {
-      isActive = true
-    }
-    if (item.link === '/myshop' && pathname.startsWith('/myshop')) {
-      isActive = true
-    }
-    if (item.link === '/dividends' && pathname.startsWith('/dividends/')) {
-      isActive = true
-    }
-    if (item.link === '/packages' && pathname.startsWith('/packages')) {
-      isActive = true
-    }
+    if (item.link === '/orders' && pathname.includes('/orders/')) isActive = true
+    if (item.link === '/myshop' && pathname.startsWith('/myshop')) isActive = true
+    if (item.link === '/dividends' && pathname.startsWith('/dividends')) isActive = true
+    if (item.link === '/withdraw' && pathname.startsWith('/withdraw')) isActive = true
+    if (item.link === '/packages' && pathname.startsWith('/packages')) isActive = true
     return isActive
+  }
+
+  if (loading) {
+    if (variant === 'sidebar') {
+      return (
+        <nav className="flex flex-col gap-2 px-2 py-3">
+          <div className="h-10 animate-pulse rounded-lg bg-neutral-100 dark:bg-neutral-800" />
+        </nav>
+      )
+    }
+    return <div className="h-14" />
   }
 
   if (variant === 'sidebar') {
     return (
       <nav aria-label={t('title')} className="flex flex-col gap-0.5 px-2 py-3">
-        {visibleLinks.map(item => {
+        {visibleLinks.map((item) => {
           const isActive = linkIsActive(item)
           return (
             <Link
@@ -99,9 +106,8 @@ const PageTab = ({ variant = 'tabs' }: PageTabProps) => {
   return (
     <div>
       <div className="hidden-scrollbar flex gap-x-8 overflow-x-auto md:gap-x-14">
-        {visibleLinks.map(item => {
+        {visibleLinks.map((item) => {
           const isActive = linkIsActive(item)
-
           return (
             <Link
               key={item.link}
