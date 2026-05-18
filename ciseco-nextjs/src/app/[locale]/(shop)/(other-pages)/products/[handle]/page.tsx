@@ -17,6 +17,7 @@ import ProductStatus from '../ProductStatus'
 import KoreanProductGallery from '../KoreanProductGallery'
 import ProductActions from './ProductActions'
 import Link from 'next/link'
+import { formatSalesCountDetail } from '@/lib/sales-count'
 import { getTranslations } from 'next-intl/server'
 
 export const dynamic = 'force-dynamic'
@@ -129,6 +130,11 @@ export default async function Page({
 
   const consumerPrice = Number(p.consumerPrice ?? p.consumer_price ?? 0)
   const salePrice     = Number(price || 0)
+  const salesCount = Number((p as { salesCount?: number }).salesCount ?? rawProduct?.sales_count ?? 0) || 0
+  const salesCountLabel = formatSalesCountDetail(salesCount, {
+    productType: String(rawProduct?.product_type ?? (p as { productType?: string }).productType ?? ''),
+    title: String(title ?? ''),
+  })
   const discountRate  = consumerPrice > 0 && consumerPrice > salePrice
     ? Math.round((consumerPrice - salePrice) / consumerPrice * 100)
     : 0
@@ -230,6 +236,9 @@ export default async function Page({
                 </span>
               )}
             </div>
+            {salesCountLabel && (
+              <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">{salesCountLabel}</p>
+            )}
 
             <Divider />
 

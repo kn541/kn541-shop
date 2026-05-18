@@ -7,6 +7,7 @@ import { useMainCartPreviewOptional } from '@/components/main-page/main-cart-pre
 import type { Product } from '@/lib/api/products'
 import { getProductImageUrl } from '@/lib/api/products'
 import { formatPrice } from '@/lib/formatPrice'
+import { formatSalesCountBadge, readSalesCount } from '@/lib/sales-count'
 import { useCart } from '@/lib/cart-context'
 import { Link } from '@/shared/link'
 import clsx from 'clsx'
@@ -139,6 +140,11 @@ export function MainProductCard(props: MainProductCardProps) {
 
   const [l1, l2] = splitTitle(product.product_name || '')
   const categoryLabel = (product.category_name_2 || product.category_name_1 || '').trim()
+  const salesCount = readSalesCount(product)
+  const salesBadge = formatSalesCountBadge(salesCount, {
+    productType: product.product_type,
+    title: product.product_name,
+  })
 
   const buildPayload = (): MainCartPreviewPayload => ({
     imageUrl: img,
@@ -221,13 +227,18 @@ export function MainProductCard(props: MainProductCardProps) {
             <span className="text-sm font-bold tracking-wide text-white">{tProduct('outOfStock')}</span>
           </div>
         )}
-        {(product.is_recommended || product.product_type === '002') && (
+        {(product.is_recommended || product.product_type === '002' || salesBadge) && (
           <div className="pointer-events-none absolute start-2 top-2 z-[2] flex flex-wrap gap-1">
             {product.is_recommended ? (
               <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-semibold text-amber-900">추천</span>
             ) : null}
             {product.product_type === '002' ? (
               <span className="rounded bg-violet-100 px-1.5 py-0.5 text-[11px] font-semibold text-violet-800">예약</span>
+            ) : null}
+            {salesBadge ? (
+              <span className="rounded bg-white/90 px-1.5 py-0.5 text-[11px] font-semibold text-neutral-700 shadow-sm">
+                {salesBadge}
+              </span>
             ) : null}
           </div>
         )}

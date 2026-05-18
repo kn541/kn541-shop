@@ -3,6 +3,7 @@ import { Suspense } from 'react'
 import ProductsPageClient from '../products/ProductsPageClient'
 import type { Metadata } from 'next'
 import { PRODUCT_LIST_PAGE_SIZE } from '@/lib/product-list-constants'
+import { readSalesCount } from '@/lib/sales-count'
 
 export const metadata: Metadata = {
   title: '사전예약 | KN541',
@@ -36,6 +37,8 @@ function mapProduct(p: any) {
       shipping_fee: p.shipping_fee ?? 0,
       free_over: p.free_shipping_over ?? null,
     },
+    salesCount: readSalesCount(p),
+    productType: p.product_type ?? '002',
   }
 }
 

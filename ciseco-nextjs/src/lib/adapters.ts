@@ -8,6 +8,7 @@
 import type { Category } from './api/categories'
 import type { Product } from './api/products'
 import type { TCollection, TProductItem } from '@/data/data'
+import { readSalesCount } from '@/lib/sales-count'
 
 const PLACEHOLDER_IMG = '/placeholder-product.jpg'
 
@@ -120,6 +121,8 @@ export function adaptProduct(p: Product): TProductItem {
     // ★ 갤러리 / 상세이미지 분리
     thumbnailImageSrcs: thumbImgs.map(i => i.src),    // THUMBNAIL 타입만 (좌측 사이드바)
     detailImageSrcs: detailImgs.map(i => i.src),      // DETAIL 타입만 (하단 스크롤)
+    salesCount: readSalesCount(p),
+    productType: p.product_type ?? '',
   } as TProductItem & Record<string, any>
 }
 

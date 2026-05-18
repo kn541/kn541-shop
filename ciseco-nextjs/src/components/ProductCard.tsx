@@ -16,6 +16,7 @@ import { useTranslations } from 'next-intl'
 import LikeButton from './LikeButton'
 import Prices from './Prices'
 import ProductStatus from './ProductStatus'
+import { formatSalesCountBadge } from '@/lib/sales-count'
 import { useAside } from './aside'
 
 interface Props {
@@ -55,8 +56,13 @@ const ProductCard: FC<Props> = ({ className = '', data, isLiked, hrefSearch, car
     rawPs === 'SOLDOUT' ||
     rawPs === 'SOLD_OUT'
 
+  const productType = String((data as { productType?: string }).productType ?? '')
+  const salesCount = Number((data as { salesCount?: number }).salesCount ?? 0) || 0
+  const salesBadge = formatSalesCountBadge(salesCount, { productType, title })
+
   // 사전예약
-  const isPreOrder = typeof title === 'string' && title.includes('[사전예약]')
+  const isPreOrder =
+    productType === '002' || (typeof title === 'string' && title.includes('[사전예약]'))
 
   // 뱃지
   const getBadge = () => {
@@ -208,11 +214,18 @@ const ProductCard: FC<Props> = ({ className = '', data, isLiked, hrefSearch, car
         {renderColorOptions()}
 
         <div>
-          {badge && (
-            <span className={`mb-1.5 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${badge.className}`}>
-              {badge.label}
-            </span>
-          )}
+          <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
+            {badge && (
+              <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${badge.className}`}>
+                {badge.label}
+              </span>
+            )}
+            {salesBadge && (
+              <span className="inline-block rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
+                {salesBadge}
+              </span>
+            )}
+          </div>
           <h2 className="nc-ProductCard__title line-clamp-2 text-sm font-semibold leading-snug transition-colors text-neutral-900 dark:text-neutral-100">
             {title}
           </h2>

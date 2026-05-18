@@ -5,6 +5,7 @@ import type { Metadata } from 'next'
 
 import { PRODUCT_LIST_PAGE_SIZE } from '@/lib/product-list-constants'
 import { productSortToApiQuery, normalizeProductSortParam } from '@/lib/product-list-sort'
+import { readSalesCount } from '@/lib/sales-count'
 
 const BASE =
   process.env.NEXT_PUBLIC_API_URL ||
@@ -93,6 +94,8 @@ function mapProduct(p: any) {
       shipping_fee: p.shipping_fee ?? 0,
       free_over: p.free_shipping_over ?? null,
     },
+    salesCount: readSalesCount(p),
+    productType: p.product_type ?? '',
   }
 }
 

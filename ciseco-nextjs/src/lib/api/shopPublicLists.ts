@@ -5,6 +5,7 @@
  */
 
 import type { Product } from '@/lib/api/products'
+import { readSalesCount } from '@/lib/sales-count'
 
 // API Route 프록시 경로 (same-origin, CORS 무관)
 const PROXY = '/api/shop-list'
@@ -38,7 +39,8 @@ export interface ShopPublicListItem {
   round_end_at?: string | null
   created_at: string
   best_source?: '14d' | 'all'
-  /** v_product_list_ext — 정렬용 (없으면 0 취급) */
+  /** v_product_list_ext — 정렬·표시용 (없으면 0 취급) */
+  sales_count?: number | null
   sort_sales_count?: number | null
   sort_review_count?: number | null
   sort_review_avg?: number | null
@@ -168,5 +170,7 @@ export function mapShopListItemToProduct(row: ShopPublicListItem): Product {
     kmc_serial: null,
     images: null,
     options: undefined,
+    sales_count: readSalesCount(row),
+    sort_sales_count: readSalesCount(row),
   }
 }

@@ -71,6 +71,8 @@ export interface Product {
   exchange_fee?: number
   delivery_days?: number
   product_round: number
+  sales_count?: number
+  sort_sales_count?: number
   created_at: string
   updated_at: string | null
   kmc_item_id?: string | null
