@@ -101,6 +101,7 @@ function SignupPageContent() {
       setMemberType('startup')
     }
   }, [searchParams])
+
   const [isPending, startTransition] = useTransition()
   const [globalError, setGlobalError] = useState('')
 
@@ -109,6 +110,8 @@ function SignupPageContent() {
   const [passwordConfirm, setPasswordConfirm] = useState('')
   const [phone, setPhone] = useState('')
   const [recommenderCode, setRecommenderCode] = useState('')
+  const [recommenderHint, setRecommenderHint] = useState<string | null>(null)
+  const [recommenderValid, setRecommenderValid] = useState<'idle' | 'checking' | 'ok' | 'invalid'>('idle')
   const [agreeTerms, setAgreeTerms] = useState(false)
   const [agreePrivacy, setAgreePrivacy] = useState(false)
 
@@ -146,6 +149,44 @@ function SignupPageContent() {
   }, [])
 
   const passwordMatch = password && passwordConfirm && password === passwordConfirm
+
+  const validateRecommender = useCallback(async (code: string) => {
+    const trimmed = code.trim()
+    if (!trimmed) {
+      setRecommenderHint(null)
+      setRecommenderValid('idle')
+      return
+    }
+    setRecommenderValid('checking')
+    try {
+      const res = await fetch(
+        `${BASE}/auth/validate-recommender?${new URLSearchParams({ code: trimmed })}`
+      )
+      const json = await res.json()
+      if (json?.data?.valid) {
+        setRecommenderValid('ok')
+        const label = json.data.member_no
+          ? `회원번호 ${json.data.member_no}`
+          : json.data.username || '추천인 확인됨'
+        const name = json.data.name ? ` (${json.data.name})` : ''
+        setRecommenderHint(`${label}${name}`)
+      } else {
+        setRecommenderValid('invalid')
+        setRecommenderHint('추천인을 찾을 수 없습니다. 회원번호(8자리)를 확인해 주세요.')
+      }
+    } catch {
+      setRecommenderValid('idle')
+      setRecommenderHint(null)
+    }
+  }, [])
+
+  /** ?ref=member_no(8자리) 또는 레거시 UUID — 추천인 코드 자동 입력·검증 */
+  useEffect(() => {
+    const ref = searchParams.get('ref')?.trim()
+    if (!ref) return
+    setRecommenderCode(ref)
+    void validateRecommender(ref)
+  }, [searchParams, validateRecommender])
 
   const validate = () => {
     if (!name.trim()) return '이름을 입력해주세요.'
@@ -398,7 +439,27 @@ function SignupPageContent() {
 
             <div>
               <label className={labelCls}>추천인 코드 <span className="text-neutral-400 font-normal">(선택)</span></label>
-              <input type="text" value={recommenderCode} onChange={e => setRecommenderCode(e.target.value)} placeholder="추천인 아이디 또는 회원번호" className={inputCls} />
+              <input
+                type="text"
+                value={recommenderCode}
+                onChange={e => {
+                  setRecommenderCode(e.target.value)
+                  setRecommenderValid('idle')
+                  setRecommenderHint(null)
+                }}
+                onBlur={e => void validateRecommender(e.target.value)}
+                placeholder="추천인 회원번호 (8자리) 또는 아이디"
+                className={inputCls}
+              />
+              {recommenderValid === 'checking' && (
+                <p className="text-xs text-neutral-400 mt-1">추천인 확인 중...</p>
+              )}
+              {recommenderHint && recommenderValid === 'ok' && (
+                <p className="text-xs text-green-600 dark:text-green-400 mt-1">✓ {recommenderHint}</p>
+              )}
+              {recommenderHint && recommenderValid === 'invalid' && (
+                <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">{recommenderHint}</p>
+              )}
             </div>
 
             {memberType === 'startup' && (

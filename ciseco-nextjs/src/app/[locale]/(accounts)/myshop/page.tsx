@@ -34,6 +34,9 @@ interface Shop {
   share_count: number
   product_count: number
   is_active: boolean
+  member_no?: string
+  referral_url?: string
+  referral_signup_url?: string
 }
 
 interface Dashboard {
@@ -371,6 +374,17 @@ export default function MyShopPage() {
                   {shop.shop_url}
                 </a>
               </div>
+              {shop.referral_url && (
+                <div>
+                  <p className="text-xs text-neutral-500">추천 URL (회원 가입)</p>
+                  <p className="truncate text-sm font-mono text-neutral-800 dark:text-neutral-200">
+                    {shop.referral_url}
+                  </p>
+                  {shop.member_no && (
+                    <p className="mt-0.5 text-xs text-neutral-500">회원번호 {shop.member_no}</p>
+                  )}
+                </div>
+              )}
               {shop.shop_description && (
                 <div>
                   <p className="text-xs text-neutral-500">소개</p>
@@ -384,9 +398,14 @@ export default function MyShopPage() {
               </div>
             </div>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <ButtonPrimary onClick={() => setTab('products')}>상품 관리하기</ButtonPrimary>
-            <ButtonSecondary onClick={() => copyToClipboard(shop.shop_url)}>URL 복사</ButtonSecondary>
+            <ButtonSecondary onClick={() => copyToClipboard(shop.shop_url)}>쇼핑몰 URL 복사</ButtonSecondary>
+            {shop.referral_url && (
+              <ButtonSecondary onClick={() => copyToClipboard(shop.referral_url!)}>
+                추천 URL 복사
+              </ButtonSecondary>
+            )}
           </div>
         </div>
       )}

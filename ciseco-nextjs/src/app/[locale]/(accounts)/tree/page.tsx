@@ -145,6 +145,8 @@ function TreeContent() {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set())
   /** 표시 단계 (1 = 직접 추천만 … 14) */
   const [displayMaxDepth, setDisplayMaxDepth] = useState(MIN_DISPLAY_DEPTH)
+  const [referralUrl, setReferralUrl] = useState<string | null>(null)
+  const [myMemberNo, setMyMemberNo] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -157,6 +159,17 @@ function TreeContent() {
         setError('회원 정보를 확인할 수 없습니다.')
         setRoot(null)
         return
+      }
+      try {
+        const refData = await mypageFetch<{
+          referral_url?: string
+          member_no?: string
+        }>(`/members/${uid}/referral-url`)
+        setReferralUrl(refData.referral_url ?? null)
+        setMyMemberNo(refData.member_no ?? null)
+      } catch {
+        setReferralUrl(null)
+        setMyMemberNo(null)
       }
       const { root: tree, truncated: t2 } = await buildShopDownlineTree(me, {
         maxDepth: MAX_WAVE_DEPTH,
@@ -239,6 +252,25 @@ function TreeContent() {
 
   return (
     <>
+      {referralUrl && (
+        <div className="flex flex-col gap-2 rounded-2xl border border-primary-200 bg-primary-50/50 p-4 dark:border-primary-900 dark:bg-primary-950/30 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-semibold text-primary-700 dark:text-primary-300">내 추천 URL</p>
+            <p className="truncate font-mono text-sm text-neutral-800 dark:text-neutral-100">{referralUrl}</p>
+            {myMemberNo && (
+              <p className="mt-0.5 text-xs text-neutral-500">회원번호 {myMemberNo}</p>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => void navigator.clipboard.writeText(referralUrl)}
+            className="shrink-0 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700"
+          >
+            복사
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <h1 className="text-2xl font-semibold sm:text-3xl">{t('referralTree')}</h1>
         <div className="flex gap-1">

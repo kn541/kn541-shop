@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useRouter } from '@/i18n/navigation'
 
 /**
@@ -8,10 +9,14 @@ import { useRouter } from '@/i18n/navigation'
  */
 export default function SignupPaidRedirectPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   useEffect(() => {
-    router.replace('/signup?type=paid')
-  }, [router])
+    const q = new URLSearchParams({ type: 'paid' })
+    const ref = searchParams.get('ref')?.trim()
+    if (ref) q.set('ref', ref)
+    router.replace(`/signup?${q.toString()}`)
+  }, [router, searchParams])
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex items-center justify-center px-4">
