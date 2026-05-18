@@ -1,33 +1,24 @@
 'use client'
-// KN541 쇼핑몰 — 헤더 우측 유저 액션 (단순화 v2)
-// - 비로그인: 로그인 / 회원가입 텍스트
-// - 로그인:  로그아웃(로그인 자리) + 마이페이지
-// - hydration mismatch 방지: isMounted 패턴 유지
+// KN541 쇼핑몰 — 헤더 우측 유저 액션
+// 비로그인: 로그인 / 회원가입
+// 로그인: 로그아웃 + 마이페이지 (회원명은 HeaderUserName)
 
-import { useEffect, useState, useCallback } from 'react'
-import { useLocale } from 'next-intl'
-import { useRouter } from '@/i18n/navigation'
-import { toast } from 'react-hot-toast'
+import { useHeaderUser } from '@/hooks/useHeaderUser'
 import {
   KN541_CART_SELECTED_STORAGE_KEY,
   KN541_CART_STORAGE_KEY,
   useCart,
 } from '@/lib/cart-context'
-
-const BASE = process.env.NEXT_PUBLIC_API_URL
-
-interface UserInfo {
-  name: string
-  user_id: string
-}
+import { useRouter } from '@/i18n/navigation'
+import { useLocale } from 'next-intl'
+import { useCallback } from 'react'
+import { toast } from 'react-hot-toast'
 
 export default function HeaderUserActions() {
   const locale = useLocale()
   const router = useRouter()
   const { clearCart } = useCart()
-  const [isMounted, setIsMounted] = useState(false)
-  const [user, setUser] = useState<UserInfo | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { isMounted, loading, isLoggedIn, clearUser } = useHeaderUser()
 
   const logout = useCallback(() => {
     localStorage.removeItem('access_token')
@@ -36,32 +27,10 @@ export default function HeaderUserActions() {
     localStorage.removeItem(KN541_CART_STORAGE_KEY)
     localStorage.removeItem(KN541_CART_SELECTED_STORAGE_KEY)
     clearCart()
-    setUser(null)
+    clearUser()
     toast.success('로그아웃되었습니다')
     router.push('/')
-  }, [router, clearCart])
-
-  useEffect(() => {
-    setIsMounted(true)
-  }, [])
-
-  useEffect(() => {
-    if (!isMounted) return
-    const token = localStorage.getItem('access_token')
-    if (!token || !BASE) { setLoading(false); return }
-    fetch(`${BASE}/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.ok ? r.json() : null)
-      .then(json => {
-        if (json?.data) {
-          setUser({
-            name: json.data.name ?? json.data.username ?? '회원',
-            user_id: json.data.user_id,
-          })
-        }
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [isMounted])
+  }, [router, clearCart, clearUser])
 
   if (!isMounted) {
     return <div className="h-9 w-24" />
@@ -71,8 +40,7 @@ export default function HeaderUserActions() {
     return <div className="h-9 w-24 animate-pulse rounded-md bg-neutral-100 dark:bg-neutral-800" />
   }
 
-  /* ─── 비로그인 → 로그인 / 회원가입 ─── */
-  if (!user) {
+  if (!isLoggedIn) {
     return (
       <div className="flex items-center text-sm">
         <a
@@ -91,7 +59,6 @@ export default function HeaderUserActions() {
     )
   }
 
-  /* ─── 로그인 → 로그아웃(로그인 자리) + 마이페이지 ─── */
   return (
     <div className="flex items-center text-sm">
       <button

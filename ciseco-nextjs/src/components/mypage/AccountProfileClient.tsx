@@ -12,6 +12,7 @@ import {
   KN541_CART_SELECTED_STORAGE_KEY,
   KN541_CART_STORAGE_KEY,
 } from '@/lib/cart-context'
+import { clearHeaderUserCache } from '@/lib/auth/headerUser'
 import BigButton from '@/components/mypage/BigButton'
 import {
   checkPasswordPolicy,
@@ -223,6 +224,7 @@ export default function AccountProfileClient() {
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
     localStorage.removeItem('user_type')
+    clearHeaderUserCache()
     localStorage.removeItem(KN541_CART_STORAGE_KEY)
     localStorage.removeItem(KN541_CART_SELECTED_STORAGE_KEY)
   }, [])

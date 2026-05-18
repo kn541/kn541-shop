@@ -3,12 +3,11 @@
 // 2행: 카테고리 네비 (홈 + 카테고리 DB + 사전예약/벨류업)
 
 import Logo from '@/components/Logo'
-import CartBtn from './CartBtn'
 import HamburgerBtnMenu from './HamburgerBtnMenu'
 import LangSwitcher from './LangSwitcher'
 import SearchBox from './SearchBox'
 import CategoryNav from './CategoryNav'
-import HeaderUserActions from './HeaderUserActions'
+import HeaderUserBar from './HeaderUserBar'
 
 export default function Header() {
   return (
@@ -26,14 +25,10 @@ export default function Header() {
         {/* 모바일에서 grid 균형 유지용 빈 칸 */}
         <div className="md:hidden" />
 
-        {/* 우: 장바구니 / 로그인or마이페이지 / 구분선 / 태극기 */}
+        {/* 우: 회원명 / 장바구니 / 로그인·회원가입 또는 로그아웃·마이페이지 / 구분선 / 태극기 */}
         <div className="flex items-center gap-1 sm:gap-2">
 
-          {/* 장바구니 (텍스트) */}
-          <CartBtn />
-
-          {/* 로그인/회원가입 또는 마이페이지 (텍스트) */}
-          <HeaderUserActions />
+          <HeaderUserBar />
 
           {/* 구분선 */}
           <span className="mx-1 h-4 w-px bg-neutral-200 dark:bg-neutral-700 hidden sm:block" />
