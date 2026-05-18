@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 
 import { Suspense } from 'react'
 import { CartProvider } from '@/lib/cart-context'
+import PasswordRouteGuard from '@/components/auth/PasswordRouteGuard'
 import ReferralRefRedirect from '@/components/referral/ReferralRefRedirect'
 import { routing } from '@/i18n/routing'
 import { NextIntlClientProvider } from 'next-intl'
@@ -30,7 +31,7 @@ export default async function LocaleLayout({
         <Suspense fallback={null}>
           <ReferralRefRedirect />
         </Suspense>
-        {children}
+        <PasswordRouteGuard>{children}</PasswordRouteGuard>
       </CartProvider>
     </NextIntlClientProvider>
   )

@@ -41,6 +41,8 @@ function EyeIcon({ open }: { open: boolean }) {
 type ForcedProps = {
   variant: 'forced'
   tempToken: string
+  /** 강제 변경 페이지: 현재 비밀번호 입력 필드 표시 */
+  requireCurrentPassword?: boolean
   serverMessage?: string
   policyText?: string
   onComplete: (data: {
@@ -99,13 +101,16 @@ export function PasswordChangePanel(props: PasswordChangePanelProps) {
   const matchOk = newPassword.length > 0 && confirm.length > 0 && newPassword === confirm
   const matchBad = confirm.length > 0 && newPassword !== confirm
   const policyOk = isPasswordValid(newPassword)
+  const forcedNeedsCurrent = isForced && Boolean(props.requireCurrentPassword)
   const canSubmit =
     policyOk &&
     matchOk &&
     !submitting &&
     !newPwHangulMsg &&
     !cfPwHangulMsg &&
-    (isForced ? Boolean(props.tempToken?.trim()) : currentPassword.length > 0)
+    (isForced
+      ? Boolean(props.tempToken?.trim()) && (!forcedNeedsCurrent || currentPassword.length > 0)
+      : currentPassword.length > 0)
 
   const inputClass =
     'w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 px-4 py-3 text-sm text-neutral-900 dark:text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all'
@@ -120,13 +125,17 @@ export function PasswordChangePanel(props: PasswordChangePanelProps) {
     setSubmitting(true)
     try {
       if (isForced) {
+        const body: Record<string, string> = {
+          temp_token: props.tempToken,
+          new_password: newPassword,
+        }
+        if (forcedNeedsCurrent) {
+          body.current_password = currentPassword
+        }
         const res = await fetch(`${apiBase}/auth/force-change-password`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            temp_token: props.tempToken,
-            new_password: newPassword,
-          }),
+          body: JSON.stringify(body),
         })
         const json = await res.json().catch(() => ({}))
         if (!res.ok) {
@@ -198,7 +207,7 @@ export function PasswordChangePanel(props: PasswordChangePanelProps) {
         </div>
       )}
 
-      {!isForced && (
+      {(!isForced || forcedNeedsCurrent) && (
         <div>
           <label className="mb-1.5 block text-xs font-medium text-neutral-700 dark:text-neutral-300">
             현재 비밀번호

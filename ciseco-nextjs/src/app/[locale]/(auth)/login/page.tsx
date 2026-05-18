@@ -1,19 +1,21 @@
 'use client'
 // KN541 쇼핑몰 — 로그인 페이지
-// fix: 간편로그인(카카오·네이버·구글) 섹션 전체 삭제
-// 비밀번호 보안 정책 미충족 시 강제 변경 오버레이 (password_change_required)
+// 비밀번호: 정책 미충족 → /force-change-password, 90일 경과 → /password-reminder
 
 import { Suspense, useState, useTransition } from 'react'
 import Image from 'next/image'
 import { Link, useRouter } from '@/i18n/navigation'
 import { useTranslations } from 'next-intl'
 import { useSearchParams } from 'next/navigation'
-import { PasswordChangePanel } from '@/components/auth/PasswordChangePanel'
+import {
+  persistLoginTokens,
+  setForceChangeSession,
+  setPasswordReminderPending,
+} from '@/lib/auth/passwordSession'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL
 const LOGO_URL = 'https://ghtkropmnrelkxivzpim.supabase.co/storage/v1/object/public/brands/white_logo.png'
 
-// useSearchParams를 사용하는 실제 폼 컴포넌트 — Suspense 안에서만 렌더링
 function LoginForm() {
   const router = useRouter()
   const t = useTranslations('Auth')
@@ -22,12 +24,6 @@ function LoginForm() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isPending, startTransition] = useTransition()
-  /** 백엔드가 임시 토큰으로 강제 변경을 요청할 때 */
-  const [forceChange, setForceChange] = useState<{
-    tempToken: string
-    serverMessage?: string
-    policyText?: string
-  } | null>(null)
 
   const redirectTo = searchParams.get('redirect') || '/'
 
@@ -54,34 +50,39 @@ function LoginForm() {
           setError(json?.detail ?? '로그인에 실패했습니다.')
           return
         }
-        if (json?.status === 'password_change_required') {
-          const d = json?.data ?? {}
+
+        const d = json?.data ?? {}
+
+        if (json?.status === 'password_change_required' || d.force_change === true) {
           const token = typeof d.temp_token === 'string' ? d.temp_token : ''
           if (!token) {
             setError('비밀번호 변경이 필요하지만 임시 토큰을 받지 못했습니다.')
             return
           }
-          setForceChange({
-            tempToken: token,
-            serverMessage: typeof d.message === 'string' ? d.message : undefined,
-            policyText: typeof d.policy === 'string' ? d.policy : undefined,
-          })
+          setForceChangeSession(
+            token,
+            typeof d.message === 'string' ? d.message : undefined
+          )
+          router.replace('/force-change-password')
           return
         }
-        const { access_token, refresh_token, user_type } = json?.data ?? {}
-        if (access_token) {
-          localStorage.setItem('access_token', access_token)
-          if (refresh_token) localStorage.setItem('refresh_token', refresh_token)
-          // user_type: API 응답에서 가져오기 (JWT에는 user_type 없음)
-          if (user_type != null && String(user_type) !== '') {
-            localStorage.setItem('user_type', String(user_type))
-          } else {
-            localStorage.removeItem('user_type')
-          }
-          router.push(redirectTo)
-        } else {
+
+        const { access_token, refresh_token, user_type } = d
+        if (!access_token) {
           setError('로그인 정보를 받아오지 못했습니다.')
+          return
         }
+
+        persistLoginTokens({ access_token, refresh_token, user_type })
+
+        if (d.password_expired === true) {
+          const days = Number(d.days_since_change ?? 0)
+          setPasswordReminderPending(Number.isFinite(days) ? days : 90)
+          router.replace('/password-reminder')
+          return
+        }
+
+        router.push(redirectTo)
       } catch {
         setError('서버 연결에 실패했습니다.')
       }
@@ -89,44 +90,6 @@ function LoginForm() {
   }
 
   return (
-    <>
-      {forceChange ? (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4 py-8 backdrop-blur-sm"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="force-pw-title"
-        >
-          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-xl dark:bg-neutral-900 dark:border dark:border-neutral-800">
-            <h2 id="force-pw-title" className="text-lg font-bold text-neutral-900 dark:text-white">
-              비밀번호 변경 필요
-            </h2>
-            <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-              보안 정책에 맞는 비밀번호로 변경한 뒤 로그인을 완료합니다.
-            </p>
-            <div className="mt-4">
-              <PasswordChangePanel
-                variant="forced"
-                tempToken={forceChange.tempToken}
-                serverMessage={forceChange.serverMessage}
-                policyText={forceChange.policyText}
-                onComplete={({ access_token, refresh_token, user_type }) => {
-                  localStorage.setItem('access_token', access_token)
-                  if (refresh_token) localStorage.setItem('refresh_token', refresh_token)
-                  if (user_type != null && String(user_type) !== '') {
-                    localStorage.setItem('user_type', String(user_type))
-                  } else {
-                    localStorage.removeItem('user_type')
-                  }
-                  setForceChange(null)
-                  router.push(redirectTo)
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      ) : null}
-
     <form onSubmit={handleSubmit} className="space-y-3">
       <input
         type="text"
@@ -169,7 +132,6 @@ function LoginForm() {
         </Link>
       </div>
     </form>
-    </>
   )
 }
 
@@ -177,8 +139,6 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-[360px]">
-
-        {/* 로고 */}
         <div className="flex justify-center mb-8">
           <a href="/ko" className="block">
             <Image
@@ -192,26 +152,20 @@ export default function LoginPage() {
             />
           </a>
         </div>
-
-        {/* 카드 */}
         <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-sm border border-neutral-100 dark:border-neutral-800 px-8 py-8">
           <h1 className="text-[22px] font-bold text-neutral-900 dark:text-white mb-6 text-center tracking-tight">
             로그인
           </h1>
-
           <Suspense fallback={<div className="h-40 flex items-center justify-center text-sm text-neutral-400">로딩 중...</div>}>
             <LoginForm />
           </Suspense>
         </div>
-
-        {/* 회원가입 링크 */}
         <p className="text-center text-sm text-neutral-500 dark:text-neutral-400 mt-6">
           아직 계정이 없으신가요?{' '}
           <a href="/ko/signup" className="font-semibold text-neutral-900 dark:text-white hover:underline">
             회원가입
           </a>
         </p>
-
       </div>
     </div>
   )
