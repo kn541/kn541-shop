@@ -1,11 +1,11 @@
 'use client'
 // KN541 상품 상세 — 장바구니 담기 / 바로구매
-// fix: isSoldout prop 추가 (page.tsx에서 전달하는 종합 품절 판단값)
 
 import NcInputNumber from '@/components/NcInputNumber'
 import { ProductDetailWishlistHeart } from '@/components/ProductDetailWishlistHeart'
 import { ProductDetailShareButton } from '@/components/ProductDetailShareButton'
 import ProductColorOptions from '@/components/ProductForm/ProductColorOptions'
+import ProductKn541Options, { type Kn541ProductOption } from '@/components/ProductForm/ProductKn541Options'
 import ProductSizeOptions from '@/components/ProductForm/ProductSizeOptions'
 import { useCart } from '@/lib/cart-context'
 import { HugeiconsIcon } from '@hugeicons/react'
@@ -28,8 +28,9 @@ interface Props {
   stock: number
   hasColorOption: boolean
   hasSizeOption: boolean
+  kn541Options?: Kn541ProductOption[]
   listingStatus?: string
-  isSoldout?: boolean  // ★ 추가: page.tsx에서 종합 품절 판단값 전달
+  isSoldout?: boolean
 }
 
 function validateCartAction(p: {
@@ -38,13 +39,17 @@ function validateCartAction(p: {
   qty: number
   hasColorOption: boolean
   hasSizeOption: boolean
+  hasKn541Options: boolean
   colorSelected: string
   sizeSelected: string
+  kn541OptionSelected: string
   listingStatus?: string
   isSoldout?: boolean
 }): string | null {
-  const { productStatus, stock, qty, hasColorOption, hasSizeOption, colorSelected, sizeSelected, listingStatus, isSoldout } = p
-  // ★ isSoldout 우선 체크
+  const {
+    productStatus, stock, qty, hasColorOption, hasSizeOption, hasKn541Options,
+    colorSelected, sizeSelected, kn541OptionSelected, listingStatus, isSoldout,
+  } = p
   if (isSoldout) return '현재 구매할 수 없는 상품입니다.'
   const list = (listingStatus || '').trim()
   if (list === '품절' || list === '판매종료') return '현재 구매할 수 없는 상품입니다.'
@@ -54,6 +59,7 @@ function validateCartAction(p: {
   if (ps && ps !== 'ON_SALE' && ps !== 'ACTIVE') return '현재 구매할 수 없는 상품입니다.'
   if (stock <= 0) return '품절된 상품입니다.'
   if (qty > stock) return `최대 ${stock.toLocaleString('ko-KR')}개까지 구매할 수 있습니다.`
+  if (hasKn541Options && !String(kn541OptionSelected).trim()) return '옵션을 선택해 주세요.'
   if (hasColorOption && !String(colorSelected).trim()) return '색상을 선택해 주세요.'
   if (hasSizeOption && !String(sizeSelected).trim()) return '사이즈를 선택해 주세요.'
   return null
@@ -62,8 +68,8 @@ function validateCartAction(p: {
 export default function ProductActions({
   productId, options, price, productName, productImage,
   shippingFee = 0, freeShippingOver = 0, scType = 1,
-  productStatus, stock, hasColorOption, hasSizeOption, listingStatus,
-  isSoldout = false,
+  productStatus, stock, hasColorOption, hasSizeOption,
+  kn541Options = [], listingStatus, isSoldout = false,
 }: Props) {
   const router   = useRouter()
   const pathname = usePathname()
@@ -73,15 +79,27 @@ export default function ProductActions({
   const [qty, setQty] = useState(1)
   const [colorSel, setColorSel] = useState('')
   const [sizeSel, setSizeSel] = useState('')
+  const [kn541Sel, setKn541Sel] = useState('')
 
+  const hasKn541Options = kn541Options.length > 0
   const maxQty = stock > 0 ? stock : 1
 
+  const selectedKn541Option = kn541Options.find((o) => o.id === kn541Sel)
+  const unitPrice = price + (selectedKn541Option?.add_price ?? 0)
+
+  const validationParams = {
+    productStatus, stock, qty, hasColorOption, hasSizeOption, hasKn541Options,
+    colorSelected: colorSel, sizeSelected: sizeSel, kn541OptionSelected: kn541Sel,
+    listingStatus, isSoldout,
+  }
+
   const blockReason = useMemo(
-    () => validateCartAction({ productStatus, stock, qty, hasColorOption, hasSizeOption, colorSelected: colorSel, sizeSelected: sizeSel, listingStatus, isSoldout }),
-    [productStatus, stock, qty, hasColorOption, hasSizeOption, colorSel, sizeSel, listingStatus, isSoldout]
+    () => validateCartAction(validationParams),
+    [productStatus, stock, qty, hasColorOption, hasSizeOption, hasKn541Options, colorSel, sizeSel, kn541Sel, listingStatus, isSoldout]
   )
 
   const buildOption = () => {
+    if (selectedKn541Option?.option_name) return selectedKn541Option.option_name
     const parts: string[] = []
     if (colorSel) parts.push(colorSel)
     if (sizeSel) parts.push(sizeSel)
@@ -89,13 +107,13 @@ export default function ProductActions({
   }
 
   const runWithValidation = (fn: () => void) => {
-    const err = validateCartAction({ productStatus, stock, qty, hasColorOption, hasSizeOption, colorSelected: colorSel, sizeSelected: sizeSel, listingStatus, isSoldout })
+    const err = validateCartAction(validationParams)
     if (err) { toast.error(err); return }
     fn()
   }
 
   const cartPayload = () => ({
-    productId, name: productName, price, quantity: qty,
+    productId, name: productName, price: unitPrice, quantity: qty,
     image: productImage, option: buildOption(),
     shippingFee, freeShippingOver, scType,
     stockQty: stock,
@@ -131,23 +149,32 @@ export default function ProductActions({
   }
 
   const buttonsDisabled = Boolean(blockReason)
-  const hint = stock > 0 && blockReason && !['색상을 선택해 주세요.', '사이즈를 선택해 주세요.'].includes(blockReason)
-    ? blockReason : null
+  const optionHints = ['옵션을 선택해 주세요.', '색상을 선택해 주세요.', '사이즈를 선택해 주세요.']
+  const hint = stock > 0 && blockReason && !optionHints.includes(blockReason) ? blockReason : null
 
   return (
     <div className="flex flex-col gap-6">
-      <ProductColorOptions options={options} colorSelected={colorSel} onColorChange={setColorSel} />
-      <ProductSizeOptions options={options} sizeSelected={sizeSel} onSizeChange={setSizeSel} />
-
-      {hasColorOption && !colorSel.trim() && (
-        <p className="text-sm text-amber-700 dark:text-amber-400">색상을 선택해 주세요.</p>
-      )}
-      {hasSizeOption && !sizeSel.trim() && (
-        <p className="text-sm text-amber-700 dark:text-amber-400">사이즈를 선택해 주세요.</p>
+      {hasKn541Options ? (
+        <ProductKn541Options
+          options={kn541Options}
+          selectedId={kn541Sel}
+          onSelect={setKn541Sel}
+          disabled={isSoldout || stock <= 0}
+        />
+      ) : (
+        <>
+          <ProductColorOptions options={options} colorSelected={colorSel} onColorChange={setColorSel} />
+          <ProductSizeOptions options={options} sizeSelected={sizeSel} onSizeChange={setSizeSel} />
+          {hasColorOption && !colorSel.trim() && (
+            <p className="text-sm text-amber-700 dark:text-amber-400">색상을 선택해 주세요.</p>
+          )}
+          {hasSizeOption && !sizeSel.trim() && (
+            <p className="text-sm text-amber-700 dark:text-amber-400">사이즈를 선택해 주세요.</p>
+          )}
+        </>
       )}
       {hint && <p className="text-sm text-red-600 dark:text-red-400">{hint}</p>}
 
-      {/* 수량 */}
       <div className="flex items-center gap-3">
         <span className="w-20 text-sm font-medium text-neutral-600 dark:text-neutral-400">수량</span>
         <div className="flex items-center justify-center rounded-full bg-neutral-100 px-2 py-1.5 dark:bg-neutral-800">
@@ -178,7 +205,7 @@ export default function ProductActions({
         </button>
         <div className="flex flex-col items-center gap-2">
           <ProductDetailWishlistHeart productId={productId} />
-          <ProductDetailShareButton title={productName} price={price} imageUrl={productImage} />
+          <ProductDetailShareButton title={productName} price={unitPrice} imageUrl={productImage} />
         </div>
       </div>
     </div>

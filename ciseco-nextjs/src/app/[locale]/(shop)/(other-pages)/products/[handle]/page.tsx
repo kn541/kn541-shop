@@ -147,9 +147,36 @@ export default async function Page({
     ['SOLDOUT', 'SOLD_OUT', 'DISCONTINUED', 'INACTIVE'].includes(productStatus.toUpperCase()) ||
     status === '품절' || status === 'Sold Out' || status === '판매종료'
 
-  const rawOpts = ((p as { options?: unknown[] }).options ?? []) as Array<{ name?: string; optionValues?: unknown[] }>
-  const hasColorOption = rawOpts.some(o => o?.name === 'Color' && Array.isArray(o?.optionValues) && o.optionValues.length > 0)
-  const hasSizeOption  = rawOpts.some(o => o?.name === 'Size'  && Array.isArray(o?.optionValues) && o.optionValues.length > 0)
+  const rawOpts = ((p as { options?: unknown[] }).options ?? []) as Array<{
+    id?: string
+    name?: string
+    option_name?: string
+    add_price?: number
+    stock_qty?: number
+    optionValues?: unknown[]
+  }>
+  const kn541Options = rawOpts
+    .filter((o) => o?.option_name && o?.id)
+    .map((o) => ({
+      id: String(o.id),
+      option_name: String(o.option_name),
+      add_price: Number(o.add_price ?? 0),
+      stock_qty: Number(o.stock_qty ?? 0),
+    }))
+  const hasKn541Options = kn541Options.length > 0
+  const hasColorOption = !hasKn541Options && rawOpts.some(
+    o => o?.name === 'Color' && Array.isArray(o?.optionValues) && o.optionValues.length > 0
+  )
+  const hasSizeOption = !hasKn541Options && rawOpts.some(
+    o => o?.name === 'Size' && Array.isArray(o?.optionValues) && o.optionValues.length > 0
+  )
+
+  const summaryText = String(p.summary ?? rawProduct?.summary ?? '').trim()
+  const showProductCode = Boolean(p.productCode)
+  const showVendorRow = Boolean(p.vendor)
+  const showOrigin = Boolean(p.origin)
+  const showMinOrder = (p.minOrderQty ?? 1) > 1 || Boolean(p.maxOrderQty)
+  const hasInfoRows = showProductCode || showVendorRow || showOrigin || showMinOrder
 
   const TABS = [
     { label: '상품상세', href: '#product-detail' },
@@ -240,30 +267,37 @@ export default async function Page({
               <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">{salesCountLabel}</p>
             )}
 
+            {summaryText && (
+              <p className="text-sm leading-relaxed text-neutral-600 dark:text-neutral-400 whitespace-pre-wrap">
+                {summaryText}
+              </p>
+            )}
+
             <Divider />
 
-            <div className="rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+            {hasInfoRows && (
+            <div className="rounded-xl border border-neutral-200 dark:border-neutral-700">
               <table className="w-full text-sm">
                 <tbody>
-                  {p.productCode && (
+                  {showProductCode && (
                     <tr className="border-b border-neutral-100 dark:border-neutral-700">
                       <td className="px-4 py-2.5 w-28 font-medium text-neutral-500 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-800">상품코드</td>
                       <td className="px-4 py-2.5 text-neutral-800 dark:text-neutral-200 font-mono">{p.productCode}</td>
                     </tr>
                   )}
-                  {p.vendor && (
+                  {showVendorRow && (
                     <tr className="border-b border-neutral-100 dark:border-neutral-700">
                       <td className="px-4 py-2.5 w-28 font-medium text-neutral-500 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-800">브랜드</td>
                       <td className="px-4 py-2.5 text-neutral-800 dark:text-neutral-200">{p.vendor}</td>
                     </tr>
                   )}
-                  {p.origin && (
+                  {showOrigin && (
                     <tr className="border-b border-neutral-100 dark:border-neutral-700">
                       <td className="px-4 py-2.5 w-28 font-medium text-neutral-500 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-800">원산지</td>
                       <td className="px-4 py-2.5 text-neutral-800 dark:text-neutral-200">{p.origin}</td>
                     </tr>
                   )}
-                  {(p.minOrderQty > 1 || p.maxOrderQty) && (
+                  {showMinOrder && (
                     <tr className="border-b border-neutral-100 dark:border-neutral-700">
                       <td className="px-4 py-2.5 w-28 font-medium text-neutral-500 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-800">최소주문</td>
                       <td className="px-4 py-2.5 text-neutral-800 dark:text-neutral-200">
@@ -274,6 +308,7 @@ export default async function Page({
                 </tbody>
               </table>
             </div>
+            )}
 
             <ProductActions
               productId={String(productId || handle)}
@@ -288,13 +323,14 @@ export default async function Page({
               stock={stock}
               hasColorOption={hasColorOption}
               hasSizeOption={hasSizeOption}
+              kn541Options={kn541Options}
               listingStatus={status}
               isSoldout={isSoldoutOrUnavailable}
             />
 
             <Divider />
 
-            <div className="rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+            <div className="rounded-xl border border-neutral-200 dark:border-neutral-700">
               <table className="w-full text-sm">
                 <tbody>
                   <tr className="border-b border-neutral-100 dark:border-neutral-700">
