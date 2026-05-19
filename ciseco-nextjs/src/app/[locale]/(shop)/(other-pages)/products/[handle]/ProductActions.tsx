@@ -6,12 +6,19 @@ import { ProductDetailWishlistHeart } from '@/components/ProductDetailWishlistHe
 import { ProductDetailShareButton } from '@/components/ProductDetailShareButton'
 import ProductColorOptions from '@/components/ProductForm/ProductColorOptions'
 import ProductKn541Options, { type Kn541ProductOption } from '@/components/ProductForm/ProductKn541Options'
+import ProductKn541ComboOptions from '@/components/ProductForm/ProductKn541ComboOptions'
 import ProductSizeOptions from '@/components/ProductForm/ProductSizeOptions'
 import { useCart } from '@/lib/cart-context'
+import {
+  fetchOptionGroups,
+  type OptionCombination,
+  type OptionGroup,
+  type OptionGroupsData,
+} from '@/hooks/useOptionGroups'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { ShoppingBag03Icon } from '@hugeicons/core-free-icons'
 import { usePathname, useRouter } from 'next/navigation'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useTranslations } from 'next-intl'
 
@@ -29,6 +36,7 @@ interface Props {
   hasColorOption: boolean
   hasSizeOption: boolean
   kn541Options?: Kn541ProductOption[]
+  isOption?: boolean
   listingStatus?: string
   isSoldout?: boolean
 }
@@ -40,15 +48,19 @@ function validateCartAction(p: {
   hasColorOption: boolean
   hasSizeOption: boolean
   hasKn541Options: boolean
+  hasComboOptions: boolean
   colorSelected: string
   sizeSelected: string
   kn541OptionSelected: string
+  comboValue1: string
+  comboValue2: string
   listingStatus?: string
   isSoldout?: boolean
 }): string | null {
   const {
-    productStatus, stock, qty, hasColorOption, hasSizeOption, hasKn541Options,
-    colorSelected, sizeSelected, kn541OptionSelected, listingStatus, isSoldout,
+    productStatus, stock, qty, hasColorOption, hasSizeOption, hasKn541Options, hasComboOptions,
+    colorSelected, sizeSelected, kn541OptionSelected, comboValue1, comboValue2,
+    listingStatus, isSoldout,
   } = p
   if (isSoldout) return '현재 구매할 수 없는 상품입니다.'
   const list = (listingStatus || '').trim()
@@ -59,6 +71,10 @@ function validateCartAction(p: {
   if (ps && ps !== 'ON_SALE' && ps !== 'ACTIVE') return '현재 구매할 수 없는 상품입니다.'
   if (stock <= 0) return '품절된 상품입니다.'
   if (qty > stock) return `최대 ${stock.toLocaleString('ko-KR')}개까지 구매할 수 있습니다.`
+  if (hasComboOptions) {
+    if (!comboValue1 || !comboValue2) return '옵션을 선택해 주세요.'
+    return null
+  }
   if (hasKn541Options && !String(kn541OptionSelected).trim()) return '옵션을 선택해 주세요.'
   if (hasColorOption && !String(colorSelected).trim()) return '색상을 선택해 주세요.'
   if (hasSizeOption && !String(sizeSelected).trim()) return '사이즈를 선택해 주세요.'
@@ -69,7 +85,7 @@ export default function ProductActions({
   productId, options, price, productName, productImage,
   shippingFee = 0, freeShippingOver = 0, scType = 1,
   productStatus, stock, hasColorOption, hasSizeOption,
-  kn541Options = [], listingStatus, isSoldout = false,
+  kn541Options = [], isOption = false, listingStatus, isSoldout = false,
 }: Props) {
   const router   = useRouter()
   const pathname = usePathname()
@@ -80,25 +96,67 @@ export default function ProductActions({
   const [colorSel, setColorSel] = useState('')
   const [sizeSel, setSizeSel] = useState('')
   const [kn541Sel, setKn541Sel] = useState('')
+  const [comboValue1, setComboValue1] = useState('')
+  const [comboValue2, setComboValue2] = useState('')
+  const [optionData, setOptionData] = useState<OptionGroupsData | null>(null)
 
-  const hasKn541Options = kn541Options.length > 0
-  const maxQty = stock > 0 ? stock : 1
+  useEffect(() => {
+    if (!isOption || !productId) {
+      setOptionData(null)
+      return
+    }
+    let cancelled = false
+    void fetchOptionGroups(productId).then(data => {
+      if (!cancelled) setOptionData(data)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [isOption, productId])
 
-  const selectedKn541Option = kn541Options.find((o) => o.id === kn541Sel)
-  const unitPrice = price + (selectedKn541Option?.add_price ?? 0)
+  const hasCombinations = (optionData?.combinations?.length ?? 0) > 0
+  const comboGroups: OptionGroup[] = optionData?.groups ?? []
+  const hasComboMode = hasCombinations && comboGroups.length === 2
+
+  const selectedCombo: OptionCombination | undefined = useMemo(() => {
+    if (!hasComboMode || !comboValue1 || !comboValue2) return undefined
+    return optionData?.combinations.find(
+      c => c.value1_id === comboValue1 && c.value2_id === comboValue2,
+    )
+  }, [hasComboMode, comboValue1, comboValue2, optionData?.combinations])
+
+  const legacyKn541Options = hasComboMode ? [] : kn541Options
+  const hasKn541Options = legacyKn541Options.length > 0
+  const maxQty = selectedCombo
+    ? Math.max(selectedCombo.stock_qty, 0) || 1
+    : stock > 0
+      ? stock
+      : 1
+
+  const selectedKn541Option = legacyKn541Options.find(o => o.id === kn541Sel)
+  const unitPrice =
+    price +
+    (selectedCombo ? Number(selectedCombo.add_price) || 0 : selectedKn541Option?.add_price ?? 0)
 
   const validationParams = {
-    productStatus, stock, qty, hasColorOption, hasSizeOption, hasKn541Options,
+    productStatus, stock: selectedCombo ? selectedCombo.stock_qty : stock, qty,
+    hasColorOption, hasSizeOption, hasKn541Options,
+    hasComboOptions: hasComboMode,
     colorSelected: colorSel, sizeSelected: sizeSel, kn541OptionSelected: kn541Sel,
+    comboValue1, comboValue2,
     listingStatus, isSoldout,
   }
 
   const blockReason = useMemo(
     () => validateCartAction(validationParams),
-    [productStatus, stock, qty, hasColorOption, hasSizeOption, hasKn541Options, colorSel, sizeSel, kn541Sel, listingStatus, isSoldout]
+    [
+      productStatus, stock, qty, hasColorOption, hasSizeOption, hasKn541Options, hasComboMode,
+      colorSel, sizeSel, kn541Sel, comboValue1, comboValue2, listingStatus, isSoldout, selectedCombo,
+    ],
   )
 
   const buildOption = () => {
+    if (selectedCombo?.option_name) return selectedCombo.option_name
     if (selectedKn541Option?.option_name) return selectedKn541Option.option_name
     const parts: string[] = []
     if (colorSel) parts.push(colorSel)
@@ -113,17 +171,23 @@ export default function ProductActions({
   }
 
   const cartPayload = () => ({
-    productId, name: productName, price: unitPrice, quantity: qty,
-    image: productImage, option: buildOption(),
-    shippingFee, freeShippingOver, scType,
-    stockQty: stock,
+    productId,
+    name: productName,
+    price: unitPrice,
+    quantity: qty,
+    image: productImage,
+    option: buildOption(),
+    shippingFee,
+    freeShippingOver,
+    scType,
+    stockQty: selectedCombo ? selectedCombo.stock_qty : stock,
   })
 
   const handleAddToCart = () => {
     runWithValidation(() => {
       addItem(cartPayload())
       toast.success(
-        (toastItem) => (
+        toastItem => (
           <span>
             {tCart('addedToCartToast')}{' '}
             <button
@@ -135,7 +199,7 @@ export default function ProductActions({
             </button>
           </span>
         ),
-        { duration: 3000 }
+        { duration: 3000 },
       )
     })
   }
@@ -154,9 +218,19 @@ export default function ProductActions({
 
   return (
     <div className="flex flex-col gap-6">
-      {hasKn541Options ? (
+      {hasComboMode ? (
+        <ProductKn541ComboOptions
+          groups={comboGroups}
+          combinations={optionData?.combinations ?? []}
+          selectedValue1={comboValue1}
+          selectedValue2={comboValue2}
+          onSelectValue1={setComboValue1}
+          onSelectValue2={setComboValue2}
+          disabled={isSoldout || stock <= 0}
+        />
+      ) : hasKn541Options ? (
         <ProductKn541Options
-          options={kn541Options}
+          options={legacyKn541Options}
           selectedId={kn541Sel}
           onSelect={setKn541Sel}
           disabled={isSoldout || stock <= 0}
@@ -182,13 +256,13 @@ export default function ProductActions({
             defaultValue={1}
             min={1}
             max={maxQty}
-            disabled={isSoldout || stock <= 0}
-            onChange={(val) => setQty(val)}
+            disabled={isSoldout || (selectedCombo ? selectedCombo.stock_qty <= 0 : stock <= 0)}
+            onChange={val => setQty(val)}
           />
         </div>
-        {stock > 0 && (
+        {(selectedCombo ? selectedCombo.stock_qty : stock) > 0 && (
           <span className="text-xs text-neutral-500 dark:text-neutral-400">
-            (재고 {stock.toLocaleString('ko-KR')}개)
+            (재고 {(selectedCombo ? selectedCombo.stock_qty : stock).toLocaleString('ko-KR')}개)
           </span>
         )}
       </div>

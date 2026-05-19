@@ -13,6 +13,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from '@/i18n/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { useCart, calcItemShipping } from '@/lib/cart-context'
+import { useCartEventDiscount } from '@/hooks/useCartEventDiscount'
 import toast from 'react-hot-toast'
 
 type PendingCartDelete =
@@ -31,6 +32,10 @@ export default function CartPage() {
     toggleSelect, toggleSelectAll, isAllSelected,
     selectedPrice, selectedShipping, selectedTotal,
   } = useCart()
+
+  const { byProductId: eventByPid, totalDiscount: eventDiscountTotal } =
+    useCartEventDiscount(items, selectedIds)
+  const payableTotal = Math.max(0, selectedTotal - eventDiscountTotal)
 
   // ★ 비로그인 가드 — 폐쇄몰: 로그인 없으면 로그인으로
   const [authChecked, setAuthChecked] = useState(false)
@@ -122,6 +127,11 @@ export default function CartPage() {
               {items.map(item => {
                 const price        = Number(item.price) || 0
                 const qty          = Number(item.quantity) || 1
+                const ev           = eventByPid[item.productId]
+                const lineGross    = price * qty
+                const lineFinal    = ev?.event_id
+                  ? Math.max(0, lineGross - (ev.discount_amount ?? 0))
+                  : lineGross
                 const itemShipping = calcItemShipping(item)
                 const isSelected   = selectedIds.has(item.id)
                 const isSoldOut    = soldOutIds.has(item.id)
@@ -161,6 +171,11 @@ export default function CartPage() {
                             {item.name}
                           </h3>
                           {item.option && <p className="mt-1 text-xs text-neutral-500">{item.option}</p>}
+                          {ev?.event_name && (
+                            <span className="mt-1 inline-block rounded bg-red-50 px-2 py-0.5 text-[10px] font-medium text-red-600">
+                              이벤트: {ev.event_name}
+                            </span>
+                          )}
                           {isSoldOut ? (
                             <p className="mt-1 text-xs font-medium text-red-500">품절</p>
                           ) : (
@@ -196,9 +211,14 @@ export default function CartPage() {
                         <div className="text-right">
                           <p className={`text-base font-semibold ${
                             isSoldOut ? 'text-neutral-400 line-through' : 'text-neutral-900 dark:text-neutral-100'
-                          }`}>
-                            {(price * qty).toLocaleString('ko-KR')}원
+                          } ${ev?.event_id && !isSoldOut ? 'text-red-600' : ''}`}>
+                            {lineFinal.toLocaleString('ko-KR')}원
                           </p>
+                          {ev?.event_id && !isSoldOut && lineFinal < lineGross && (
+                            <p className="text-xs text-neutral-400 line-through">
+                              {lineGross.toLocaleString('ko-KR')}원
+                            </p>
+                          )}
                           <p className="text-xs text-neutral-400">단가 {price.toLocaleString('ko-KR')}원</p>
                         </div>
                       </div>
@@ -252,13 +272,21 @@ export default function CartPage() {
                     {selectedShipping === 0 ? '무료' : `${selectedShipping.toLocaleString('ko-KR')}원`}
                   </span>
                 </div>
+                {eventDiscountTotal > 0 && (
+                  <div className="flex justify-between text-red-600">
+                    <span>이벤트 할인</span>
+                    <span>-{eventDiscountTotal.toLocaleString('ko-KR')}원</span>
+                  </div>
+                )}
               </div>
 
               <div className="my-4 border-t border-neutral-200 dark:border-neutral-700" />
 
               <div className="flex items-center justify-between">
                 <span className="font-bold text-neutral-900 dark:text-neutral-100">총 결제금액</span>
-                <span className="text-xl font-bold text-primary-600">{selectedTotal.toLocaleString('ko-KR')}원</span>
+                <span className="text-xl font-bold text-primary-600">
+                  {payableTotal.toLocaleString('ko-KR')}원
+                </span>
               </div>
 
               <ButtonPrimary

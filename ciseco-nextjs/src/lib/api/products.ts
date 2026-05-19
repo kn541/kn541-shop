@@ -70,6 +70,8 @@ export interface Product {
   return_fee?: number
   exchange_fee?: number
   delivery_days?: number
+  delivery_company?: string | null
+  delivery_company_name?: string | null
   product_round: number
   sales_count?: number
   sort_sales_count?: number

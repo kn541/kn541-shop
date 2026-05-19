@@ -16,6 +16,7 @@ import ProductReviews from '../ProductReviews'
 import ProductStatus from '../ProductStatus'
 import KoreanProductGallery from '../KoreanProductGallery'
 import ProductActions from './ProductActions'
+import ProductDetailPricing from '@/components/events/ProductDetailPricing'
 import Link from 'next/link'
 import { formatSalesCountDetail } from '@/lib/sales-count'
 import { getTranslations } from 'next-intl/server'
@@ -78,7 +79,14 @@ export default async function Page({
   const scType           = Number(deliveryInfo.sc_type ?? 1)
   const returnFee        = Number(deliveryInfo.return_fee ?? 0)
   const deliveryDays     = Number(deliveryInfo.delivery_days ?? 3)
-  const deliveryCompany  = deliveryInfo.delivery_company ?? null
+  const deliveryCompany = String(
+    deliveryInfo.delivery_company ?? p.deliveryCompany ?? rawProduct?.delivery_company ?? ''
+  ).trim()
+  const deliveryCompanyName = String(
+    deliveryInfo.delivery_company_name ?? p.deliveryCompanyName ?? rawProduct?.delivery_company_name ?? ''
+  ).trim()
+  const showDeliveryCompany = Boolean(deliveryCompany)
+  const deliveryCompanyLabel = deliveryCompanyName || deliveryCompany
 
   // ★ THUMBNAIL 타입 이미지 — 갤러리 사이드바 전용
   const thumbnailSrcs: string[] = (() => {
@@ -254,15 +262,25 @@ export default async function Page({
               )}
             </div>
 
-            <div className="flex items-end gap-3">
-              {discountRate > 0 && <span className="text-2xl font-bold text-red-500">{discountRate}%</span>}
-              <Prices contentClass="text-3xl font-bold" price={salePrice} />
-              {consumerPrice > 0 && consumerPrice > salePrice && (
-                <span className="text-base text-neutral-400 line-through mb-0.5">
-                  {consumerPrice.toLocaleString('ko-KR')}원
-                </span>
-              )}
-            </div>
+            <ProductDetailPricing
+              productId={productId}
+              salePrice={salePrice}
+              consumerPrice={consumerPrice}
+              discountRate={discountRate}
+              fallback={
+                <div className="flex items-end gap-3">
+                  {discountRate > 0 && (
+                    <span className="text-2xl font-bold text-red-500">{discountRate}%</span>
+                  )}
+                  <Prices contentClass="text-3xl font-bold" price={salePrice} />
+                  {consumerPrice > 0 && consumerPrice > salePrice && (
+                    <span className="text-base text-neutral-400 line-through mb-0.5">
+                      {consumerPrice.toLocaleString('ko-KR')}원
+                    </span>
+                  )}
+                </div>
+              }
+            />
             {salesCountLabel && (
               <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">{salesCountLabel}</p>
             )}
@@ -324,6 +342,7 @@ export default async function Page({
               hasColorOption={hasColorOption}
               hasSizeOption={hasSizeOption}
               kn541Options={kn541Options}
+              isOption={Boolean(rawProduct?.is_option ?? p.is_option)}
               listingStatus={status}
               isSoldout={isSoldoutOrUnavailable}
             />
@@ -336,9 +355,15 @@ export default async function Page({
                   <tr className="border-b border-neutral-100 dark:border-neutral-700">
                     <td className="px-4 py-2.5 w-28 font-medium text-neutral-500 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-800">배송방법</td>
                     <td className="px-4 py-2.5 text-neutral-800 dark:text-neutral-200">
-                      일반배송 ({deliveryDays}일 이내){deliveryCompany ? ` · ${deliveryCompany}` : ''}
+                      일반배송 ({deliveryDays}일 이내)
                     </td>
                   </tr>
+                  {showDeliveryCompany && (
+                    <tr className="border-b border-neutral-100 dark:border-neutral-700">
+                      <td className="px-4 py-2.5 w-28 font-medium text-neutral-500 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-800">택배사</td>
+                      <td className="px-4 py-2.5 text-neutral-800 dark:text-neutral-200">{deliveryCompanyLabel}</td>
+                    </tr>
+                  )}
                   <tr className="border-b border-neutral-100 dark:border-neutral-700">
                     <td className="px-4 py-2.5 w-28 font-medium text-neutral-500 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-800">배송비</td>
                     <td className="px-4 py-2.5 text-neutral-800 dark:text-neutral-200">{shippingText}</td>
@@ -396,8 +421,14 @@ export default async function Page({
           <div className="flex flex-col gap-3 text-sm text-neutral-600 dark:text-neutral-400">
             <div className="flex gap-4">
               <span className="w-28 shrink-0 font-medium text-neutral-800 dark:text-neutral-200">배송방법</span>
-              <span>일반택배 ({deliveryDays}일 이내 출발){deliveryCompany ? ` · ${deliveryCompany}` : ''}</span>
+              <span>일반택배 ({deliveryDays}일 이내 출발)</span>
             </div>
+            {showDeliveryCompany && (
+              <div className="flex gap-4">
+                <span className="w-28 shrink-0 font-medium text-neutral-800 dark:text-neutral-200">택배사</span>
+                <span>배송: {deliveryCompanyLabel}</span>
+              </div>
+            )}
             <div className="flex gap-4">
               <span className="w-28 shrink-0 font-medium text-neutral-800 dark:text-neutral-200">배송비</span>
               <span>{shippingText}</span>
