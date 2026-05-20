@@ -70,7 +70,7 @@ export default async function Page({
             <FilterSortByMenuListBox className="ml-auto" />
           </div>
           <Divider className="mb-8" />
-          <div className="grid flex-1 grid-cols-2 gap-x-5 gap-y-10 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 xl:gap-x-8">
+          <div className="grid flex-1 grid-cols-2 gap-x-3 gap-y-10 sm:grid-cols-2 md:grid-cols-3 md:gap-x-5 xl:grid-cols-5 xl:gap-x-8 [&>*]:min-w-0">
             {products.map((item) => (
               <ProductCard data={item} key={item.id} />
             ))}

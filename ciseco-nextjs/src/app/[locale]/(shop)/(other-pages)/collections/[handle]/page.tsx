@@ -66,7 +66,7 @@ export default async function Page({
       <Divider className="mt-8" />
 
       {/* LOOP ITEMS */}
-      <div className="mt-8 grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 xl:gap-x-8 lg:mt-10">
+      <div className="mt-8 grid grid-cols-2 gap-x-3 gap-y-8 sm:grid-cols-2 md:grid-cols-3 md:gap-x-5 xl:grid-cols-5 xl:gap-x-8 [&>*]:min-w-0 lg:mt-10">
         {products?.map((produc) => <ProductCard data={produc} key={produc.id} />)}
       </div>
 

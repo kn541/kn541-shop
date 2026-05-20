@@ -100,11 +100,11 @@ export function MainProductCard(props: MainProductCardProps) {
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={CART_ICON} alt="" width={18} height={17} className="h-[17px] w-[18px]" />
-          담기
+          <span className="cart-label">담기</span>
         </button>
-        <h3 className="mt-[17px] mb-[11px] min-h-[38px] overflow-hidden text-[16px] font-light leading-normal tracking-[-0.32px] text-kn541-black">
-          <span className="title-line block whitespace-nowrap">{PLACE_L1}</span>
-          <span className="title-line block whitespace-nowrap">{PLACE_L2}</span>
+        <h3 className="mt-[17px] mb-[11px] min-h-[38px] overflow-hidden text-[16px] font-light leading-normal tracking-[-0.32px] text-kn541-black line-clamp-2">
+          <span className="title-line block">{PLACE_L1}</span>
+          <span className="title-line block">{PLACE_L2}</span>
         </h3>
         <p className="price m-0 flex flex-wrap items-baseline gap-x-3 leading-[1.2]">
           <span className="text-[18px] font-normal text-kn541-red">88%</span>
@@ -266,18 +266,18 @@ export function MainProductCard(props: MainProductCardProps) {
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={CART_ICON} alt="" width={18} height={17} className="h-[17px] w-[18px]" />
-        {soldOut ? tProduct('outOfStock') : '담기'}
+        <span className="cart-label">{soldOut ? tProduct('outOfStock') : '담기'}</span>
       </button>
-      <h3 className="mt-[17px] mb-[11px] min-h-[38px] overflow-hidden text-[16px] font-light leading-normal tracking-[-0.32px] text-kn541-black">
-        <Link href={`/products/${pid}`}>
+      <h3 className="mt-[17px] mb-[11px] min-h-[38px] overflow-hidden text-[16px] font-light leading-normal tracking-[-0.32px] text-kn541-black line-clamp-2">
+        <Link href={`/products/${pid}`} className="block min-w-0">
           {categoryLabel ? (
             <span className="title-line mb-0.5 block truncate text-[12px] font-normal text-[#999]">{categoryLabel}</span>
           ) : null}
           {product.brand ? (
             <span className="title-line mb-0.5 block truncate text-[13px] font-normal text-[#888]">{product.brand}</span>
           ) : null}
-          <span className="title-line block whitespace-nowrap">{l1}</span>
-          <span className="title-line block whitespace-nowrap">{l2}</span>
+          <span className="title-line block">{l1}</span>
+          <span className="title-line block">{l2}</span>
         </Link>
       </h3>
       <p className="price m-0 flex flex-wrap items-baseline gap-x-3 leading-[1.2]">

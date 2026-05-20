@@ -45,7 +45,7 @@ export async function BestProducts() {
             />
           </div>
         </div>
-        <div className="best-grid grid grid-cols-2 justify-center gap-x-[55px] gap-y-10 md:grid-cols-4">
+        <div className="best-grid grid grid-cols-2 justify-center gap-x-3 gap-y-10 md:grid-cols-4 md:gap-x-[55px] [&>*]:min-w-0">
           {items.slice(0, 10).map((p) => (
             <MainProductCard key={p.product_id} mode="api" product={p} compact />
           ))}

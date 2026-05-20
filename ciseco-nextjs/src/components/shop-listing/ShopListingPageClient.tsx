@@ -153,7 +153,7 @@ export default function ShopListingPageClient({
 
       {!isValueUpEmpty && !loading && displayItems.length > 0 && (
         <>
-          <div className="grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 xl:gap-x-8">
+          <div className="grid grid-cols-2 gap-x-3 gap-y-8 sm:grid-cols-2 md:grid-cols-3 md:gap-x-5 xl:grid-cols-5 xl:gap-x-8 [&>*]:min-w-0">
             {displayItems.map((row) => (
               <ProductCard key={row.product_id} data={adaptProduct(mapShopListItemToProduct(row)) as any} />
             ))}

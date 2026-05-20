@@ -158,7 +158,7 @@ const ProductCard: FC<Props> = ({ className = '', data, isLiked, hrefSearch, car
   }
 
   return (
-    <div className={`product-card relative flex flex-col bg-transparent ${className}`}>
+    <div className={`product-card relative flex min-w-0 w-full flex-col bg-transparent ${className}`}>
       {/* ★ 카드 전체 클릭 링크 — next-intl Link이므로 locale 없이 */}
       <Link href={productPath} className="absolute inset-0 z-0" />
 
@@ -231,8 +231,8 @@ const ProductCard: FC<Props> = ({ className = '', data, isLiked, hrefSearch, car
           </h2>
         </div>
 
-        <div className="flex items-center justify-between gap-2">
-          <Prices price={price ?? 0} contentClass="py-0 text-sm" />
+        <div className="flex min-w-0 items-center justify-between gap-2">
+          <Prices price={price ?? 0} contentClass="py-0 text-sm min-w-0 truncate" />
           {isFreeShipping && (
             <span className="rounded-full bg-teal-50 px-2 py-0.5 text-xs font-medium text-teal-700 dark:bg-teal-900/30 dark:text-teal-400 whitespace-nowrap">
               무료배송

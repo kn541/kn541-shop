@@ -188,7 +188,50 @@
 .kn-main-page .product-card {
   box-sizing: border-box;
   width: 280px;
+  min-width: 0;
+  max-width: 100%;
   flex-shrink: 0;
+}
+
+@media (max-width: 767px) {
+  .kn-main-page .best-grid .product-card,
+  .kn-main-page .best-grid.small .product-card {
+    width: 100%;
+    flex-shrink: 1;
+  }
+
+  .kn-main-page .product-card.compact .thumb {
+    height: 168px;
+  }
+
+  .kn-main-page .product-card .title-line {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+
+  .kn-main-page .product-card .price {
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+
+  .kn-main-page .product-card .price strong,
+  .kn-main-page .product-card .price del,
+  .kn-main-page .product-card .price span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .kn-main-page .product-card .cart-button .cart-label {
+    display: none;
+  }
+
+  .kn-main-page .best-grid {
+    gap: 28px 10px;
+  }
 }
 
 .kn-main-page .product-rail.final-rail {
