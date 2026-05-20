@@ -33,8 +33,8 @@ export default function Header() {
           {/* 구분선 */}
           <span className="mx-1 h-4 w-px bg-neutral-200 dark:bg-neutral-700 hidden sm:block" />
 
-          {/* 언어선택 (태극기 드롭다운) */}
-          <LangSwitcher />
+          {/* 언어선택 — 모바일은 사이드바 메뉴 안으로 */}
+          <LangSwitcher className="hidden md:block" />
 
           {/* 모바일 햄버거 */}
           <div className="lg:hidden ml-1">

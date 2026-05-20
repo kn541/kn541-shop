@@ -10,6 +10,7 @@ import { useRouter } from '@/i18n/navigation'
 import { useLocale } from 'next-intl'
 import { useCallback } from 'react'
 import { toast } from 'react-hot-toast'
+import { UserIcon } from '@heroicons/react/24/outline'
 import CartBtn from './CartBtn'
 
 /** 검색바 우측: 회원명 · 장바구니 · 로그인/회원가입 또는 로그아웃/마이페이지 */
@@ -31,12 +32,15 @@ export default function HeaderUserBar() {
     router.push('/')
   }, [router, clearCart, clearUser])
 
+  const iconBtnCls =
+    'inline-flex min-h-11 min-w-11 items-center justify-center rounded-md text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800 md:hidden'
+
   if (!isMounted) {
     return (
       <>
-        <div className="h-9 w-16" />
+        <div className="h-9 w-11 md:w-16" />
         <CartBtn />
-        <div className="h-9 w-24" />
+        <div className="h-9 w-11 md:w-24" />
       </>
     )
   }
@@ -46,7 +50,7 @@ export default function HeaderUserBar() {
       <>
         <div className="hidden h-9 w-14 animate-pulse rounded-md bg-neutral-100 dark:bg-neutral-800 sm:block" />
         <CartBtn />
-        <div className="h-9 w-24 animate-pulse rounded-md bg-neutral-100 dark:bg-neutral-800" />
+        <div className="h-9 w-11 animate-pulse rounded-md bg-neutral-100 dark:bg-neutral-800 md:w-24" />
       </>
     )
   }
@@ -55,7 +59,7 @@ export default function HeaderUserBar() {
     <>
       {isLoggedIn && greeting ? (
         <span
-          className="max-w-[88px] truncate whitespace-nowrap px-1 text-xs font-medium text-neutral-800 dark:text-neutral-100 sm:max-w-none sm:text-sm"
+          className="max-w-[88px] truncate whitespace-nowrap px-1 text-xs font-medium text-neutral-800 dark:text-neutral-100 sm:max-w-none sm:text-sm hidden md:inline"
           aria-label={`${greeting} 환영`}
           title={greeting}
         >
@@ -66,36 +70,46 @@ export default function HeaderUserBar() {
       <CartBtn />
 
       {!isLoggedIn ? (
-        <div className="flex items-center text-sm">
-          <a
-            href={`/${locale}/login`}
-            className="rounded-md px-2.5 py-1.5 text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800 whitespace-nowrap"
-          >
-            로그인
+        <>
+          <a href={`/${locale}/login`} className={iconBtnCls} aria-label="로그인">
+            <UserIcon className="h-6 w-6" aria-hidden />
           </a>
-          <a
-            href={`/${locale}/signup`}
-            className="rounded-md px-2.5 py-1.5 text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800 whitespace-nowrap"
-          >
-            회원가입
-          </a>
-        </div>
+          <div className="hidden items-center text-sm md:flex">
+            <a
+              href={`/${locale}/login`}
+              className="rounded-md px-2.5 py-1.5 text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800 whitespace-nowrap"
+            >
+              로그인
+            </a>
+            <a
+              href={`/${locale}/signup`}
+              className="rounded-md px-2.5 py-1.5 text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800 whitespace-nowrap"
+            >
+              회원가입
+            </a>
+          </div>
+        </>
       ) : (
-        <div className="flex items-center text-sm">
-          <button
-            type="button"
-            onClick={logout}
-            className="rounded-md px-2.5 py-1.5 text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800 whitespace-nowrap"
-          >
-            로그아웃
-          </button>
-          <a
-            href={`/${locale}/account`}
-            className="rounded-md px-2.5 py-1.5 text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800 whitespace-nowrap"
-          >
-            마이페이지
+        <>
+          <a href={`/${locale}/account`} className={iconBtnCls} aria-label="마이페이지">
+            <UserIcon className="h-6 w-6" aria-hidden />
           </a>
-        </div>
+          <div className="hidden items-center text-sm md:flex">
+            <button
+              type="button"
+              onClick={logout}
+              className="rounded-md px-2.5 py-1.5 text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800 whitespace-nowrap"
+            >
+              로그아웃
+            </button>
+            <a
+              href={`/${locale}/account`}
+              className="rounded-md px-2.5 py-1.5 text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800 whitespace-nowrap"
+            >
+              마이페이지
+            </a>
+          </div>
+        </>
       )}
     </>
   )

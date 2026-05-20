@@ -12,6 +12,7 @@ import { Search01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import clsx from 'clsx'
 import React from 'react'
+import LangSwitcher from '../LangSwitcher'
 
 interface SidebarNavigationProps {
   data: TNavigationItem[]
@@ -104,6 +105,12 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ data }) => {
     <div>
       <div>{renderSearchForm()}</div>
       <ul className="flex flex-col gap-y-1 px-2 py-6">{data?.map(_renderItem)}</ul>
+      <div className="border-t border-neutral-200 px-4 py-4 dark:border-neutral-700 md:hidden">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+          언어
+        </p>
+        <LangSwitcher />
+      </div>
     </div>
   )
 }
