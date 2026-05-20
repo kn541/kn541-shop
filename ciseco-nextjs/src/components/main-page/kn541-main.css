@@ -615,17 +615,11 @@ body.is-cart-popup-open {
   }
 
   .mobile-bottom .home {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 60px;
-    height: 58px;
-    margin: -10px auto 0;
-    padding: 0;
-    border: 0;
-    background: transparent;
-    cursor: pointer;
+    margin-top: -10px;
+  }
+
+  .mobile-bottom .home > span:first-of-type {
+    margin-bottom: 2px;
   }
 
   .mobile-bottom .mb-btn.is-active,

@@ -30,7 +30,7 @@ function IconReserve() {
 
 function IconHomeFab() {
   return (
-    <svg width="60" height="58" viewBox="0 0 60 58" fill="none" aria-hidden>
+    <svg width="60" height="58" viewBox="0 0 60 58" fill="none" aria-hidden className="block">
       <circle cx="30" cy="26" r="26" fill="url(#mbHomeGrad)" />
       <defs>
         <linearGradient id="mbHomeGrad" x1="4" y1="26" x2="56" y2="26" gradientUnits="userSpaceOnUse">
@@ -38,6 +38,19 @@ function IconHomeFab() {
           <stop offset="1" stopColor="#05C368" />
         </linearGradient>
       </defs>
+    </svg>
+  )
+}
+
+function IconHomeGlyph() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden className="relative z-[1]">
+      <path
+        d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4v-5H9v5H5a1 1 0 0 1-1-1v-8.5Z"
+        fill="white"
+        stroke="white"
+        strokeWidth="0.5"
+      />
     </svg>
   )
 }
@@ -90,8 +103,14 @@ export function MobileBottomNav() {
         </span>
         사전예약
       </Link>
-      <Link href={homeHref} className={clsx('home', isHome && 'is-active')} scroll={false}>
-        <IconHomeFab />
+      <Link href={homeHref} className={clsx('mb-btn home', isHome && 'is-active')} scroll={false}>
+        <span className="relative flex h-[58px] w-[60px] items-center justify-center">
+          <IconHomeFab />
+          <span className="absolute inset-0 flex items-center justify-center pb-1">
+            <IconHomeGlyph />
+          </span>
+        </span>
+        홈
       </Link>
       <Link href={`/${locale}/myshop`} className="mb-btn" scroll={false}>
         <span>
