@@ -216,6 +216,24 @@ export default function ProductActions({
   const optionHints = ['옵션을 선택해 주세요.', '색상을 선택해 주세요.', '사이즈를 선택해 주세요.']
   const hint = stock > 0 && blockReason && !optionHints.includes(blockReason) ? blockReason : null
 
+  const ctaButtons = (
+    <>
+      <button type="button" onClick={handleAddToCart} disabled={buttonsDisabled}
+        className="flex min-h-[52px] min-w-0 flex-1 items-center justify-center gap-2 rounded-full bg-primary-600 px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50 sm:px-6">
+        <HugeiconsIcon icon={ShoppingBag03Icon} size={18} color="currentColor" strokeWidth={1.5} className="hidden sm:block" />
+        <span>장바구니에 담기</span>
+      </button>
+      <button type="button" onClick={handleBuyNow} disabled={buttonsDisabled}
+        className="flex min-h-[52px] min-w-0 flex-1 items-center justify-center gap-2 rounded-full bg-neutral-900 px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 sm:px-6">
+        바로구매
+      </button>
+      <div className="flex flex-col items-center gap-2">
+        <ProductDetailWishlistHeart productId={productId} />
+        <ProductDetailShareButton title={productName} price={unitPrice} imageUrl={productImage} />
+      </div>
+    </>
+  )
+
   return (
     <div className="flex flex-col gap-6">
       {hasComboMode ? (
@@ -267,21 +285,17 @@ export default function ProductActions({
         )}
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 pt-2">
-        <button type="button" onClick={handleAddToCart} disabled={buttonsDisabled}
-          className="flex min-h-[52px] min-w-0 flex-1 items-center justify-center gap-2 rounded-full bg-primary-600 px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50 sm:px-6">
-          <HugeiconsIcon icon={ShoppingBag03Icon} size={18} color="currentColor" strokeWidth={1.5} className="hidden sm:block" />
-          <span>장바구니에 담기</span>
-        </button>
-        <button type="button" onClick={handleBuyNow} disabled={buttonsDisabled}
-          className="flex min-h-[52px] min-w-0 flex-1 items-center justify-center gap-2 rounded-full bg-neutral-900 px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 sm:px-6">
-          바로구매
-        </button>
-        <div className="flex flex-col items-center gap-2">
-          <ProductDetailWishlistHeart productId={productId} />
-          <ProductDetailShareButton title={productName} price={unitPrice} imageUrl={productImage} />
+      <div className="hidden flex-wrap items-center gap-3 pt-2 md:flex">
+        {ctaButtons}
+      </div>
+
+      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-neutral-200 bg-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-[0_-2px_10px_rgba(0,0,0,0.1)] md:hidden dark:border-neutral-700 dark:bg-neutral-900">
+        <div className="flex flex-wrap items-center gap-2">
+          {ctaButtons}
         </div>
       </div>
+
+      <div className="h-24 shrink-0 md:hidden" aria-hidden />
     </div>
   )
 }
