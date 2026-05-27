@@ -16,6 +16,13 @@ import {
 const BASE = process.env.NEXT_PUBLIC_API_URL
 const LOGO_URL = 'https://ghtkropmnrelkxivzpim.supabase.co/storage/v1/object/public/brands/white_logo.png'
 
+// next-intl router.push()에 locale prefix가 중복되지 않도록 strip
+const LOCALE_PREFIX_RE = /^\/(ko|en|zh)(\/|$)/
+
+function stripLocalePrefix(path: string): string {
+  return path.replace(LOCALE_PREFIX_RE, '/') || '/'
+}
+
 function LoginForm() {
   const router = useRouter()
   const t = useTranslations('Auth')
@@ -25,7 +32,10 @@ function LoginForm() {
   const [error, setError] = useState('')
   const [isPending, startTransition] = useTransition()
 
-  const redirectTo = searchParams.get('redirect') || '/'
+  // redirect 파라미터에서 locale prefix 제거
+  // 예: /ko/myshop → /myshop (next-intl router가 /ko/ 자동 추가)
+  const rawRedirect = searchParams.get('redirect') || '/'
+  const redirectTo = stripLocalePrefix(rawRedirect)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -140,7 +150,8 @@ export default function LoginPage() {
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-[360px]">
         <div className="flex justify-center mb-8">
-          <a href="/ko" className="block">
+          {/* 하드코딩 <a href="/ko"> 제거 → next-intl Link 사용 */}
+          <Link href="/" className="block">
             <Image
               src={LOGO_URL}
               alt="KN541"
@@ -150,7 +161,7 @@ export default function LoginPage() {
               className="object-contain"
               priority
             />
-          </a>
+          </Link>
         </div>
         <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-sm border border-neutral-100 dark:border-neutral-800 px-8 py-8">
           <h1 className="text-[22px] font-bold text-neutral-900 dark:text-white mb-6 text-center tracking-tight">
@@ -162,9 +173,10 @@ export default function LoginPage() {
         </div>
         <p className="text-center text-sm text-neutral-500 dark:text-neutral-400 mt-6">
           아직 계정이 없으신가요?{' '}
-          <a href="/ko/signup" className="font-semibold text-neutral-900 dark:text-white hover:underline">
+          {/* 하드코딩 <a href="/ko/signup"> 제거 → next-intl Link 사용 */}
+          <Link href="/signup" className="font-semibold text-neutral-900 dark:text-white hover:underline">
             회원가입
-          </a>
+          </Link>
         </p>
       </div>
     </div>
