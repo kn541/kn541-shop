@@ -123,7 +123,95 @@ export default function AccountProfileClient() {
     setZip(data.zip_code ?? '')
     setAddr1(data.address1 ?? '')
     setAddr2(data.address2 ?? '')
+    setCurrentPassword('')
+    setNewPassword('')
+    setConfirmPassword('')
+    setNewPwHangulMsg('')
+    setCfPwHangulMsg('')
   }, [data])
+
+  const matchOk =
+    newPassword.length > 0 && confirmPassword.length > 0 && newPassword === confirmPassword
+  const matchBad = confirmPassword.length > 0 && newPassword !== confirmPassword
+
+  const validatePasswordSection = useCallback((): string | null => {
+    const cur = currentPassword.trim()
+    const nw = newPassword.trim()
+    const cf = confirmPassword.trim()
+    if (!cur && !nw && !cf) return null
+    if (!cur) return '비밀번호를 변경하려면 현재 비밀번호를 입력해 주세요.'
+    if (!nw) return '새 비밀번호를 입력해 주세요.'
+    if (newPwHangulMsg || cfPwHangulMsg) return '비밀번호에 한글을 사용할 수 없습니다.'
+    if (!isPasswordValid(nw)) return '새 비밀번호가 정책을 만족하지 않습니다.'
+    if (nw !== cf) return '새 비밀번호 확인이 일치하지 않습니다.'
+    return null
+  }, [
+    currentPassword,
+    newPassword,
+    confirmPassword,
+    newPwHangulMsg,
+    cfPwHangulMsg,
+  ])
+
+  const saveAll = async () => {
+    if (!BASE || !data) {
+      toast.error('설정을 불러올 수 없습니다.')
+      return
+    }
+
+    const pwErr = validatePasswordSection()
+    if (pwErr) {
+      toast.error(pwErr)
+      return
+    }
+
+    const wantsPasswordChange =
+      currentPassword.trim().length > 0 ||
+      newPassword.trim().length > 0 ||
+      confirmPassword.trim().length > 0
+
+    setSaving(true)
+    try {
+      const patchRes = await fetch(`${BASE}/members/${data.user_id}`, {
+        method: 'PATCH',
+        headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name.trim() || null,
+          email: email.trim() || null,
+          birth_date: birthDate.trim() === '' ? null : birthDate.trim().slice(0, 10),
+          gender: gender === '' ? null : gender,
+          phone: phone.trim() || null,
+          zip_code: zip.trim() || null,
+          address1: addr1.trim() || null,
+          address2: addr2.trim() || null,
+        }),
+      })
+      if (!patchRes.ok) throw new Error('profile_patch_failed')
+
+      if (wantsPasswordChange) {
+        await mypageFetch<unknown>('/auth/change-password', {
+          method: 'POST',
+          body: JSON.stringify({
+            current_password: currentPassword,
+            new_password: newPassword,
+          }),
+        })
+      }
+
+      toast.success(
+        wantsPasswordChange ? '저장되었습니다. 비밀번호가 변경되었습니다.' : '저장되었습니다.'
+      )
+      reload()
+    } catch (e) {
+      if (e instanceof MypageApiError) {
+        toast.error(e.message)
+      } else {
+        toast.error('저장에 실패했습니다. 다시 시도해 주세요.')
+      }
+    } finally {
+      setSaving(false)
+    }
+  }
 
   useEffect(() => {
     if (!withdrawOpen) return
@@ -182,85 +270,22 @@ export default function AccountProfileClient() {
 
   if (!data) return null
 
-  const saveAll = async () => {
-    if (!BASE || !data) return
-    setSaving(true)
-    try {
-      // 비밀번호 변경 요청이 있는 경우 검증
-      if (newPassword || confirmPassword || currentPassword) {
-        if (!currentPassword) { toast.error('현재 비밀번호를 입력해 주세요.'); return }
-        if (!newPassword) { toast.error('새 비밀번호를 입력해 주세요.'); return }
-        if (!isPasswordValid(newPassword)) { toast.error('비밀번호 정책을 확인해 주세요.'); return }
-        if (newPassword !== confirmPassword) { toast.error('새 비밀번호가 일치하지 않습니다.'); return }
-      }
-
-      const profileBody: Record<string, unknown> = {}
-      if (name !== (data.name ?? '')) profileBody.name = name
-      if (email !== (data.email ?? '')) profileBody.email = email
-      if (phone !== (data.phone ?? '')) profileBody.phone = phone
-      if (zip !== (data.zip_code ?? '')) profileBody.zip_code = zip
-      if (addr1 !== (data.address1 ?? '')) profileBody.address1 = addr1
-      if (addr2 !== (data.address2 ?? '')) profileBody.address2 = addr2
-      if (gender !== (data.gender === 'M' || data.gender === 'F' ? data.gender : ''))
-        profileBody.gender = gender || null
-      const bd = birthDate || null
-      if (bd !== (data.birth_date ? String(data.birth_date).slice(0, 10) : null))
-        profileBody.birth_date = bd
-
-      let saved = false
-
-      if (Object.keys(profileBody).length > 0) {
-        await fetch(`${BASE}/members/${data.user_id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-          body: JSON.stringify(profileBody),
-        })
-        saved = true
-      }
-
-      if (currentPassword && newPassword) {
-        await mypageFetch('/auth/change-password', {
-          method: 'POST',
-          body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
-        })
-        saved = true
-        setCurrentPassword('')
-        setNewPassword('')
-        setConfirmPassword('')
-      }
-
-      if (saved) {
-        toast.success('저장됐습니다.')
-        reload()
-      } else {
-        toast('변경된 내용이 없습니다.')
-      }
-    } catch (e) {
-      if (e instanceof MypageApiError) {
-        toast.error(e.message)
-      } else {
-        toast.error('저장에 실패했습니다.')
-      }
-    } finally {
-      setSaving(false)
-    }
-  }
-
   return (
     <div className="flex flex-col gap-8">
       <section className={cardClass}>
-        <h2 className="mb-5 text-base font-semibold text-neutral-900 dark:text-neutral-100">👤 기본 정보</h2>
-        <div className="grid gap-5 sm:grid-cols-2">
+        <h2 className="mb-6 flex items-center gap-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+          <span aria-hidden>👤</span> 기본 정보
+        </h2>
+        <div className="space-y-5">
           <div>
             <label className="mb-1.5 block text-sm font-medium text-neutral-800 dark:text-neutral-200">
               이름
             </label>
             <input
-              type="text"
               className={inputClass}
               value={name}
               onChange={e => setName(e.target.value)}
-              placeholder="이름을 입력하세요"
+              autoComplete="name"
             />
           </div>
           <div>
@@ -284,7 +309,6 @@ export default function AccountProfileClient() {
               className={inputClass}
               value={birthDate}
               onChange={e => setBirthDate(e.target.value)}
-              max={new Date().toISOString().slice(0, 10)}
             />
           </div>
           <div>
@@ -294,7 +318,9 @@ export default function AccountProfileClient() {
             <select
               className={inputClass}
               value={gender}
-              onChange={e => setGender(e.target.value as 'M' | 'F' | '')}
+              onChange={e =>
+                setGender(e.target.value === 'M' ? 'M' : e.target.value === 'F' ? 'F' : '')
+              }
             >
               <option value="">선택안함</option>
               <option value="M">남성</option>
@@ -305,8 +331,10 @@ export default function AccountProfileClient() {
       </section>
 
       <section className={cardClass}>
-        <h2 className="mb-5 text-base font-semibold text-neutral-900 dark:text-neutral-100">📱 연락처</h2>
-        <div className="grid gap-5 sm:grid-cols-2">
+        <h2 className="mb-6 flex items-center gap-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+          <span aria-hidden>📱</span> 연락처
+        </h2>
+        <div className="space-y-5">
           <div>
             <label className="mb-1.5 block text-sm font-medium text-neutral-800 dark:text-neutral-200">
               이메일
@@ -316,7 +344,7 @@ export default function AccountProfileClient() {
               className={inputClass}
               value={email}
               onChange={e => setEmail(e.target.value)}
-              placeholder="이메일을 입력하세요"
+              autoComplete="email"
             />
           </div>
           <div>
@@ -328,122 +356,117 @@ export default function AccountProfileClient() {
               className={inputClass}
               value={phone}
               onChange={e => setPhone(e.target.value)}
-              placeholder="01012345678"
-            />
-          </div>
-          <div className="sm:col-span-2">
-            <label className="mb-1.5 block text-sm font-medium text-neutral-800 dark:text-neutral-200">
-              우편번호
-            </label>
-            <input
-              type="text"
-              className={inputClass}
-              value={zip}
-              onChange={e => setZip(e.target.value)}
-              placeholder="우편번호"
-              maxLength={6}
-            />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-neutral-800 dark:text-neutral-200">
-              주소
-            </label>
-            <input
-              type="text"
-              className={inputClass}
-              value={addr1}
-              onChange={e => setAddr1(e.target.value)}
-              placeholder="기본 주소"
-            />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-neutral-800 dark:text-neutral-200">
-              상세 주소
-            </label>
-            <input
-              type="text"
-              className={inputClass}
-              value={addr2}
-              onChange={e => setAddr2(e.target.value)}
-              placeholder="상세 주소 (동·호수 등)"
+              placeholder="010-0000-0000"
+              autoComplete="tel"
             />
           </div>
         </div>
       </section>
 
       <section className={cardClass}>
-        <h2 className="mb-1 text-base font-semibold text-neutral-900 dark:text-neutral-100">🔒 비밀번호 변경</h2>
-        <p className="mb-5 text-xs text-neutral-500 dark:text-neutral-400">
-          정책: 8자 이상, 숫자 또는 특수문자 포함, 동일 문자만 반복은 사용할 수 없으며 한글은 사용할 수 없습니다. 비밀번호를 바꾸지 않으려면 아래 칸을 비워 두세요.
+        <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+          <span aria-hidden>🔒</span> 비밀번호 변경
+        </h2>
+        <p className="mb-6 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm leading-relaxed text-neutral-600 dark:border-neutral-700 dark:bg-neutral-800/60 dark:text-neutral-300">
+          정책: 8자 이상, 숫자 또는 특수문자 포함, 동일 문자만 반복은 사용할 수 없으며 한글은 사용할 수
+          없습니다. 비밀번호를 바꾸지 않으려면 아래 칸을 비워 두세요.
         </p>
-        <div className="grid gap-5">
+        <div className="space-y-4">
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-neutral-800 dark:text-neutral-200">
+            <label className="mb-1.5 block text-xs font-medium text-neutral-700 dark:text-neutral-300">
               현재 비밀번호
             </label>
             <div className="relative">
               <input
                 type={showCur ? 'text' : 'password'}
-                className={inputClass + ' pr-10'}
+                autoComplete="current-password"
                 value={currentPassword}
                 onChange={e => setCurrentPassword(e.target.value)}
-                placeholder="현재 비밀번호"
-                autoComplete="current-password"
+                className={`${inputClass} pr-11`}
               />
-              <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600" onClick={() => setShowCur(v => !v)}>
+              <button
+                type="button"
+                aria-label={showCur ? '비밀번호 숨기기' : '비밀번호 보기'}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-2 text-neutral-500 hover:bg-neutral-200/60 dark:hover:bg-neutral-700/60"
+                onClick={() => setShowCur(v => !v)}
+              >
                 <EyeIcon open={showCur} />
               </button>
             </div>
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-neutral-800 dark:text-neutral-200">
+            <label className="mb-1.5 block text-xs font-medium text-neutral-700 dark:text-neutral-300">
               새 비밀번호
             </label>
             <div className="relative">
               <input
                 type={showNew ? 'text' : 'password'}
-                className={inputClass + ' pr-10'}
-                value={newPassword}
-                onChange={e => {
-                  const stripped = stripHangulFromPassword(e.target.value)
-                  setNewPassword(stripped)
-                  setNewPwHangulMsg(passwordContainsHangul(e.target.value) ? '한글은 자동으로 제거됩니다.' : '')
-                }}
-                placeholder="새 비밀번호 (8자 이상)"
                 autoComplete="new-password"
+                value={newPassword}
+                onInput={e => {
+                  const raw = e.currentTarget.value
+                  if (passwordContainsHangul(raw)) {
+                    setNewPwHangulMsg('비밀번호에 한글을 사용할 수 없습니다')
+                  } else {
+                    setNewPwHangulMsg('')
+                  }
+                  setNewPassword(stripHangulFromPassword(raw))
+                }}
+                className={`${inputClass} pr-11 ${newPwHangulMsg ? 'border-red-500 ring-1 ring-red-500/30' : ''}`}
               />
-              <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600" onClick={() => setShowNew(v => !v)}>
+              <button
+                type="button"
+                aria-label={showNew ? '비밀번호 숨기기' : '비밀번호 보기'}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-2 text-neutral-500 hover:bg-neutral-200/60 dark:hover:bg-neutral-700/60"
+                onClick={() => setShowNew(v => !v)}
+              >
                 <EyeIcon open={showNew} />
               </button>
             </div>
-            {newPwHangulMsg && <p className="mt-1 text-xs text-orange-500">{newPwHangulMsg}</p>}
-            {newPassword && <PasswordPolicyHint password={newPassword} />}
+            {newPwHangulMsg ? (
+              <p className="mt-1 text-xs font-medium text-red-500">{newPwHangulMsg}</p>
+            ) : null}
+            {newPassword.length > 0 ? <PasswordPolicyHint password={newPassword} /> : null}
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-neutral-800 dark:text-neutral-200">
+            <label className="mb-1.5 block text-xs font-medium text-neutral-700 dark:text-neutral-300">
               새 비밀번호 확인
             </label>
             <div className="relative">
               <input
                 type={showCf ? 'text' : 'password'}
-                className={inputClass + ' pr-10'}
-                value={confirmPassword}
-                onChange={e => {
-                  const stripped = stripHangulFromPassword(e.target.value)
-                  setConfirmPassword(stripped)
-                  setCfPwHangulMsg(passwordContainsHangul(e.target.value) ? '한글은 자동으로 제거됩니다.' : '')
-                }}
-                placeholder="새 비밀번호 재입력"
                 autoComplete="new-password"
+                value={confirmPassword}
+                onInput={e => {
+                  const raw = e.currentTarget.value
+                  if (passwordContainsHangul(raw)) {
+                    setCfPwHangulMsg('비밀번호에 한글을 사용할 수 없습니다')
+                  } else {
+                    setCfPwHangulMsg('')
+                  }
+                  setConfirmPassword(stripHangulFromPassword(raw))
+                }}
+                className={`${inputClass} pr-11 ${matchBad || cfPwHangulMsg ? 'border-red-500 ring-1 ring-red-500/30' : ''}`}
               />
-              <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600" onClick={() => setShowCf(v => !v)}>
+              <button
+                type="button"
+                aria-label={showCf ? '비밀번호 숨기기' : '비밀번호 보기'}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-2 text-neutral-500 hover:bg-neutral-200/60 dark:hover:bg-neutral-700/60"
+                onClick={() => setShowCf(v => !v)}
+              >
                 <EyeIcon open={showCf} />
               </button>
             </div>
-            {cfPwHangulMsg && <p className="mt-1 text-xs text-orange-500">{cfPwHangulMsg}</p>}
-            {confirmPassword && newPassword !== confirmPassword && (
-              <p className="mt-1 text-xs text-red-500">비밀번호가 일치하지 않습니다.</p>
-            )}
+            {cfPwHangulMsg ? (
+              <p className="mt-1 text-xs font-medium text-red-500">{cfPwHangulMsg}</p>
+            ) : null}
+            {confirmPassword.length > 0 ? (
+              <p
+                className={`mt-1 text-xs font-medium ${matchOk ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}`}
+              >
+                {matchOk ? '✓ 비밀번호가 일치합니다' : '비밀번호가 일치하지 않습니다'}
+              </p>
+            ) : null}
           </div>
         </div>
       </section>
