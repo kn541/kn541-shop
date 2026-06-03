@@ -3,6 +3,7 @@
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react'
 import { MinusIcon, PlusIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/outline'
 import { useState } from 'react'
+import { Link } from '@/shared/link'
 
 interface FaqItem {
   id: number
@@ -22,7 +23,7 @@ type TabKey = 'all' | 'shop' | 'member' | 'scm'
 
 const TABS: { key: TabKey; label: string; emoji: string }[] = [
   { key: 'all', label: '전체', emoji: '📝' },
-  { key: 'shop', label: '쓼핑몰', emoji: '🛍️' },
+  { key: 'shop', label: '쇼핑몰', emoji: '🛍️' },
   { key: 'member', label: '회원', emoji: '👤' },
   { key: 'scm', label: '공급사(SCM)', emoji: '🏭' },
 ]
@@ -136,7 +137,7 @@ export default function FaqClient({ shopFaqs, memberFaqs, scmFaqs }: Props) {
         {/* ── 검색 결과 없음 ── */}
         {search && filtered.length === 0 && (
           <div className="py-16 text-center text-neutral-400">
-            <p className="text-lg">‘{search}’ 관련 FAQ를 찾을 수 없습니다.</p>
+            <p className="text-lg">'{search}' 관련 FAQ를 찾을 수 없습니다.</p>
             <p className="mt-2 text-sm">다른 키워드로 검색해보세요.</p>
           </div>
         )}
@@ -206,12 +207,12 @@ export default function FaqClient({ shopFaqs, memberFaqs, scmFaqs }: Props) {
           <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
             1:1 문의를 남겨주시면 빠르게 답변드리겠습니다.
           </p>
-          <a
-            href="/ko/contact"
+          <Link
+            href="/cs/inquiry"
             className="mt-6 inline-flex items-center rounded-full bg-neutral-900 px-8 py-3 text-sm font-semibold text-white transition hover:bg-neutral-700 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
           >
             1:1 문의하기
-          </a>
+          </Link>
         </div>
 
       </div>
