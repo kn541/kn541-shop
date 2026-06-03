@@ -1,7 +1,7 @@
 // KN541 서버측 "느슨(LOOSE)" HTML 새니타이저 (sanitize-html · jsdom 비의존)
 // 정책: docs/KN541_새니타이즈_정책.md §4 — 내부/승인 콘텐츠(공지·상품설명/KMC)용.
 // 레이아웃(style/class/table/font 등) 보존 + 스크립트성만 제거. 서버 컴포넌트 전용.
-// 외부 소비자 콘텐츠(리뀑 등)는 강함(sanitizeHtmlServer.ts) 사용.
+// 외부 소비자 콘텐츠(리뷰 등)는 강함(sanitizeHtmlServer.ts) 사용.
 import sanitizeHtmlLib from 'sanitize-html'
 
 const STRICT_TAGS = [
