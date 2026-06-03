@@ -23,9 +23,6 @@ function FooterNavLinks({
       <Link href="/terms/privacy" className="transition-colors hover:text-kn541-black dark:hover:text-white">
         {t('privacy')}
       </Link>
-      <a href="#" className="transition-colors hover:text-kn541-black dark:hover:text-neutral-200">
-        {t('guide')}
-      </a>
       <Link
         href="/vendor-inquiry"
         className={clsx(
@@ -70,14 +67,16 @@ export default function Footer() {
             </div>
 
             <div className="space-y-4 lg:hidden">
-              <div className="flex items-center gap-3">
-                <a href={COMPANY_INFO.cs.kakaoUrl} className={inquiryBtnCls}>
-                  {t('kakaoInquiry')}
-                </a>
-                <p className="whitespace-pre-line text-xs leading-[1.3] text-kn541-gray-700 dark:text-neutral-400">
-                  {t('kakaoBlurb')}
-                </p>
-              </div>
+              {COMPANY_INFO.cs.kakaoUrl !== '#' && (
+                <div className="flex items-center gap-3">
+                  <a href={COMPANY_INFO.cs.kakaoUrl} className={inquiryBtnCls}>
+                    {t('kakaoInquiry')}
+                  </a>
+                  <p className="whitespace-pre-line text-xs leading-[1.3] text-kn541-gray-700 dark:text-neutral-400">
+                    {t('kakaoBlurb')}
+                  </p>
+                </div>
+              )}
               <div className="flex items-center gap-3">
                 <a href={`mailto:${COMPANY_INFO.email}`} className={inquiryBtnCls}>
                   {t('emailInquiry')}
