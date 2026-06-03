@@ -9,7 +9,7 @@ import type {
   DividendItem, DividendSummaryResponse, DividendHistoryResponse,
 } from './types'
 
-// ──── Phase 4 ────────────────────────────────────────────────────────────────────────────
+// ──── Phase 4 ─────────────────────────────────────────────────────────────
 
 export type ScenarioKey = 'L1' | 'L2-pending' | 'L2' | 'L3'
 
@@ -35,7 +35,7 @@ export const MOCK_SCENARIOS: Record<ScenarioKey, MypageHomeResponse> = {
   L3: {
     user: { name: '박유료', member_level: 'L3', email: 'park@example.com' },
     summary: { points: 150_000, coupons: 12, orders_pending: 3 },
-    shop: { status: 'APPROVED', shop_name: '박유료 프리미엄뫰' },
+    shop: { status: 'APPROVED', shop_name: '박유료 프리미엄몰' },
     paid: { is_active: true, expires_at: '2027-04-16T00:00:00Z' },
   },
 }
@@ -49,7 +49,7 @@ export const SCENARIO_LABELS: Record<ScenarioKey, string> = {
 
 export const DEFAULT_SCENARIO: ScenarioKey = 'L1'
 
-// ──── Phase 5 ────────────────────────────────────────────────────────────────────────────
+// ──── Phase 5 ─────────────────────────────────────────────────────────────
 
 export const MOCK_ORDERS: OrderListItem[] = [
   { order_id: 'ord-001', order_no: '2026040300001', ordered_at: '2026-04-03T10:23:00+09:00', status: 'DELIVERED', status_label: '배송완료', total_amount: 33_000, main_item_name: 'ITREX 5A C타입 충전케이블', main_item_thumbnail: null, item_count: 1 },
@@ -75,7 +75,7 @@ export const MOCK_INQUIRY_RESPONSE: InquiryListResponse = {
 export const MOCK_PROFILE: MypageProfile = {
   user_id: 'user-001', member_no: '00000001', username: 'hong123', email: 'hong@example.com', phone: '01012345678',
   name: '홍길동', birth_date: '1960-01-01', gender: 'M',
-  zip_code: '06000', address1: '서울특별시 강남구 테혜란로', address2: '101동 202호',
+  zip_code: '06000', address1: '서울특별시 강남구 테헄란로', address2: '101동 202호',
   user_type: '002',
 }
 
@@ -99,7 +99,7 @@ export const MOCK_COUPONS: CouponListResponse = {
   ] as CouponItem[],
 }
 
-// ──── Phase 6 ─────────────────────────────────────────────────────────────────────────────
+// ──── Phase 6 ─────────────────────────────────────────────────────────────
 
 export const MOCK_TEMPLATES: ShopTemplate[] = [
   { template_code: 'CLASSIC', template_name: '클래식',  description: '단정한 느낌의 기본 템플릿',     primary_color: '#7367F0', thumbnail_url: null, sort_order: 10 },
@@ -118,7 +118,7 @@ export function mockCheckUrlCode(code: string): UrlCheckResponse {
   return { available: true }
 }
 
-// ──── Phase 7 ──────────────────────────────────────────────────────────────────────────
+// ──── Phase 7 ─────────────────────────────────────────────────────────────
 
 const RECENT_DIVIDENDS: DividendItem[] = [
   { dividend_id: 1, dividend_type: 'MLM',    dividend_type_label: '541 배당', dividend_date: '2026-04-15', amount: 12_000, source_order_no: null, source_member_masked: '홍**', depth: 1 },
