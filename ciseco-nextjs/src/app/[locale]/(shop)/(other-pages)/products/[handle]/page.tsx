@@ -9,7 +9,6 @@ import SectionSliderProductCard from '@/components/SectionSliderProductCard'
 import { getProducts } from '@/data/data'
 import { getProductById } from '@/lib/api/products'
 import { adaptProduct } from '@/lib/adapters'
-import { sanitizeHtml } from '@/lib/sanitizeHtml'
 import { StarIcon } from '@heroicons/react/24/solid'
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
@@ -395,7 +394,7 @@ export default async function Page({
         <div id="product-detail">
           {isHtmlDesc ? (
             <div className="prose prose-sm sm:prose max-w-none dark:prose-invert mx-auto w-full"
-              dangerouslySetInnerHTML={{ __html: sanitizeHtml(description) }} />
+              dangerouslySetInnerHTML={{ __html: description }} />
           ) : description ? (
             <div className="mx-auto w-full max-w-3xl">
               <p className="whitespace-pre-wrap text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">{description}</p>
