@@ -4,6 +4,7 @@ import clsx from 'clsx'
 import Image from 'next/image'
 import { Link } from '@/shared/link'
 import { FC } from 'react'
+import { sanitizeLooseHtmlServer } from '@/lib/sanitizeLooseHtmlServer'
 
 interface CollectionCard4Props {
   className?: string
@@ -43,11 +44,11 @@ const CollectionCard4: FC<CollectionCard4Props> = ({ className, bgSvgUrl, collec
         <div className="mt-12">
           <p
             className="text-sm text-neutral-500 dark:text-neutral-400"
-            dangerouslySetInnerHTML={{ __html: collection.sortDescription || '' }}
+            dangerouslySetInnerHTML={{ __html: sanitizeLooseHtmlServer(collection.sortDescription || '') }}
           />
           <h2
             className="mt-2 text-2xl font-semibold sm:text-3xl"
-            dangerouslySetInnerHTML={{ __html: collection.title || '' }}
+            dangerouslySetInnerHTML={{ __html: sanitizeLooseHtmlServer(collection.title || '') }}
           />
         </div>
 

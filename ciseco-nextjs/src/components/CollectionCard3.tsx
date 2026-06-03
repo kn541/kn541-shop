@@ -2,6 +2,7 @@ import { TCollection } from '@/data/data'
 import { Button } from '@/shared/Button/Button'
 import Image from 'next/image'
 import { FC } from 'react'
+import { sanitizeLooseHtmlServer } from '@/lib/sanitizeLooseHtmlServer'
 import { Link } from './Link'
 
 interface Props {
@@ -43,7 +44,7 @@ const CollectionCard3: FC<Props> = ({ className = '', collection }) => {
               {collection.description && (
                 <h2
                   className={`text-xl font-semibold text-neutral-900 md:text-2xl`}
-                  dangerouslySetInnerHTML={{ __html: collection.sortDescription || '' }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeLooseHtmlServer(collection.sortDescription || '') }}
                 ></h2>
               )}
             </div>
