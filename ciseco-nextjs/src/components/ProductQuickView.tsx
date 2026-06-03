@@ -25,6 +25,7 @@ import { StarIcon } from '@heroicons/react/24/solid'
 import { ShoppingBag03Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import Image from 'next/image'
+import { sanitizeLooseHtml } from '@/lib/sanitizeLooseHtml'
 import { usePathname } from 'next/navigation'
 import { FC, useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
@@ -195,7 +196,7 @@ const ProductQuickView: FC<ProductQuickViewProps> = ({ className }) => {
     ...(description ? [{
       name: '상품 설명',
       content: isHtmlDesc
-        ? description
+        ? sanitizeLooseHtml(description)
         : `<p class="whitespace-pre-wrap">${description}</p>`,
     }] : []),
     {

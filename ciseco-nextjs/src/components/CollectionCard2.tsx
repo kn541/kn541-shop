@@ -2,6 +2,7 @@ import { TCollection } from '@/data/data'
 import clsx from 'clsx'
 import Image from 'next/image'
 import { FC } from 'react'
+import { sanitizeLooseHtmlServer } from '@/lib/sanitizeLooseHtmlServer'
 import { Link } from './Link'
 
 interface Props {
@@ -36,7 +37,7 @@ const CollectionCard2: FC<Props> = ({ className, ratioClass = 'aspect-square', c
         </h2>
         <span
           className="mt-0.5 block text-sm text-neutral-500 sm:mt-1.5 dark:text-neutral-400"
-          dangerouslySetInnerHTML={{ __html: collection.sortDescription || '' }}
+          dangerouslySetInnerHTML={{ __html: sanitizeLooseHtmlServer(collection.sortDescription || '') }}
         ></span>
       </div>
     </Link>

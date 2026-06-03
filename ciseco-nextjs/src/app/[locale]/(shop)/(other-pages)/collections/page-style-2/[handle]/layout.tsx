@@ -3,6 +3,7 @@ import SectionPromo1 from '@/components/SectionPromo1'
 import SectionSliderLargeProduct from '@/components/SectionSliderLargeProduct'
 import { getCollectionByHandle, getProducts } from '@/data/data'
 import { Metadata } from 'next'
+import { sanitizeLooseHtmlServer } from '@/lib/sanitizeLooseHtmlServer'
 import { notFound } from 'next/navigation'
 import React from 'react'
 
@@ -36,7 +37,7 @@ const Layout = async ({ children, params }: { children: React.ReactNode; params:
           <h1 className="block text-4xl font-semibold tracking-tight sm:text-[2.5rem]">{title}</h1>
           <span
             className="mt-6 block text-base text-neutral-500 dark:text-neutral-400"
-            dangerouslySetInnerHTML={{ __html: description || '' }}
+            dangerouslySetInnerHTML={{ __html: sanitizeLooseHtmlServer(description || '') }}
           />
         </div>
         <Divider className="mt-20 mb-10 lg:mt-24" />

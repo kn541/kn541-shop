@@ -3,6 +3,7 @@ import Avatar from '@/shared/Avatar/Avatar'
 import { StarIcon } from '@heroicons/react/24/solid'
 import clsx from 'clsx'
 import { FC } from 'react'
+import { sanitizeHtmlServer } from '@/lib/sanitizeHtmlServer'
 
 export interface ReviewItemProps {
   className?: string
@@ -42,7 +43,7 @@ const ReviewItem: FC<ReviewItemProps> = ({ className, data }) => {
       <div className="prose prose-sm mt-4 sm:prose sm:max-w-2xl dark:prose-invert">
         <div
           className="text-neutral-600 dark:text-neutral-300"
-          dangerouslySetInnerHTML={{ __html: data.content || '' }}
+          dangerouslySetInnerHTML={{ __html: sanitizeHtmlServer(data.content || '') }}
         ></div>
       </div>
     </div>
