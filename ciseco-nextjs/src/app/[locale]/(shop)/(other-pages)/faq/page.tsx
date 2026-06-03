@@ -12,7 +12,7 @@ async function fetchFaqs(target: string) {
   const BASE = process.env.NEXT_PUBLIC_API_URL || 'https://kn541-production.up.railway.app'
   try {
     const res = await fetch(`${BASE}/faqs?faq_target=${target}&size=100`, {
-      next: { revalidate: 300 }, // 5분 쾐시
+      next: { revalidate: 300 }, // 5분 캐시
     })
     if (!res.ok) return []
     const json = await res.json()
