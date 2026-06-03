@@ -35,6 +35,7 @@ export function useProfile() {
         const d = res.data
         setData({
           user_id:    String(d.id ?? d.user_id ?? ''),
+          member_no:  d.member_no ? String(d.member_no) : '',
           username:   String(d.username ?? ''),
           email:      d.email   ? String(d.email)    : null,
           phone:      d.phone   ? String(d.phone)    : null,

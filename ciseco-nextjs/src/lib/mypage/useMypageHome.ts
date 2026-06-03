@@ -1,6 +1,6 @@
 'use client'
 /**
- * useMypageHome — Step 5-H API 스왑
+ * useMypageHome — Step 5-H API 스왓
  * - ?mock=L1|L2-pending|L2|L3  개발용 Mock 스위치
  * - 그 외  GET /mypage/home 실 API 호출
  * - Mock fallback 금지: 에러는 error 상태로 노출
@@ -28,8 +28,8 @@ export function useMypageHome() {
       )
       const mockKey = params.get('mock') as ScenarioKey | null
 
-      // 개발용 Mock 분기: ?mock=L1 / L2-pending / L2 / L3
-      if (mockKey && mockKey in MOCK_SCENARIOS) {
+      // 개발용 Mock 분기: ?mock=L1 / L2-pending / L2 / L3 (프로덕션 차단)
+      if (process.env.NODE_ENV !== 'production' && mockKey && mockKey in MOCK_SCENARIOS) {
         if (!cancelled) {
           setData(MOCK_SCENARIOS[mockKey])
           setLoading(false)

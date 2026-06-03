@@ -1,7 +1,7 @@
 // KN541 마이페이지 타입 정의
 // Phase 4~7 전체
 
-// ──── Phase 4 ─────────────────────────────────────────────────────────────
+// ──── Phase 4 ────────────────────────────────────────────────────────────────────────────
 
 export interface MypageHomeUser {
   name: string
@@ -32,7 +32,7 @@ export interface MypageHomeResponse {
   paid: MypageHomePaid
 }
 
-// ──── Phase 5-1 ────────────────────────────────────────────────────────────
+// ──── Phase 5-1 ───────────────────────────────────────────────────────────────────────────
 
 export type OrderStatus =
   | 'PAID' | 'PREPARING' | 'SHIPPING' | 'DELIVERED'
@@ -119,7 +119,7 @@ export interface CommissionMonthResponse {
   rows?: CommissionMonthRow[]
 }
 
-// ──── Phase 5-2 ────────────────────────────────────────────────────────────
+// ──── Phase 5-2 ───────────────────────────────────────────────────────────────────────────
 
 export type InquiryStatus = 'WAITING' | 'ANSWERED'
 
@@ -140,7 +140,7 @@ export interface InquiryListResponse {
   status_counts: Record<InquiryStatus | 'ALL', number>
 }
 
-// ──── Phase 5-3 ────────────────────────────────────────────────────────────
+// ──── Phase 5-3 ───────────────────────────────────────────────────────────────────────────
 
 export interface MypageProfile {
   user_id: string
@@ -153,11 +153,13 @@ export interface MypageProfile {
   zip_code: string | null
   address1: string | null
   address2: string | null
+  /** 8자리 회원번호 (숫자 문자열) */
+  member_no?: string
   /** 시스템 회원유형 코드 (창업회원: 006) */
   user_type?: string | null
 }
 
-// ──── Phase 5-4 ────────────────────────────────────────────────────────────
+// ──── Phase 5-4 ───────────────────────────────────────────────────────────────────────────
 
 export type PointChangeType = 'EARN' | 'USE' | 'EXPIRE' | 'CANCEL'
 
@@ -196,7 +198,7 @@ export interface CouponListResponse {
   status_counts: Record<CouponStatus, number>
 }
 
-// ──── Phase 6 ─────────────────────────────────────────────────────────────
+// ──── Phase 6 ─────────────────────────────────────────────────────────────────────────────
 
 export type ShopTemplateCode = 'CLASSIC' | 'MODERN' | 'WARM' | 'COOL' | 'ELEGANT'
 
@@ -288,7 +290,7 @@ export interface ShopSalesStats {
   }[]
 }
 
-// ──── Phase 7: L3 수당 ────────────────────────────────────────────────────
+// ──── Phase 7: L3 수당 ──────────────────────────────────────────────────────────────────────────
 
 export type DividendType = 'MLM' | 'EQUITY' | 'AGIT'
 
@@ -328,7 +330,7 @@ export interface DownlineMember {
   user_type_label: string
   joined_at: string
   depth: number
-  /** 직접 추천(1단) 인원 — 자식 노드 수 */
+  /** 직접 추첬(1단) 인원 — 자식 노드 수 */
   downline_count: number
 }
 
