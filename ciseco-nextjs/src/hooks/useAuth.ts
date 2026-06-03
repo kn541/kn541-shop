@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { refreshAccessToken, clearAuthAndRedirect } from '@/lib/mypage/api'
 import { useLocale } from 'next-intl'
 
 interface AuthUser {
@@ -35,34 +36,44 @@ export function useAuth() {
   }
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token')
-    if (!token) {
-      setLoading(false)
-      return
-    }
+    void (async () => {
+      // access_token 확보 (없으면 refresh_token으로 재발급 시도)
+      let token = localStorage.getItem('access_token')
+      if (!token) {
+        token = await refreshAccessToken()
+        if (!token) { setLoading(false); return }
+      }
 
-    const payload = decodeJwt(token)
-    if (!payload) {
-      setLoading(false)
-      return
-    }
+      const payload = decodeJwt(token)
+      if (!payload) { setLoading(false); return }
 
-    // JWT 만료 체크
-    const exp = payload.exp as number | undefined
-    if (exp && exp * 1000 < Date.now()) {
-      localStorage.removeItem('access_token')
-      setLoading(false)
-      return
-    }
+      // JWT 만료 체크 — 만료 시 refresh 시도 / 실패 시 전부 제거 + 로그인 리다이렉트
+      const exp = payload.exp as number | undefined
+      if (exp && exp * 1000 < Date.now()) {
+        const newToken = await refreshAccessToken()
+        if (!newToken) { clearAuthAndRedirect(); setLoading(false); return }
+        const newPayload = decodeJwt(newToken)
+        if (!newPayload) { clearAuthAndRedirect(); setLoading(false); return }
+        setUser({
+          user_id: (newPayload.sub as string) || (newPayload.user_id as string) || '',
+          user_type: (newPayload.user_type as string) || '',
+          username: newPayload.username as string | undefined,
+          email: newPayload.email as string | undefined,
+          name: (newPayload.name as string | undefined) || (newPayload.user_name as string | undefined),
+        })
+        setLoading(false)
+        return
+      }
 
-    setUser({
-      user_id: (payload.sub as string) || (payload.user_id as string) || '',
-      user_type: (payload.user_type as string) || '',
-      username: payload.username as string | undefined,
-      email: payload.email as string | undefined,
-      name: (payload.name as string | undefined) || (payload.user_name as string | undefined),
-    })
-    setLoading(false)
+      setUser({
+        user_id: (payload.sub as string) || (payload.user_id as string) || '',
+        user_type: (payload.user_type as string) || '',
+        username: payload.username as string | undefined,
+        email: payload.email as string | undefined,
+        name: (payload.name as string | undefined) || (payload.user_name as string | undefined),
+      })
+      setLoading(false)
+    })()
   }, [])
 
   const logout = () => {

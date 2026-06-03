@@ -3,6 +3,7 @@
  * Step 5-H: GET /mypage/home 실 API 연동
  */
 import type { MypageHomeResponse } from './types'
+import { clearHeaderUserCache } from '@/lib/auth/headerUser'
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || 'https://kn541-production.up.railway.app'
@@ -68,6 +69,43 @@ export function adaptMypageHome(raw: RawMypageHomeData): MypageHomeResponse {
   }
 }
 
+// ─── 토큰 재발급: refresh_token → 새 access_token ──────────────────
+// 성공 시 새 access_token 반환 / 실패(refresh 없음·서버 거부) 시 null
+export async function refreshAccessToken(): Promise<string | null> {
+  if (typeof window === 'undefined') return null
+  const rt = localStorage.getItem('refresh_token')
+  if (!rt) return null
+  try {
+    const res = await fetch(`${API_BASE}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: rt }),
+    })
+    if (!res.ok) return null
+    const body = await res.json().catch(() => null)
+    const newAt = body?.data?.access_token as string | undefined
+    const newRt = body?.data?.refresh_token as string | undefined
+    if (!newAt) return null
+    localStorage.setItem('access_token', newAt)
+    if (newRt) localStorage.setItem('refresh_token', newRt)
+    return newAt
+  } catch {
+    return null
+  }
+}
+
+// ─── 토큰 전부 제거 + 로그인 리다이렉트 ────────────────────────────
+// 만료·재발급 실패 시 호출 — "로그인된 듯 보이나 유효 토큰 없음" 상태 제거
+export function clearAuthAndRedirect(): void {
+  if (typeof window === 'undefined') return
+  localStorage.removeItem('access_token')
+  localStorage.removeItem('refresh_token')
+  localStorage.removeItem('user_type')
+  clearHeaderUserCache()
+  const locale = window.location.pathname.split('/')[1] || 'ko'
+  window.location.href = `/${locale}/login`
+}
+
 // ─── 공통 fetch (인증 토큰 + envelope unwrap) ───────────────────────────
 export async function mypageFetch<T>(path: string, init?: RequestInit): Promise<T> {
   // 기존 shop API와 동일한 localStorage 토큰 방식
@@ -83,9 +121,43 @@ export async function mypageFetch<T>(path: string, init?: RequestInit): Promise<
     },
   })
 
-  // 401: 로그인 필요 or 토큰 만료
+  // 401: refresh 시도 → 새 토큰으로 1회 재시도 / 실패 시 전부 제거 + 로그인 리다이렉트
   if (res.status === 401) {
-    throw new MypageApiError(401, 'UNAUTHORIZED', '로그인이 필요합니다')
+    const newToken = await refreshAccessToken()
+    if (!newToken) {
+      clearAuthAndRedirect()
+      throw new MypageApiError(401, 'UNAUTHORIZED', '로그인이 필요합니다')
+    }
+    const retryRes = await fetch(`${API_BASE}${path}`, {
+      ...init,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(init?.headers ?? {}),
+        Authorization: `Bearer ${newToken}`,
+      },
+    })
+    if (retryRes.status === 401) {
+      clearAuthAndRedirect()
+      throw new MypageApiError(401, 'UNAUTHORIZED', '로그인이 필요합니다')
+    }
+    // 재시도 응답 파싱 (원본 로직과 동일)
+    const rb = await retryRes.json().catch(() => ({}))
+    if (!retryRes.ok) {
+      const rd = rb?.detail
+      if (rd && typeof rd === 'object')
+        throw new MypageApiError(retryRes.status, (rd as Record<string, string>).code ?? null,
+          (rd as Record<string, string>).message ?? '요청에 실패했습니다',
+          (rd as Record<string, string>).action_url ?? null)
+      throw new MypageApiError(retryRes.status, null,
+        typeof rd === 'string' ? rd : '요청에 실패했습니다')
+    }
+    const rm = (init?.method ?? 'GET').toUpperCase()
+    if ((rm === 'DELETE' || retryRes.status === 204) && rb &&
+        typeof rb === 'object' && Object.keys(rb as object).length === 0)
+      return undefined as T
+    const re = rb as ApiEnvelope<T>
+    if (re.status === 'success') return re.data
+    throw new MypageApiError(500, null, '응답 형식이 올바르지 않습니다')
   }
 
   const body = await res.json().catch(() => ({}))
