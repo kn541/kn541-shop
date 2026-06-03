@@ -7,6 +7,7 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeftIcon, EyeIcon } from '@heroicons/react/24/outline'
+import { sanitizeHtmlServer } from '@/lib/sanitizeHtmlServer'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL || 'https://kn541-production.up.railway.app'
 
@@ -93,7 +94,7 @@ export default async function NoticeDetailPage({
         {/* 본문 */}
         <div
           className="prose prose-sm mx-auto max-w-none sm:prose lg:prose-lg dark:prose-invert"
-          dangerouslySetInnerHTML={{ __html: notice.content || '' }}
+          dangerouslySetInnerHTML={{ __html: sanitizeHtmlServer(notice.content || '') }}
         />
 
         <Divider className="my-10" />
