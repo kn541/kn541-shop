@@ -1,1 +1,83 @@
-Ly8gS041NDEg66eI7J207Y6Y7J207KeAIOKAlCDrsLDri7kg64K07JetIO2bhSAoTTU6IOyLpCBBUEkg7Jew6rKwKQovLyAvbXlwYWdlL2RpdmlkZW5kcy9oaXN0b3J5IChMMyDsnbjspp0pIOyLpCDrjbDsnbTthLAg7Zi47LacCi8vIGFwaS50c8K3dXNlQXV0aC50cyDsiJjsoJUg7JeG7J20IG15cGFnZUZldGNoIO2YuOy2nOunjCDsgqzsmqkKaW1wb3J0IHsgdXNlU3RhdGUsIHVzZUVmZmVjdCB9IGZyb20gJ3JlYWN0JwppbXBvcnQgeyBteXBhZ2VGZXRjaCwgTXlwYWdlQXBpRXJyb3IgfSBmcm9tICcuL2FwaScKCi8qKiBCRSAvbXlwYWdlL2RpdmlkZW5kcy9oaXN0b3J5IOydkeuLtSDtla3rqqkgKOyLpCDtlYTrk5wg6riw7KSAKSAqLwpleHBvcnQgaW50ZXJmYWNlIENvbW1pc3Npb25IaXN0b3J5SXRlbSB7CiAgY29tbWlzc2lvbl9pZDogc3RyaW5nCiAgb3JkZXJfaWQ6IHN0cmluZwogIGNvbW1pc3Npb25fdHlwZTogc3RyaW5nCiAgY29tbWlzc2lvbl90eXBlX2xhYmVsOiBzdHJpbmcKICBzdGF0dXM6IHN0cmluZwogIHN0YXR1c19sYWJlbDogc3RyaW5nCiAgYW1vdW50OiBudW1iZXIKICBwYXlfdGltaW5nOiBzdHJpbmcgfCBudWxsCiAgcmV3YXJkX3R5cGU6IHN0cmluZyB8IG51bGwKICBjcmVhdGVkX2F0OiBzdHJpbmcKfQoKLyoqIEJFIC9teXBhZ2UvZGl2aWRlbmRzL2hpc3Rvcnkg7Y6Y7J207KeA64Sk7J207IWYIOydkeuLtSAqLwpleHBvcnQgaW50ZXJmYWNlIENvbW1pc3Npb25IaXN0b3J5RGF0YSB7CiAgaXRlbXM6IENvbW1pc3Npb25IaXN0b3J5SXRlbVtdCiAgdG90YWw6IG51bWJlcgogIHBhZ2U6IG51bWJlcgogIHNpemU6IG51bWJlcgp9CgpleHBvcnQgaW50ZXJmYWNlIFVzZURpdmlkZW5kSGlzdG9yeVJlc3VsdCB7CiAgZGF0YTogQ29tbWlzc2lvbkhpc3RvcnlEYXRhIHwgbnVsbAogIGxvYWRpbmc6IGJvb2xlYW4KICBlcnJvcjogc3RyaW5nIHwgbnVsbAp9CgovKioKICog67Cw64u5IOuCtOyXrSDsi6QgQVBJIO2bhQogKiBAcGFyYW0gZnJvbSAgWVlZWS1NTS1ERCDsi5zsnpHsnbwgKHVuZGVmaW5lZCDsi5wg7ZWE7YSwIOyXhuydjCkKICogQHBhcmFtIHRvICAgIFlZWVktTU0tREQg7KKF66OM7J28ICh1bmRlZmluZWQg7IucIO2VhO2EsCDsl4bsnYwpCiAqIEBwYXJhbSBwYWdlICDtjpjsnbTsp4AgKOq4sOuzuCAxKQogKiBAcGFyYW0gc2l6ZSAg7Y6Y7J207KeAIO2BrOq4sCAo6riw67O4IDIwKQogKi8KZXhwb3J0IGZ1bmN0aW9uIHVzZURpdmlkZW5kSGlzdG9yeSgKICBmcm9tOiBzdHJpbmcgfCB1bmRlZmluZWQsCiAgdG86IHN0cmluZyB8IHVuZGVmaW5lZCwKICBwYWdlID0gMSwKICBzaXplID0gMjAsCik6IFVzZURpdmlkZW5kSGlzdG9yeVJlc3VsdCB7CiAgY29uc3QgW2RhdGEsIHNldERhdGFdID0gdXNlU3RhdGU8Q29tbWlzc2lvbkhpc3RvcnlEYXRhIHwgbnVsbD4obnVsbCkKICBjb25zdCBbbG9hZGluZywgc2V0TG9hZGluZ10gPSB1c2VTdGF0ZSh0cnVlKQogIGNvbnN0IFtlcnJvciwgc2V0RXJyb3JdID0gdXNlU3RhdGU8c3RyaW5nIHwgbnVsbD4obnVsbCkKCiAgdXNlRWZmZWN0KCgpID0+IHsKICAgIGxldCBjYW5jZWxsZWQgPSBmYWxzZQogICAgc2V0TG9hZGluZyh0cnVlKQogICAgc2V0RXJyb3IobnVsbCkKICAgIHNldERhdGEobnVsbCkKCiAgICBjb25zdCBxcyA9IG5ldyBVUkxTZWFyY2hQYXJhbXMoeyBwYWdlOiBTdHJpbmcocGFnZSksIHNpemU6IFN0cmluZyhzaXplKSB9KQogICAgaWYgKGZyb20pIHFzLnNldCgnZnJvbScsIGZyb20pCiAgICBpZiAodG8pIHFzLnNldCgndG8nLCB0bykKCiAgICBteXBhZ2VGZXRjaDxDb21taXNzaW9uSGlzdG9yeURhdGE+KGAvbXlwYWdlL2RpdmlkZW5kcy9oaXN0b3J5PyR7cXN9YCkKICAgICAgLnRoZW4ocmVzdWx0ID0+IHsKICAgICAgICBpZiAoIWNhbmNlbGxlZCkgc2V0RGF0YShyZXN1bHQpCiAgICAgIH0pCiAgICAgIC5jYXRjaChlID0+IHsKICAgICAgICBpZiAoY2FuY2VsbGVkKSByZXR1cm4KICAgICAgICAvLyA0MDE6IG15cGFnZUZldGNo6rCAIHJlZnJlc2gg7Iuc64+EIOKGkiDsi6TtjKgg7IucIGNsZWFyQXV0aEFuZFJlZGlyZWN0KCkg7Zi47LacCiAgICAgICAgLy8g7J20IGNhdGNoIOu4lOuhneq5jOyngCDsmKTrqbQg7J6s7Iuc64+E64+EIOyLpO2MqO2VnCDsg4Htg5wg4oaSIOuzhOuPhCDsspjrpqwg67aI7ZWE7JqUCiAgICAgICAgaWYgKGUgaW5zdGFuY2VvZiBNeXBhZ2VBcGlFcnJvciAmJiBlLnN0YXR1cyA9PT0gNDAxKSByZXR1cm4KICAgICAgICBzZXRFcnJvcihlIGluc3RhbmNlb2YgRXJyb3IgPyBlLm1lc3NhZ2UgOiAn67Cw64u5IOuCtOyXreydhCDrtojrn6zsmKTsp4Ag66q77ZaI7Iq164uI64ukLicpCiAgICAgIH0pCiAgICAgIC5maW5hbGx5KCgpID0+IHsKICAgICAgICBpZiAoIWNhbmNlbGxlZCkgc2V0TG9hZGluZyhmYWxzZSkKICAgICAgfSkKCiAgICByZXR1cm4gKCkgPT4gewogICAgICBjYW5jZWxsZWQgPSB0cnVlCiAgICB9CiAgfSwgW2Zyb20sIHRvLCBwYWdlLCBzaXplXSkKCiAgcmV0dXJuIHsgZGF0YSwgbG9hZGluZywgZXJyb3IgfQp9Cg==
+// KN541 마이페이지 — 배당 내역 훅 (M5: 실 API 연결)
+// /mypage/dividends/history (L3 인증) 실 데이터 호출
+// api.ts·useAuth.ts 수정 없이 mypageFetch 호출만 사용
+import { useState, useEffect } from 'react'
+import { mypageFetch, MypageApiError } from './api'
+
+/** BE /mypage/dividends/history 응답 항목 (실 필드 기준) */
+export interface CommissionHistoryItem {
+  commission_id: string
+  order_id: string
+  commission_type: string
+  commission_type_label: string
+  status: string
+  status_label: string
+  amount: number
+  pay_timing: string | null
+  reward_type: string | null
+  created_at: string
+}
+
+/** BE /mypage/dividends/history 페이지네이션 응답 */
+export interface CommissionHistoryData {
+  items: CommissionHistoryItem[]
+  total: number
+  page: number
+  size: number
+}
+
+export interface UseDividendHistoryResult {
+  data: CommissionHistoryData | null
+  loading: boolean
+  error: string | null
+}
+
+/**
+ * 배당 내역 실 API 훅
+ * @param from  YYYY-MM-DD 시작일 (undefined 시 필터 없음)
+ * @param to    YYYY-MM-DD 종료일 (undefined 시 필터 없음)
+ * @param page  페이지 (기본 1)
+ * @param size  페이지 크기 (기본 20)
+ */
+export function useDividendHistory(
+  from: string | undefined,
+  to: string | undefined,
+  page = 1,
+  size = 20,
+): UseDividendHistoryResult {
+  const [data, setData] = useState<CommissionHistoryData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    setError(null)
+    setData(null)
+
+    const qs = new URLSearchParams({ page: String(page), size: String(size) })
+    if (from) qs.set('from', from)
+    if (to) qs.set('to', to)
+
+    mypageFetch<CommissionHistoryData>(`/mypage/dividends/history?${qs}`)
+      .then(result => {
+        if (!cancelled) setData(result)
+      })
+      .catch(e => {
+        if (cancelled) return
+        // 401: mypageFetch가 refresh 시도 → 실패 시 clearAuthAndRedirect() 호출
+        // 이 catch 블록까지 오면 재시도도 실패한 상태 → 별도 처리 불필요
+        if (e instanceof MypageApiError && e.status === 401) return
+        setError(e instanceof Error ? e.message : '배당 내역을 불러오지 못했습니다.')
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [from, to, page, size])
+
+  return { data, loading, error }
+}
