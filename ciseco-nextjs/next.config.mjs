@@ -28,8 +28,10 @@ const nextConfig = {
   images: {
     minimumCacheTTL: 2678400 * 12,
     remotePatterns: [
+      // HTTPS: 외부 CDN/스토리지 전체 허용 (Supabase, S3 등 프로덕션 이미지)
       { protocol: 'https', hostname: '**', port: '', pathname: '/**' },
-      { protocol: 'http',  hostname: '**', port: '', pathname: '/**' },
+      // HTTP: 로컬 개발 환경만 허용 (외부 http 이미지 차단)
+      { protocol: 'http', hostname: 'localhost', port: '', pathname: '/**' },
     ],
   },
 }
