@@ -164,6 +164,14 @@ export default function ProductActions({
     return parts.join(' / ') || undefined
   }
 
+  /** KN541 옵션 UUID — POST /orders option_id 로 전달
+   *  콤보: OptionCombination.id / kn541 레거시: kn541Sel(UUID) / 색상·사이즈 구형: undefined */
+  const buildOptionId = (): string | undefined => {
+    if (hasComboMode && selectedCombo) return selectedCombo.id
+    if (hasKn541Options && kn541Sel) return kn541Sel
+    return undefined
+  }
+
   const runWithValidation = (fn: () => void) => {
     const err = validateCartAction(validationParams)
     if (err) { toast.error(err); return }
@@ -177,6 +185,7 @@ export default function ProductActions({
     quantity: qty,
     image: productImage,
     option: buildOption(),
+    optionId: buildOptionId(),
     shippingFee,
     freeShippingOver,
     scType,

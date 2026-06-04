@@ -261,9 +261,10 @@ export default function CheckoutPage() {
         } catch {}
       }
 
+      // M2-B: option_id — CartItem.optionId(UUID)를 BE로 전달. 없으면 null(옵션 없는 상품·구형 색상/사이즈 옵션)
       const orderBody = isDigitalOnly
         ? {
-            items: orderableItems.map(i => ({ product_id: i.productId, option_id: null, quantity: Number(i.quantity)||1 })),
+            items: orderableItems.map(i => ({ product_id: i.productId, option_id: i.optionId ?? null, quantity: Number(i.quantity)||1 })),
             recipient_name: payName,
             recipient_phone: payPhone,
             zip_code: '',
@@ -273,7 +274,7 @@ export default function CheckoutPage() {
             payment_method: 'TOSS',
           }
         : {
-            items: orderableItems.map(i => ({ product_id: i.productId, option_id: null, quantity: Number(i.quantity)||1 })),
+            items: orderableItems.map(i => ({ product_id: i.productId, option_id: i.optionId ?? null, quantity: Number(i.quantity)||1 })),
             recipient_name: form.name.trim(), recipient_phone: form.phone.trim(),
             zip_code: address.zipcode, address1: address.address1,
             address2: address.address2 ?? '', delivery_memo: form.memo,
