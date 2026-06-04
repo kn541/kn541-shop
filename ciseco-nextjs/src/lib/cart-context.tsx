@@ -19,6 +19,9 @@ export interface CartItem {
   quantity: number
   image: string
   option?: string
+  /** KN541 옵션 UUID (product_options.id) — POST /orders의 option_id 로 전달
+   *  콤보: OptionCombination.id / kn541 레거시: kn541Sel(UUID) / 색상·사이즈 구형: undefined */
+  optionId?: string
   shippingFee: number
   freeShippingOver: number
   scType: number
@@ -122,7 +125,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [items, selectedIds, hydrated])
 
   const addItem = useCallback((newItem: Omit<CartItem, 'id'>) => {
-    const id = `${newItem.productId}__${newItem.option ?? ''}`
+    // optionId(UUID)가 있으면 UUID 기반으로 충돌 방지 — 같은 상품·같은 옵션을 정확히 구분
+    const id = `${newItem.productId}__${newItem.optionId ?? newItem.option ?? ''}`
     setItems(prev => {
       const existing = prev.find(i => i.id === id)
       if (existing) {
