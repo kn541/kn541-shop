@@ -2,9 +2,11 @@
 // KN541 주문완료 페이지 — 결제 상세 정보 전체 노출
 // fix: 가상계좌 입금안내 강조 박스 추가
 // fix: 카드정보 / 결제일시 / 결제수단 상세 노출
+// fix: i18n — 하드코딩 한국어 → t() 키 치환 (OrderSuccessful 섹션)
 
 import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import ButtonPrimary from '@/shared/Button/ButtonPrimary'
 import { Link } from '@/shared/link'
 import {
@@ -55,10 +57,17 @@ interface OrderDetail {
   }[]
 }
 
-const METHOD_LABEL: Record<string, string> = {
-  CARD: '신용카드', VIRTUAL_ACCOUNT: '가상계좌', TRANSFER: '계좌이체',
-  TOSS: '토스페이먼츠', KAKAO: '카카오페이', EASY_PAY: '간편결제',
-  '카드': '신용카드', '가상계좌': '가상계좌', '계좌이체': '계좌이체',
+// 결제 수단 → i18n 키 매핑 (t()로 처리)
+const METHOD_KEY_MAP: Record<string, string> = {
+  CARD: 'methodCard',
+  VIRTUAL_ACCOUNT: 'methodVA',
+  TRANSFER: 'methodTransfer',
+  TOSS: 'methodToss',
+  KAKAO: 'methodKakao',
+  EASY_PAY: 'methodEasyPay',
+  '카드': 'methodCard',
+  '가상계좌': 'methodVA',
+  '계좌이체': 'methodTransfer',
 }
 
 function isVirtualAccount(method?: string) {
@@ -88,7 +97,8 @@ function RowItem({ label, value, highlight }: { label: string; value: React.Reac
 }
 
 function OrderContent() {
-  const params   = useSearchParams()
+  const t      = useTranslations('OrderSuccessful')
+  const params = useSearchParams()
 
   const orderId = params.get('order_id')
   const [order, setOrder]     = useState<OrderDetail | null>(null)
@@ -114,8 +124,15 @@ function OrderContent() {
   const shipping = order?.shipping_fee ?? 0
   const total    = order?.total_amount ?? (subtotal + shipping)
   const isVA     = isVirtualAccount(order?.payment_method)
-  /** 쿼리 또는 주문 조회 응답의 UUID — next-intl Link는 locale 없이 경로만 전달 */
   const detailOrderId = orderId ?? order?.order_id ?? ''
+
+  /** 결제 수단 레이블 — t()로 처리 */
+  const getMethodLabel = (method?: string): string => {
+    if (!method) return ''
+    const key = METHOD_KEY_MAP[method]
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return key ? t(key as any) : method
+  }
 
   return (
     <main className="container py-16 lg:py-24">
@@ -126,52 +143,52 @@ function OrderContent() {
           <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
             <CheckCircleIcon className="h-14 w-14 text-green-500" />
           </div>
-          <p className="text-sm font-semibold uppercase tracking-widest text-green-600">결제 완료</p>
+          <p className="text-sm font-semibold uppercase tracking-widest text-green-600">{t('paymentComplete')}</p>
           <h1 className="mt-3 text-3xl font-bold text-neutral-900 dark:text-neutral-100 lg:text-4xl">
-            주문이 접수됐습니다!
+            {t('title')}
           </h1>
-          <p className="mt-3 text-neutral-500">주문해 주셔서 감사합니다.</p>
+          <p className="mt-3 text-neutral-500">{t('subtitle')}</p>
         </div>
 
         {/* 주문번호 */}
         <div className={`mt-8 rounded-3xl border border-green-200 bg-green-50 p-5 text-center transition-all duration-700 delay-150 ${
           show ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
         } dark:border-green-800 dark:bg-green-900/20`}>
-          <p className="text-sm text-neutral-500">주문번호</p>
+          <p className="text-sm text-neutral-500">{t('orderNumberLabel')}</p>
           {loading ? (
             <div className="mt-2 h-8 w-48 animate-pulse rounded-lg bg-green-200 mx-auto dark:bg-green-800" />
           ) : (
             <p className="mt-1 text-2xl font-bold tracking-wider text-green-700 dark:text-green-400">
-              {order?.order_no ?? '처리 중...'}
+              {order?.order_no ?? t('orderNumberLoading')}
             </p>
           )}
         </div>
 
-        {/* ★ 가상계좌 입금 안내 — 가장 눈에 띄게 */}
+        {/* ★ 가상계좌 입금 안내 */}
         {!loading && isVA && (
           <div className={`mt-6 rounded-3xl border-2 border-amber-400 bg-amber-50 p-5 transition-all duration-700 delay-[180ms] ${
             show ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
           } dark:border-amber-600 dark:bg-amber-900/20`}>
             <div className="mb-3 flex items-center gap-2">
               <ExclamationTriangleIcon className="h-5 w-5 text-amber-600" />
-              <p className="font-bold text-amber-800 dark:text-amber-300">입금 계좌 안내</p>
+              <p className="font-bold text-amber-800 dark:text-amber-300">{t('vaTitle')}</p>
             </div>
             {order?.virtual_account ? (
               <div className="space-y-2.5">
                 <div className="flex justify-between">
-                  <span className="text-sm text-amber-700 dark:text-amber-400">은행</span>
+                  <span className="text-sm text-amber-700 dark:text-amber-400">{t('vaBank')}</span>
                   <span className="font-semibold text-amber-900 dark:text-amber-200">
                     {order.virtual_account.bank_name ?? '-'}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-amber-700 dark:text-amber-400">계좌번호</span>
+                  <span className="text-sm text-amber-700 dark:text-amber-400">{t('vaAccount')}</span>
                   <span className="font-bold text-lg tracking-widest text-amber-900 dark:text-amber-200">
                     {order.virtual_account.account_number ?? '-'}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-amber-700 dark:text-amber-400">입금기한</span>
+                  <span className="text-sm text-amber-700 dark:text-amber-400">{t('vaDueDate')}</span>
                   <span className="font-semibold text-red-600 dark:text-red-400">
                     {order.virtual_account.due_date
                       ? formatDateKo(order.virtual_account.due_date)
@@ -179,24 +196,22 @@ function OrderContent() {
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-amber-700 dark:text-amber-400">입금금액</span>
+                  <span className="text-sm text-amber-700 dark:text-amber-400">{t('vaAmount')}</span>
                   <span className="font-bold text-amber-900 dark:text-amber-200">
                     {total.toLocaleString('ko-KR')}원
                   </span>
                 </div>
-                <p className="mt-3 text-xs text-amber-600 dark:text-amber-500">
-                  ※ 입금기한 내 입금하지 않으면 주문이 자동 취소됩니다.
-                </p>
+                <p className="mt-3 text-xs text-amber-600 dark:text-amber-500">{t('vaWarning')}</p>
               </div>
             ) : (
-              <p className="text-sm text-amber-700">입금 계좌 정보를 불러오는 중입니다.</p>
+              <p className="text-sm text-amber-700">{t('vaLoading')}</p>
             )}
           </div>
         )}
 
         {/* 주문 상품 */}
         <div className={`mt-8 transition-all duration-700 delay-200 ${show ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
-          <h2 className="mb-4 font-semibold">주문 상품</h2>
+          <h2 className="mb-4 font-semibold">{t('itemsSectionTitle')}</h2>
           {loading ? (
             <div className="space-y-3">
               {[1, 2].map(i => (
@@ -237,19 +252,19 @@ function OrderContent() {
               ))}
             </div>
           ) : (
-            <p className="text-sm text-neutral-400">상품 정보를 불러오는 중입니다.</p>
+            <p className="text-sm text-neutral-400">{t('itemsLoading')}</p>
           )}
         </div>
 
         {/* 결제 요약 */}
         <div className={`mt-6 space-y-3 text-sm transition-all duration-700 delay-300 ${show ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
-          <RowItem label="상품금액" value={`${subtotal.toLocaleString('ko-KR')}원`} />
+          <RowItem label={t('productAmount')} value={`${subtotal.toLocaleString('ko-KR')}원`} />
           <RowItem
-            label="배송비"
-            value={shipping === 0 ? <span className="text-green-600 font-medium">무료</span> : `${shipping.toLocaleString('ko-KR')}원`}
+            label={t('shippingFee')}
+            value={shipping === 0 ? <span className="text-green-600 font-medium">{t('shippingFree')}</span> : `${shipping.toLocaleString('ko-KR')}원`}
           />
           <div className="border-t border-neutral-200 pt-3 dark:border-neutral-700">
-            <RowItem label="실결제금액" value={`${total.toLocaleString('ko-KR')}원`} highlight />
+            <RowItem label={t('actualPayment')} value={`${total.toLocaleString('ko-KR')}원`} highlight />
           </div>
         </div>
 
@@ -264,29 +279,29 @@ function OrderContent() {
               ) : (
                 <CreditCardIcon className="h-4 w-4 text-neutral-400" />
               )}
-              <p className="text-sm font-semibold">결제 정보</p>
+              <p className="text-sm font-semibold">{t('paymentInfoTitle')}</p>
             </div>
             <div className="space-y-2">
               {order?.payment_method && (
                 <RowItem
-                  label="결제수단"
-                  value={METHOD_LABEL[order.payment_method] ?? order.payment_method}
+                  label={t('payMethod')}
+                  value={getMethodLabel(order.payment_method)}
                 />
               )}
               {order?.paid_at && (
-                <RowItem label="결제일시" value={formatDateKo(order.paid_at) ?? '-'} />
+                <RowItem label={t('payDatetime')} value={formatDateKo(order.paid_at) ?? '-'} />
               )}
               {!isVA && order?.payment_key_masked && (
-                <RowItem label="결제키" value={order.payment_key_masked} />
+                <RowItem label={t('payKey')} value={order.payment_key_masked} />
               )}
               {order?.payment_status && (
                 <RowItem
-                  label="결제상태"
+                  label={t('payStatus')}
                   value={
                     order.payment_status === 'PAID' || order.payment_status === 'DONE'
-                      ? <span className="text-green-600 font-medium">결제완료</span>
+                      ? <span className="text-green-600 font-medium">{t('payStatusPaid')}</span>
                       : order.payment_status === 'WAITING_FOR_DEPOSIT'
-                      ? <span className="text-amber-600 font-medium">입금대기</span>
+                      ? <span className="text-amber-600 font-medium">{t('payStatusWaiting')}</span>
                       : order.payment_status
                   }
                 />
@@ -300,7 +315,7 @@ function OrderContent() {
           <div className={`mt-6 rounded-2xl border border-neutral-200 p-4 text-sm transition-all duration-700 delay-[350ms] ${
             show ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
           } dark:border-neutral-700`}>
-            <p className="mb-2 font-semibold">배송지</p>
+            <p className="mb-2 font-semibold">{t('shippingTitle')}</p>
             <p className="text-neutral-600 dark:text-neutral-400">{order.recipient_name}</p>
             <p className="text-neutral-500">{order.address1} {order.address2}</p>
           </div>
@@ -310,18 +325,18 @@ function OrderContent() {
         <div className={`mt-4 rounded-2xl bg-neutral-50 p-5 text-sm transition-all duration-700 delay-[400ms] ${
           show ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
         } dark:bg-neutral-800`}>
-          <p className="mb-2 font-semibold">배송 안내</p>
+          <p className="mb-2 font-semibold">{t('deliveryTitle')}</p>
           <ul className="space-y-1 text-neutral-500">
             {isVA ? (
               <>
-                <li>• 입금 확인 후 영업일 2~3일 내 출고 예정</li>
-                <li>• 입금기한 내 미입금 시 주문 자동 취소</li>
+                <li>• {t('deliveryVAPre')}</li>
+                <li>• {t('deliveryVAWarn')}</li>
               </>
             ) : (
-              <li>• 결제 확인 후 영업일 2~3일 내 출고 예정</li>
+              <li>• {t('deliveryNormal')}</li>
             )}
-            <li>• 출고 시 등록하신 연락처로 송장번호 안내</li>
-            <li>• 배송 문의: 070-4436-0928</li>
+            <li>• {t('deliveryTrack')}</li>
+            <li>• {t('deliveryPhone')}</li>
           </ul>
         </div>
 
@@ -330,22 +345,22 @@ function OrderContent() {
           show ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
         }`}>
           <ButtonPrimary href="/" className="flex-1">
-            <HomeIcon className="mr-2 h-5 w-5" />홈으로 가기
+            <HomeIcon className="mr-2 h-5 w-5" />{t('btnHome')}
           </ButtonPrimary>
           {detailOrderId ? (
             <Link href={`/orders/${detailOrderId}`}
               className="flex flex-1 items-center justify-center gap-2 rounded-full border border-neutral-300 px-6 py-3 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50 dark:border-neutral-600 dark:text-neutral-300">
-              <ClipboardDocumentListIcon className="h-5 w-5" />주문 상세 보기
+              <ClipboardDocumentListIcon className="h-5 w-5" />{t('btnOrderDetail')}
             </Link>
           ) : null}
           <Link href="/products"
             className="flex flex-1 items-center justify-center gap-2 rounded-full border border-neutral-300 px-6 py-3 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50 dark:border-neutral-600 dark:text-neutral-300">
-            <ShoppingBagIcon className="h-5 w-5" />쇼핑 계속하기
+            <ShoppingBagIcon className="h-5 w-5" />{t('btnKeepShopping')}
           </Link>
         </div>
 
         <p className={`mt-10 text-center text-sm text-neutral-400 transition-all duration-700 delay-[600ms] ${show ? 'opacity-100' : 'opacity-0'}`}>
-          KN541을 이용해 주셔서 감사합니다 🙏
+          {t('footer')}
         </p>
       </div>
     </main>
