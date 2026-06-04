@@ -1,4 +1,4 @@
-// KN541 마이페이지 Mock 데이터 (Phase 4~7)
+// KN541 마이페이지 Mock 데이터 (Phase 4~6)
 import type {
   MypageHomeResponse,
   OrderListItem, OrderListResponse,
@@ -6,7 +6,6 @@ import type {
   MypageProfile, PointLedgerItem, PointsResponse,
   CouponItem, CouponListResponse,
   ShopTemplate, UrlCheckResponse,
-  DividendItem, DividendSummaryResponse, DividendHistoryResponse,
 } from './types'
 
 // ──── Phase 4 ─────────────────────────────────────────────────────────────
@@ -116,31 +115,4 @@ export function mockCheckUrlCode(code: string): UrlCheckResponse {
   if (code.toLowerCase().includes('taken') || code.toLowerCase() === 'admin')
     return { available: false, reason: 'TAKEN' }
   return { available: true }
-}
-
-// ──── Phase 7 ─────────────────────────────────────────────────────────────
-
-const RECENT_DIVIDENDS: DividendItem[] = [
-  { dividend_id: 1, dividend_type: 'MLM',    dividend_type_label: '541 배당', dividend_date: '2026-04-15', amount: 12_000, source_order_no: null, source_member_masked: '홍**', depth: 1 },
-  { dividend_id: 2, dividend_type: 'EQUITY', dividend_type_label: '동사가치', dividend_date: '2026-04-14', amount: 8_500, source_order_no: null, source_member_masked: null, depth: null },
-  { dividend_id: 3, dividend_type: 'AGIT',   dividend_type_label: '아지트', dividend_date: '2026-04-13', amount: 5_000, source_order_no: null, source_member_masked: null, depth: null },
-  { dividend_id: 4, dividend_type: 'MLM',    dividend_type_label: '541 배당', dividend_date: '2026-04-12', amount: 3_200, source_order_no: null, source_member_masked: '김**', depth: 2 },
-  { dividend_id: 5, dividend_type: 'MLM',    dividend_type_label: '541 배당', dividend_date: '2026-04-10', amount: 15_000, source_order_no: null, source_member_masked: '이**', depth: 1 },
-]
-
-export const MOCK_DIVIDEND_SUMMARY: DividendSummaryResponse = {
-  withdrawable_balance: 1_234_000,
-  total_by_type: { MLM: 3_245_000, EQUITY: 1_200_000, AGIT: 987_000 },
-  this_month_by_type: { MLM: 245_000, EQUITY: 120_000, AGIT: 50_000 },
-  recent_items: RECENT_DIVIDENDS,
-}
-
-export const MOCK_DIVIDEND_HISTORY: DividendHistoryResponse = {
-  items: [
-    ...RECENT_DIVIDENDS,
-    { dividend_id: 6,  dividend_type: 'EQUITY', dividend_type_label: '동사가치', dividend_date: '2026-03-31', amount: 8_500, source_order_no: null, source_member_masked: null, depth: null },
-    { dividend_id: 7,  dividend_type: 'MLM',    dividend_type_label: '541 배당', dividend_date: '2026-03-28', amount: 9_200, source_order_no: null, source_member_masked: '박**', depth: 1 },
-    { dividend_id: 8,  dividend_type: 'AGIT',   dividend_type_label: '아지트', dividend_date: '2026-03-25', amount: 5_000, source_order_no: null, source_member_masked: null, depth: null },
-  ],
-  total: 8, page: 1, size: 20, total_amount: 66_400,
 }
