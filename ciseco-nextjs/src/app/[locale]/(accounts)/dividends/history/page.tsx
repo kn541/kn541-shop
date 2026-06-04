@@ -1,14 +1,12 @@
 'use client'
 
-import { useState } from 'react'
-import BigTabs from '@/components/mypage/BigTabs'
+import { useState, useMemo } from 'react'
 import L3Guard from '@/components/mypage/L3Guard'
-import DividendCard from '@/components/mypage/DividendCard'
-import { DIVIDEND_COLORS } from '@/lib/mypage/dividendColors'
-import { MOCK_DIVIDEND_HISTORY } from '@/lib/mypage/mocks'
-import type { DividendType } from '@/lib/mypage/types'
+import {
+  useDividendHistory,
+  type CommissionHistoryItem,
+} from '@/lib/mypage/useDividendHistory'
 
-type TabKey = 'ALL' | DividendType
 type PeriodKey = 'THIS_MONTH' | 'LAST_MONTH' | 'ALL' | 'CUSTOM'
 
 const PERIOD_LABELS: Record<PeriodKey, string> = {
@@ -18,44 +16,142 @@ const PERIOD_LABELS: Record<PeriodKey, string> = {
   CUSTOM: '직접입력',
 }
 
+/** 기간 키 → from/to YYYY-MM-DD (실제 오늘 날짜 기준, 하드코딩 없음) */
+function periodToDates(
+  period: PeriodKey,
+  customFrom: string,
+  customTo: string,
+): { from: string | undefined; to: string | undefined } {
+  const now = new Date()
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const fmt = (d: Date) =>
+    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+
+  if (period === 'THIS_MONTH') {
+    const first = new Date(now.getFullYear(), now.getMonth(), 1)
+    const last = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+    return { from: fmt(first), to: fmt(last) }
+  }
+  if (period === 'LAST_MONTH') {
+    const first = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+    const last = new Date(now.getFullYear(), now.getMonth(), 0)
+    return { from: fmt(first), to: fmt(last) }
+  }
+  if (period === 'CUSTOM') {
+    return { from: customFrom || undefined, to: customTo || undefined }
+  }
+  // ALL — 날짜 필터 없음
+  return { from: undefined, to: undefined }
+}
+
+/**
+ * 배당 내역 행 컴포넌트 (M5: BE 실 필드 기반)
+ * DividendCard 대체 — MLM/EQUITY/AGIT 하드코딩 없음
+ */
+function CommissionRow({ item }: { item: CommissionHistoryItem }) {
+  const dateStr = item.created_at.slice(0, 10)
+  const isNegative = item.amount < 0
+  const amountDisplay = isNegative
+    ? `${item.amount.toLocaleString('ko-KR')}원`
+    : `+${item.amount.toLocaleString('ko-KR')}원`
+  const amountColor = isNegative
+    ? 'var(--mp-color-error, #DC2626)'
+    : 'var(--mp-color-success)'
+
+  return (
+    <div
+      style={{
+        background: '#fff',
+        borderRadius: 'var(--mp-radius-lg)',
+        border: '1px solid var(--mp-color-border)',
+        padding: 16,
+        marginBottom: 10,
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          gap: 12,
+        }}
+      >
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              gap: 8,
+              marginBottom: 6,
+            }}
+          >
+            <span
+              style={{
+                fontSize: 12,
+                fontWeight: 700,
+                background: '#F3F4F6',
+                color: '#374151',
+                borderRadius: 20,
+                padding: '3px 10px',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {item.commission_type_label}
+            </span>
+            <span
+              style={{
+                fontSize: 12,
+                color: 'var(--mp-color-text-muted)',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {item.status_label}
+            </span>
+            <span style={{ fontSize: 13, color: 'var(--mp-color-text-muted)' }}>
+              {dateStr}
+            </span>
+          </div>
+          {item.pay_timing != null && (
+            <div style={{ fontSize: 13, color: 'var(--mp-color-text-muted)' }}>
+              {item.pay_timing === 'INSTANT' ? '즉시 지급' : item.pay_timing}
+            </div>
+          )}
+        </div>
+        <div
+          style={{
+            fontSize: 18,
+            fontWeight: 700,
+            color: amountColor,
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
+          }}
+        >
+          {amountDisplay}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function HistoryContent() {
-  const [tab, setTab] = useState<TabKey>('ALL')
   const [period, setPeriod] = useState<PeriodKey>('THIS_MONTH')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
 
-  const allItems = MOCK_DIVIDEND_HISTORY.items
+  const { from, to } = useMemo(
+    () => periodToDates(period, dateFrom, dateTo),
+    [period, dateFrom, dateTo],
+  )
 
-  const filtered = allItems.filter(item => {
-    const byType = tab === 'ALL' || item.dividend_type === tab
-    if (!byType) return false
-    if (period === 'CUSTOM') {
-      if (dateFrom && item.dividend_date < dateFrom) return false
-      if (dateTo && item.dividend_date > dateTo) return false
-    } else if (period === 'THIS_MONTH') {
-      return item.dividend_date.startsWith('2026-04')
-    } else if (period === 'LAST_MONTH') {
-      return item.dividend_date.startsWith('2026-03')
-    }
-    return true
-  })
+  const { data, loading, error } = useDividendHistory(from, to)
 
-  const totalAmount = filtered.reduce((s, i) => s + i.amount, 0)
+  const items = data?.items ?? []
+  const totalAmount = items.reduce((s, i) => s + i.amount, 0)
 
   return (
     <>
       <h1 className="text-2xl font-semibold sm:text-3xl">배당 내역</h1>
-
-      <BigTabs
-        value={tab}
-        onChange={v => setTab(v as TabKey)}
-        tabs={[
-          { value: 'ALL', label: '전체' },
-          { value: 'MLM', label: `${DIVIDEND_COLORS.MLM.icon} 541배당` },
-          { value: 'EQUITY', label: `${DIVIDEND_COLORS.EQUITY.icon} 동사가치` },
-          { value: 'AGIT', label: `${DIVIDEND_COLORS.AGIT.icon} 아지트` },
-        ]}
-      />
 
       <div className="border-b border-neutral-200 bg-white py-3 dark:border-neutral-700 dark:bg-neutral-900">
         <div className="flex flex-wrap gap-2 px-4">
@@ -94,21 +190,46 @@ function HistoryContent() {
       </div>
 
       <div>
-        {filtered.length > 0 && (
-          <div className="mb-3 text-right text-sm text-neutral-500 dark:text-neutral-400">
-            합계{' '}
-            <strong className="text-base text-emerald-600">+{totalAmount.toLocaleString('ko-KR')}원</strong>
+        {loading && (
+          <div className="py-12 text-center text-neutral-400">불러오는 중...</div>
+        )}
+
+        {!loading && error && (
+          <div className="py-12 text-center">
+            <div className="mb-2 text-neutral-500">{error}</div>
           </div>
         )}
 
-        {filtered.length === 0 ? (
+        {!loading && !error && items.length > 0 && (
+          <div className="mb-3 text-right text-sm text-neutral-500 dark:text-neutral-400">
+            합계{' '}
+            <strong
+              className="text-base"
+              style={{
+                color:
+                  totalAmount >= 0
+                    ? 'var(--mp-color-success)'
+                    : 'var(--mp-color-error, #DC2626)',
+              }}
+            >
+              {totalAmount >= 0 ? '+' : ''}
+              {totalAmount.toLocaleString('ko-KR')}원
+            </strong>
+          </div>
+        )}
+
+        {!loading && !error && items.length === 0 && (
           <div className="py-12 text-center">
             <div className="mb-3 text-5xl">💰</div>
-            <div className="text-lg text-neutral-500 dark:text-neutral-400">선택한 기간에 내역이 없어요.</div>
+            <div className="text-lg text-neutral-500 dark:text-neutral-400">
+              선택한 기간에 내역이 없어요.
+            </div>
           </div>
-        ) : (
-          filtered.map(item => <DividendCard key={item.dividend_id} item={item} />)
         )}
+
+        {!loading && !error && items.map(item => (
+          <CommissionRow key={item.commission_id} item={item} />
+        ))}
       </div>
     </>
   )
