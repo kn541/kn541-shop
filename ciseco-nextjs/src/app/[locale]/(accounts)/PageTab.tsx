@@ -3,7 +3,6 @@
 import { Link } from '@/components/Link'
 import { usePathname } from '@/i18n/navigation'
 import { useEffectiveUserType } from '@/hooks/useEffectiveUserType'
-import { UPGRADE_PAID_PATH } from '@/lib/mypage/memberAccess'
 import { useTranslations } from 'next-intl'
 
 type LinkItem = {
@@ -39,7 +38,8 @@ const links: LinkItem[] = [
   { nameKey: 'myshop', link: '/myshop', paidOnly: true },
   { nameKey: 'withdraw', link: '/withdraw', paidOnly: true },
   { nameKey: 'addresses', link: '/addresses' },
-  { nameKey: 'upgradePaid', link: UPGRADE_PAID_PATH, generalOnly: true },
+  // generalOnly: 002(일반회원)에게만 노출. 목적지: /packages (유료전환 구매 페이지)
+  { nameKey: 'upgradePaid', link: '/packages', generalOnly: true },
 ]
 
 type PageTabVariant = 'tabs' | 'sidebar'
@@ -87,7 +87,7 @@ const PageTab = ({ variant = 'tabs' }: PageTabProps) => {
           const isActive = linkIsActive(item)
           return (
             <Link
-              key={item.link}
+              key={item.nameKey}
               href={item.link}
               className={`block w-full rounded-lg border-l-4 py-3 pl-4 pr-3 text-left text-sm transition-colors ${
                 isActive
@@ -110,7 +110,7 @@ const PageTab = ({ variant = 'tabs' }: PageTabProps) => {
           const isActive = linkIsActive(item)
           return (
             <Link
-              key={item.link}
+              key={item.nameKey}
               href={item.link}
               className={`block shrink-0 border-b-2 py-5 text-sm sm:text-base md:py-8 ${
                 isActive
