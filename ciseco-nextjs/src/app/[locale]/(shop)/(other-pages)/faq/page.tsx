@@ -12,7 +12,7 @@ async function fetchFaqs(target: string) {
   const BASE = process.env.NEXT_PUBLIC_API_URL || 'https://kn541-production.up.railway.app'
   try {
     const res = await fetch(`${BASE}/faqs?faq_target=${target}&size=100`, {
-      next: { revalidate: 300 }, // 5분 쫨시
+      next: { revalidate: 300 }, // 5분 캐시
     })
     if (!res.ok) return []
     const json = await res.json()
@@ -23,7 +23,7 @@ async function fetchFaqs(target: string) {
 }
 
 export default async function FaqPage() {
-  // faq_target: 001=쓼핑몰, 002=회원, 003=SCM
+  // faq_target: 001=쇼핑몰, 002=회원, 003=SCM
   const [shopFaqs, memberFaqs, scmFaqs] = await Promise.all([
     fetchFaqs('001'),
     fetchFaqs('002'),

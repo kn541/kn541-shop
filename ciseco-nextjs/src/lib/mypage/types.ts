@@ -153,6 +153,8 @@ export interface MypageProfile {
   zip_code: string | null
   address1: string | null
   address2: string | null
+  /** 8자리 회원번호 (숫자 문자열) */
+  member_no?: string
   /** 시스템 회원유형 코드 (창업회원: 006) */
   user_type?: string | null
 }

@@ -298,7 +298,7 @@ export default function AccountProfileClient() {
             <label className="mb-1.5 block text-sm font-medium text-neutral-800 dark:text-neutral-200">
               회원번호
             </label>
-            <div className={readOnlyBoxClass}>{data.user_id || '-'}</div>
+            <div className={readOnlyBoxClass}>{data.member_no || '-'}</div>
           </div>
           <div>
             <label className="mb-1.5 block text-sm font-medium text-neutral-800 dark:text-neutral-200">
