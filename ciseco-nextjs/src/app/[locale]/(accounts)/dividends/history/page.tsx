@@ -1,132 +1,244 @@
-J3VzZSBjbGllbnQnCgppbXBvcnQgeyB1c2VTdGF0ZSwgdXNlTWVtbyB9IGZyb20gJ3JlYWN0Jwpp
-bXBvcnQgTDNHdWFyZCBmcm9tICdAL2NvbXBvbmVudHMvbXlwYWdlL0wzR3VhcmQnCmltcG9ydCB7
-CiAgdXNlRGl2aWRlbmRIaXN0b3J5LAogIHR5cGUgQ29tbWlzc2lvbkhpc3RvcnlJdGVtLAp9IGZy
-b20gJ0AvbGliL215cGFnZS91c2VEaXZpZGVuZEhpc3RvcnknCgp0eXBlIFBlcmlvZEtleSA9ICdU
-SFTXX01PTlRIJyB8ICdMQVNUX01PTlRIJyB8ICdBTEwnIHwgJ0NVU1RPTScKCmNvbnN0IFBFUklP
-RF9MQUJFTFM6IFJlY29yZDxQZXJpb2RLZXksIHN0cmluZz4gPSB7CiAgVEhJU19NT05USDogJ+yd
-tOuyiOuLrCcsCiAgTEFTVF9NT05USDogJ+yngOuCnOuLrCcsCiAgQUxMOiAn7KCE7LK0JywKICBD
-VVNUT006ICfsp4HsoJHsnoXroKUnLAp9CgovKiog6riw6rCEIO2CpCDihpIgZnJvbS90byBZWVlZ
-LU1NLUREICjsi6TsoJwg7Jik64qYIOuCoOynnCDquLDspIAsIO2VmOuTnOy9lOuUqSDsl4bsnYwp
-ICovCmZ1bmN0aW9uIHBlcmlvZFRvRGF0ZXMoCiAgcGVyaW9kOiBQZXJpb2RLZXksCiAgY3VzdG9t
-RnJvbTogc3RyaW5nLAogIGN1c3RvbVRvOiBzdHJpbmcsCik6IHsgZnJvbTogc3RyaW5nIHwgdW5k
-ZWZpbmVkOyB0bzogc3RyaW5nIHwgdW5kZWZpbmVkIH0gewogIGNvbnN0IG5vdyA9IG5ldyBEYXRl
-KCkKICBjb25zdCBwYWQgPSAobjogbnVtYmVyKSA9PiBTdHJpbmcobikucGFkU3RhcnQoMiwgJzAn
-KQogIGNvbnN0IGZtdCA9IChkOiBEYXRlKSA9PgogICAgYCR7ZC5nZXRGdWxsWWVhcigpfS0ke3Bh
-ZChkLmdldE1vbnRoKCkgKyAxKX0tJHtwYWQoZC5nZXREYXRlKCkpfWAKCiAgaWYgKHBlcmlvZCA9
-PT0gJ1RISVNfTU9OVEgnKSB7CiAgICBjb25zdCBmaXJzdCA9IG5ldyBEYXRlKG5vdy5nZXRGdWxs
-WWVhcigpLCBub3cuZ2V0TW9udGgoKSwgMSkKICAgIGNvbnN0IGxhc3QgPSBuZXcgRGF0ZShub3cu
-Z2V0RnVsbFllYXIoKSwgbm93LmdldE1vbnRoKCkgKyAxLCAwKQogICAgcmV0dXJuIHsgZnJvbTog
-Zm10KGZpcnN0KSwgdG86IGZtdChsYXN0KSB9CiAgfQogIGlmIChwZXJpb2QgPT09ICdMQVNUX01P
-TlRIJykgewogICAgY29uc3QgZmlyc3QgPSBuZXcgRGF0ZShub3cuZ2V0RnVsbFllYXIoKSwgbm93
-LmdldE1vbnRoKCkgLSAxLCAxKQogICAgY29uc3QgbGFzdCA9IG5ldyBEYXRlKG5vdy5nZXRGdWxs
-WWVhcigpLCBub3cuZ2V0TW9udGgoKSwgMCkKICAgIHJldHVybiB7IGZyb206IGZtdChmaXJzdCks
-IHRvOiBmbXQobGFzdCkgfQogIH0KICBpZiAocGVyaW9kID09PSAnQ1VTVE9NJykgewogICAgcmV0
-dXJuIHsgZnJvbTogY3VzdG9tRnJvbSB8fCB1bmRlZmluZWQsIHRvOiBjdXN0b21UbyB8fCB1bmRl
-ZmluZWQgfQogIH0KICAvLyBBTEwg4oCUIOuCoOynnCDtlYTthLAg7JeG7J2MCiAgcmV0dXJuIHsg
-ZnJvbTogdW5kZWZpbmVkLCB0bzogdW5kZWZpbmVkIH0KfQoKLyoqCiAqIOuwsOuLuSDrgrTsl60g
-7ZaJIOy7tO2PrOuEjO2KuCAoTTU6IEJFIOyLpCDtlYTrk5wg6riw67CYKQogKiBEaXZpZGVuZENh
-cmQg64yA7LK0IOKAlCBNTE0vRVFVSVRZL0FHSVQg7ZWY65Oc7L2U65SpIOyXhuydjAogKi8KZnVu
-Y3Rpb24gQ29tbWlzc2lvblJvdyh7IGl0ZW0gfTogeyBpdGVtOiBDb21taXNzaW9uSGlzdG9yeUl0
-ZW0gfSkgewogIGNvbnN0IGRhdGVTdHIgPSBpdGVtLmNyZWF0ZWRfYXQuc2xpY2UoMCwgMTApCiAg
-Y29uc3QgaXNOZWdhdGl2ZSA9IGl0ZW0uYW1vdW50IDwgMAogIGNvbnN0IGFtb3VudERpc3BsYXkg
-PSBpc05lZ2F0aXZlCiAgICA/IGAke2l0ZW0uYW1vdW50LnRvTG9jYWxlU3RyaW5nKCdrby1LUicp
-feybkGAKICAgIDogYCske2l0ZW0uYW1vdW50LnRvTG9jYWxlU3RyaW5nKCdrby1LUicpfeybkGAK
-ICBjb25zdCBhbW91bnRDb2xvciA9IGlzTmVnYXRpdmUKICAgID8gJ3ZhcigtLW1wLWNvbG9yLWVy
-cm9yLCAjREMyNjI2KScKICAgIDogJ3ZhcigtLW1wLWNvbG9yLXN1Y2Nlc3MpJwoKICByZXR1cm4g
-KAogICAgPGRpdgogICAgICBzdHlsZT17ewogICAgICAgIGJhY2tncm91bmQ6ICcjZmZmJywKICAg
-ICAgICBib3JkZXJSYWRpdXM6ICd2YXIoLS1tcC1yYWRpdXMtbGcpJywKICAgICAgICBib3JkZXI6
-ICcxcHggc29saWQgdmFyKC0tbXAtY29sb3ItYm9yZGVyKScsCiAgICAgICAgcGFkZGluZzogMTYs
-CiAgICAgICAgbWFyZ2luQm90dG9tOiAxMCwKICAgICAgfX0KICAgID4KICAgICAgPGRpdgogICAg
-ICAgIHN0eWxlPXt7CiAgICAgICAgICBkaXNwbGF5OiAnZmxleCcsCiAgICAgICAgICBhbGlnbkl0
-ZW1zOiAnZmxleC1zdGFydCcsCiAgICAgICAgICBqdXN0aWZ5Q29udGVudDogJ3NwYWNlLWJldHdl
-ZW4nLAogICAgICAgICAgZ2FwOiAxMiwKICAgICAgICB9fQogICAgICA+CiAgICAgICAgPGRpdiBz
-dHlsZT17eyBmbGV4OiAxLCBtaW5XaWR0aDogMCB9fT4KICAgICAgICAgIDxkaXYKICAgICAgICAg
-ICAgc3R5bGU9e3sKICAgICAgICAgICAgICBkaXNwbGF5OiAnZmxleCcsCiAgICAgICAgICAgICAg
-ZmxleFdyYXA6ICd3cmFwJywKICAgICAgICAgICAgICBhbGlnbkl0ZW1zOiAnY2VudGVyJywKICAg
-ICAgICAgICAgICBnYXA6IDgsCiAgICAgICAgICAgICAgbWFyZ2luQm90dG9tOiA2LAogICAgICAg
-ICAgICB9fQogICAgICAgICAgPgogICAgICAgICAgICA8c3BhbgogICAgICAgICAgICAgIHN0eWxl
-PXt7CiAgICAgICAgICAgICAgICBmb250U2l6ZTogMTIsCiAgICAgICAgICAgICAgICBmb250V2Vp
-Z2h0OiA3MDAsCiAgICAgICAgICAgICAgICBiYWNrZ3JvdW5kOiAnI0YzRjRGNicsCiAgICAgICAg
-ICAgICAgICBjb2xvcjogJyMzNzQxNTEnLAogICAgICAgICAgICAgICAgYm9yZGVyUmFkaXVzOiAy
-MCwKICAgICAgICAgICAgICAgIHBhZGRpbmc6ICczcHggMTBweCcsCiAgICAgICAgICAgICAgICB3
-aGl0ZVNwYWNlOiAnbm93cmFwJywKICAgICAgICAgICAgICB9fQogICAgICAgICAgICA+CiAgICAg
-ICAgICAgICAge2l0ZW0uY29tbWlzc2lvbl90eXBlX2xhYmVsfQogICAgICAgICAgICA8L3NwYW4+
-CiAgICAgICAgICAgIDxzcGFuCiAgICAgICAgICAgICAgc3R5bGU9e3sKICAgICAgICAgICAgICAg
-IGZvbnRTaXplOiAxMiwKICAgICAgICAgICAgICAgIGNvbG9yOiAndmFyKC0tbXAtY29sb3ItdGV4
-dC1tdXRlZCknLAogICAgICAgICAgICAgICAgd2hpdGVTcGFjZTogJ25vd3JhcCcsCiAgICAgICAg
-ICAgICAgfX0KICAgICAgICAgICAgPgogICAgICAgICAgICAgIHtpdGVtLnN0YXR1c19sYWJlbH0K
-ICAgICAgICAgICAgPC9zcGFuPgogICAgICAgICAgICA8c3BhbiBzdHlsZT17eyBmb250U2l6ZTog
-MTMsIGNvbG9yOiAndmFyKC0tbXAtY29sb3ItdGV4dC1tdXRlZCknIH19PgogICAgICAgICAgICAg
-IHtkYXRlU3RyfQogICAgICAgICAgICA8L3NwYW4+CiAgICAgICAgICA8L2Rpdj4KICAgICAgICAg
-IHtpdGVtLnBheV90aW1pbmcgIT0gbnVsbCAmJiAoCiAgICAgICAgICAgIDxkaXYgc3R5bGU9e3sg
-Zm9udFNpemU6IDEzLCBjb2xvcjogJ3ZhcigtLW1wLWNvbG9yLXRleHQtbXV0ZWQpJyB9fT4KICAg
-ICAgICAgICAgICB7aXRlbS5wYXlfdGltaW5nID09PSAnSU5TVEFOVCcgPyAn7KaJ7IucIOyngOq4
-iScgOiBpdGVtLnBheV90aW1pbmd9CiAgICAgICAgICAgIDwvZGl2PgogICAgICAgICAgKX0KICAg
-ICAgICA8L2Rpdj4KICAgICAgICA8ZGl2CiAgICAgICAgICBzdHlsZT17ewogICAgICAgICAgICBm
-b250U2l6ZTogMTgsCiAgICAgICAgICAgIGZvbnRXZWlnaHQ6IDcwMCwKICAgICAgICAgICAgY29s
-b3I6IGFtb3VudENvbG9yLAogICAgICAgICAgICB3aGl0ZVNwYWNlOiAnbm93cmFwJywKICAgICAg
-ICAgICAgZmxleFNocmluazogMCwKICAgICAgICAgIH19CiAgICAgICAgPgogICAgICAgICAge2Ft
-b3VudERpc3BsYXl9CiAgICAgICAgPC9kaXY+CiAgICAgIDwvZGl2PgogICAgPC9kaXY+CiAgKQp9
-CgpmdW5jdGlvbiBIaXN0b3J5Q29udGVudCgpIHsKICBjb25zdCBbcGVyaW9kLCBzZXRQZXJpb2Rd
-ID0gdXNlU3RhdGU8UGVyaW9kS2V5PignVEhJU19NT05USCcpCiAgY29uc3QgW2RhdGVGcm9tLCBz
-ZXREYXRLRXJVBV0gPSB1c2VTdGF0ZSgnJykKICBjb25zdCBbZGF0ZVRvLCBzZXREYXRlVG9dID0g
-dXNlU3RhdGUoJycpCgogIGNvbnN0IHsgZnJvbSwgdG8gfSA9IHVzZU1lbW8oCiAgICAoKSA9PiBw
-ZXJpb2RUb0RhdGVzKHBlcmlvZCwgZGF0ZUZyb20sIGRhdGVUbyksCiAgICBbcGVyaW9kLCBkYXRl
-RnJvbSwgZGF0ZVRvXSwKICApCgogIGNvbnN0IHsgZGF0YSwgbG9hZGluZywgZXJyb3IgfSA9IHVz
-ZURpdmlkZW5kSGlzdG9yeShmcm9tLCB0bykKCiAgY29uc3QgaXRlbXMgPSBkYXRhPy5pdGVtcyA/
-PyBbXQogIGNvbnN0IHRvdGFsQW1vdW50ID0gaXRlbXMucmVkdWNlKChzLCBpKSA9PiBzICsgaS5h
-bW91bnQsIDApCgogIHJldHVybiAoCiAgICA8PgogICAgICA8aDEgY2xhc3NOYW1lPSJ0ZXh0LTJ4
-bCBmb250LXNlbWlib2xkIHNtOnRleHQtM3hsIj7rsLDri7kg64K07JetPC9oMT4KCiAgICAgIDxk
-aXYgY2xhc3NOYW1lPSJib3JkZXItYiBib3JkZXItbmV1dHJhbC0yMDAgYmctd2hpdGUgcHktMyBk
-YXJrOmJvcmRlci1uZXV0cmFsLTcwMCBkYXJrOmJnLW5ldXRyYWwtOTAwIj4KICAgICAgICA8ZGl2
-IGNsYXNzTmFtZT0iZmxleCBmbGV4LXdyYXAgZ2FwLTIgcHgtNCI+CiAgICAgICAgICB7KE9iamVj
-dC5rZXlzKFBFUklPRF9MQUJFTFMpIGFzIFBlcmlvZEtleVtdKS5tYXAoayA9PiAoCiAgICAgICAg
-ICAgIDxidXR0b24KICAgICAgICAgICAgICBrZXk9e2t9CiAgICAgICAgICAgICAgdHlwZT0iYnV0
-dG9uIgogICAgICAgICAgICAgIG9uQ2xpY2s9eygpID0+IHNldFBlcmlvZChrKX0KICAgICAgICAg
-ICAgICBjbGFzc05hbWU9e2Byb3VuZGVkLWZ1bGwgYm9yZGVyIHB4LTMuNSBweS0xLjUgdGV4dC1z
-bSAkewogICAgICAgICAgICAgICAgcGVyaW9kID09PSBrCiAgICAgICAgICAgICAgICAgID8gJ2Jv
-cmRlci1wcmltYXJ5LTUwMCBiZy1wcmltYXJ5LTUwMCBmb250LWJvbGQgdGV4dC13aGl0ZScKICAg
-ICAgICAgICAgICAgICAgOiAnYm9yZGVyLW5ldXRyYWwtMjAwIGJnLXdoaXRlIGRhcms6Ym9yZGVy
-LW5ldXRyYWwtNjAwIGRhcms6YmctbmV1dHJhbC05MDAnCiAgICAgICAgICAgICAgfWB9CiAgICAg
-ICAgICAgID4KICAgICAgICAgICAgICB7UEVSSU9EX0xBQkVMU1trXX0KICAgICAgICAgICAgPC9i
-dXR0b24+CiAgICAgICAgICApKX0KICAgICAgICA8L2Rpdj4KICAgICAgICB7cGVyaW9kID09PSAn
-Q1VTVE9NJyAmJiAoCiAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT0ibXQtMiBmbGV4IGl0ZW1zLWNl
-bnRlciBnYXAtMiBweC00Ij4KICAgICAgICAgICAgPGlucHV0CiAgICAgICAgICAgICAgdHlwZT0i
-ZGF0ZSIKICAgICAgICAgICAgICB2YWx1ZT17ZGF0ZUZyb219CiAgICAgICAgICAgICAgb25DaGFu
-Z2U9e2UgPT4gc2V0RGF0ZUZyb20oZS50YXJnZXQudmFsdWUpfQogICAgICAgICAgICAgIGNsYXNz
-TmFtZT0iaC0xMSBmbGV4LTEgcm91bmRlZC1sZyBib3JkZXIgYm9yZGVyLW5ldXRyYWwtMjAwIHB4
-LTIgdGV4dC1zbSBkYXJrOmJvcmRlci1uZXV0cmFsLTYwMCBkYXJrOmJnLW5ldXRyYWwtOTAwIgog
-ICAgICAgICAgICAvPgogICAgICAgICAgICA8c3BhbiBjbGFzc05hbWU9InRleHQtbmV1dHJhbC01
-MDAiPn48L3NwYW4+CiAgICAgICAgICAgIDxpbnB1dAogICAgICAgICAgICAgIHR5cGU9ImRhdGUi
-CiAgICAgICAgICAgICAgdmFsdWU9e2RhdGVUb30KICAgICAgICAgICAgICBvbkNoYW5nZT17ZSA9
-PiBzZXREYXRlVG8oZS50YXJnZXQudmFsdWUpfQogICAgICAgICAgICAgIGNsYXNzTmFtZT0iaC0x
-MSBmbGV4LTEgcm91bmRlZC1sZyBib3JkZXIgYm9yZGVyLW5ldXRyYWwtMjAwIHB4LTIgdGV4dC1z
-bSBkYXJrOmJvcmRlci1uZXV0cmFsLTYwMCBkYXJrOmJnLW5ldXRyYWwtOTAwIgogICAgICAgICAg
-ICAvPgogICAgICAgICAgPC9kaXY+CiAgICAgICAgKX0KICAgICAgPC9kaXY+CgogICAgICA8ZGl2
-PgogICAgICAgIHtsb2FkaW5nICYmICgKICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPSJweS0xMiB0
-ZXh0LWNlbnRlciB0ZXh0LW5ldXRyYWwtNDAwIj7rtojrn6zsmKTripQg7KSRLi4uPC9kaXY+CiAg
-ICAgICAgKX0KCiAgICAgICAgeyFsb2FkaW5nICYmIGVycm9yICYmICgKICAgICAgICAgIDxkaXYg
-Y2xhc3NOYW1lPSJweS0xMiB0ZXh0LWNlbnRlciI+CiAgICAgICAgICAgIDxkaXYgY2xhc3NOYW1l
-PSJtYi0yIHRleHQtbmV1dHJhbC01MDAiPntlcnJvcn08L2Rpdj4KICAgICAgICAgIDwvZGl2Pgog
-ICAgICAgICl9CgogICAgICAgIHshbG9hZGluZyAmJiAhZXJyb3IgJiYgaXRlbXMubGVuZ3RoID4g
-MCAmJiAoCiAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT0ibWItMyB0ZXh0LXJpZ2h0IHRleHQtc20g
-dGV4dC1uZXV0cmFsLTUwMCBkYXJrOnRleHQtbmV1dHJhbC00MDAiPgogICAgICAgICAgICDtlanq
-s4R7JyAnfQogICAgICAgICAgICA8c3Ryb25nCiAgICAgICAgICAgICAgY2xhc3NOYW1lPSJ0ZXh0
-LWJhc2UiCiAgICAgICAgICAgICAgc3R5bGU9e3sKICAgICAgICAgICAgICAgIGNvbG9yOgogICAg
-ICAgICAgICAgICAgICB0b3RhbEFtb3VudCA+PSAwCiAgICAgICAgICAgICAgICAgICAgPyAndmFy
-KC0tbXAtY29sb3Itc3VjY2VzcyknCiAgICAgICAgICAgICAgICAgICAgOiAndmFyKC0tbXAtY29s
-b3ItZXJyb3IsICNEQzI2MjYpJywKICAgICAgICAgICAgICB9fQogICAgICAgICAgICA+CiAgICAg
-ICAgICAgICAge3RvdGFsQW1vdW50ID49IDAgPyAnKycgOiAnJ30KICAgICAgICAgICAgICB7dG90
-YWxBbW91bnQudG9Mb2NhbGVTdHJpbmcoJ2tvLUtSJyl97JuQCiAgICAgICAgICAgIDwvc3Ryb25n
-PgogICAgICAgICAgPC9kaXY+CiAgICAgICAgKX0KCiAgICAgICAgeyFsb2FkaW5nICYmICFlcnJv
-ciAmJiBpdGVtcy5sZW5ndGggPT09IDAgJiYgKAogICAgICAgICAgPGRpdiBjbGFzc05hbWU9InB5
-LTEyIHRleHQtY2VudGVyIj4KICAgICAgICAgICAgPGRpdiBjbGFzc05hbWU9Im1iLTMgdGV4dC01
-eGwiPvCfkrA8L2Rpdj4KICAgICAgICAgICAgPGRpdiBjbGFzc05hbWU9InRleHQtbGcgdGV4dC1u
-ZXV0cmFsLTUwMCBkYXJrOnRleHQtbmV1dHJhbC00MDAiPgogICAgICAgICAgICAgIOyEoO2Dne2V
-nCDquLDqsITsl5Ag64K07Jet7J20IOyXhuyWtOyalC4KICAgICAgICAgICAgPC9kaXY+CiAgICAg
-ICAgICA8L2Rpdj4KICAgICAgICApfQoKICAgICAgICB7IWxvYWRpbmcgJiYgIWVycm9yICYmIGl0
-ZW1zLm1hcChpdGVtID0+ICgKICAgICAgICAgIDxDb21taXNzaW9uUm93IGtleT17aXRlbS5jb21t
-aXNzaW9uX2lkfSBpdGVtPXtpdGVtfSAvPgogICAgICAgICkpfQogICAgICA8L2Rpdj4KICAgIDwv
-PgogICkKfQoKZXhwb3J0IGRlZmF1bHQgZnVuY3Rpb24gRGl2aWRlbmRIaXN0b3J5UGFnZSgpIHsK
-ICByZXR1cm4gKAogICAgPEwzR3VhcmQgZW1iZWRkZWQgdGl0bGU9IuuwsOuLuSDrgrTsl60iPgog
-ICAgICA8SGlzdG9yeUNvbnRlbnQgLz4KICAgIDwvTDNHdWFyZD4KICApCn0K
+'use client'
+
+import { useState, useMemo } from 'react'
+import L3Guard from '@/components/mypage/L3Guard'
+import {
+  useDividendHistory,
+  type CommissionHistoryItem,
+} from '@/lib/mypage/useDividendHistory'
+
+type PeriodKey = 'THIS_MONTH' | 'LAST_MONTH' | 'ALL' | 'CUSTOM'
+
+const PERIOD_LABELS: Record<PeriodKey, string> = {
+  THIS_MONTH: '이번달',
+  LAST_MONTH: '지난달',
+  ALL: '전체',
+  CUSTOM: '직접입력',
+}
+
+/** 기간 키 → from/to YYYY-MM-DD (실제 오늘 날짜 기준, 하드코딩 없음) */
+function periodToDates(
+  period: PeriodKey,
+  customFrom: string,
+  customTo: string,
+): { from: string | undefined; to: string | undefined } {
+  const now = new Date()
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const fmt = (d: Date) =>
+    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+
+  if (period === 'THIS_MONTH') {
+    const first = new Date(now.getFullYear(), now.getMonth(), 1)
+    const last = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+    return { from: fmt(first), to: fmt(last) }
+  }
+  if (period === 'LAST_MONTH') {
+    const first = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+    const last = new Date(now.getFullYear(), now.getMonth(), 0)
+    return { from: fmt(first), to: fmt(last) }
+  }
+  if (period === 'CUSTOM') {
+    return { from: customFrom || undefined, to: customTo || undefined }
+  }
+  // ALL — 날짜 필터 없음
+  return { from: undefined, to: undefined }
+}
+
+/**
+ * 배당 내역 행 컴포넌트 (M5: BE 실 필드 기반)
+ * DividendCard 대체 — MLM/EQUITY/AGIT 하드코딩 없음
+ */
+function CommissionRow({ item }: { item: CommissionHistoryItem }) {
+  const dateStr = item.created_at.slice(0, 10)
+  const isNegative = item.amount < 0
+  const amountDisplay = isNegative
+    ? `${item.amount.toLocaleString('ko-KR')}원`
+    : `+${item.amount.toLocaleString('ko-KR')}원`
+  const amountColor = isNegative
+    ? 'var(--mp-color-error, #DC2626)'
+    : 'var(--mp-color-success)'
+
+  return (
+    <div
+      style={{
+        background: '#fff',
+        borderRadius: 'var(--mp-radius-lg)',
+        border: '1px solid var(--mp-color-border)',
+        padding: 16,
+        marginBottom: 10,
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          gap: 12,
+        }}
+      >
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              gap: 8,
+              marginBottom: 6,
+            }}
+          >
+            <span
+              style={{
+                fontSize: 12,
+                fontWeight: 700,
+                background: '#F3F4F6',
+                color: '#374151',
+                borderRadius: 20,
+                padding: '3px 10px',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {item.commission_type_label}
+            </span>
+            <span
+              style={{
+                fontSize: 12,
+                color: 'var(--mp-color-text-muted)',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {item.status_label}
+            </span>
+            <span style={{ fontSize: 13, color: 'var(--mp-color-text-muted)' }}>
+              {dateStr}
+            </span>
+          </div>
+          {item.pay_timing != null && (
+            <div style={{ fontSize: 13, color: 'var(--mp-color-text-muted)' }}>
+              {item.pay_timing === 'INSTANT' ? '즉시 지급' : item.pay_timing}
+            </div>
+          )}
+        </div>
+        <div
+          style={{
+            fontSize: 18,
+            fontWeight: 700,
+            color: amountColor,
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
+          }}
+        >
+          {amountDisplay}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function HistoryContent() {
+  const [period, setPeriod] = useState<PeriodKey>('THIS_MONTH')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+
+  const { from, to } = useMemo(
+    () => periodToDates(period, dateFrom, dateTo),
+    [period, dateFrom, dateTo],
+  )
+
+  const { data, loading, error } = useDividendHistory(from, to)
+
+  const items = data?.items ?? []
+  const totalAmount = items.reduce((s, i) => s + i.amount, 0)
+
+  return (
+    <>
+      <h1 className="text-2xl font-semibold sm:text-3xl">배당 내역</h1>
+
+      <div className="border-b border-neutral-200 bg-white py-3 dark:border-neutral-700 dark:bg-neutral-900">
+        <div className="flex flex-wrap gap-2 px-4">
+          {(Object.keys(PERIOD_LABELS) as PeriodKey[]).map(k => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => setPeriod(k)}
+              className={`rounded-full border px-3.5 py-1.5 text-sm ${
+                period === k
+                  ? 'border-primary-500 bg-primary-500 font-bold text-white'
+                  : 'border-neutral-200 bg-white dark:border-neutral-600 dark:bg-neutral-900'
+              }`}
+            >
+              {PERIOD_LABELS[k]}
+            </button>
+          ))}
+        </div>
+        {period === 'CUSTOM' && (
+          <div className="mt-2 flex items-center gap-2 px-4">
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={e => setDateFrom(e.target.value)}
+              className="h-11 flex-1 rounded-lg border border-neutral-200 px-2 text-sm dark:border-neutral-600 dark:bg-neutral-900"
+            />
+            <span className="text-neutral-500">~</span>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={e => setDateTo(e.target.value)}
+              className="h-11 flex-1 rounded-lg border border-neutral-200 px-2 text-sm dark:border-neutral-600 dark:bg-neutral-900"
+            />
+          </div>
+        )}
+      </div>
+
+      <div>
+        {loading && (
+          <div className="py-12 text-center text-neutral-400">불러오는 중...</div>
+        )}
+
+        {!loading && error && (
+          <div className="py-12 text-center">
+            <div className="mb-2 text-neutral-500">{error}</div>
+          </div>
+        )}
+
+        {!loading && !error && items.length > 0 && (
+          <div className="mb-3 text-right text-sm text-neutral-500 dark:text-neutral-400">
+            합계{' '}
+            <strong
+              className="text-base"
+              style={{
+                color:
+                  totalAmount >= 0
+                    ? 'var(--mp-color-success)'
+                    : 'var(--mp-color-error, #DC2626)',
+              }}
+            >
+              {totalAmount >= 0 ? '+' : ''}
+              {totalAmount.toLocaleString('ko-KR')}원
+            </strong>
+          </div>
+        )}
+
+        {!loading && !error && items.length === 0 && (
+          <div className="py-12 text-center">
+            <div className="mb-3 text-5xl">💰</div>
+            <div className="text-lg text-neutral-500 dark:text-neutral-400">
+              선택한 기간에 내역이 없어요.
+            </div>
+          </div>
+        )}
+
+        {!loading && !error && items.map(item => (
+          <CommissionRow key={item.commission_id} item={item} />
+        ))}
+      </div>
+    </>
+  )
+}
+
+export default function DividendHistoryPage() {
+  return (
+    <L3Guard embedded title="배당 내역">
+      <HistoryContent />
+    </L3Guard>
+  )
+}
