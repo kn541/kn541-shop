@@ -2,6 +2,9 @@
  * KN541 쇼핑몰 네비게이션 데이터
  * - 헤더 카테고리 드롭다운: API에서 동적 로드 (실패 시 더미 폴백)
  * - API 클라이언트: src/lib/api/categories.ts
+ *
+ * [정리] getNavigation / getNavMegaMenu 제거 (ciseco 데모 잔재 — 참조 0건)
+ *   Header2.tsx가 유일 참조였으나 Header2.tsx도 미렌더링 상태 확인 후 함께 제거.
  */
 
 import { getRootCategories } from '@/lib/api/categories'
@@ -16,42 +19,6 @@ const DUMMY_CATEGORIES = [
 ]
 
 const DEFAULT_ICON = `<svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 22H15C20 22 22 20 22 15V9C22 4 20 2 15 2H9C4 2 2 4 2 9V15C2 20 4 22 9 22Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`
-
-export async function getNavigation(): Promise<TNavigationItem[]> {
-  return [
-    { id: '1', href: '/', name: 'Home' },
-    { id: '2', href: '/collections/all', name: 'Shop' },
-    { id: '3', href: '/collections/page-style-2/all', name: 'New Arrivals' },
-    { id: '4', href: '/collections/all', name: 'Sale' },
-    {
-      id: '5', href: '/collections/all', name: 'Categories', type: 'mega-menu',
-      children: [
-        { id: '1', href: '/', name: 'Home Page', type: 'dropdown', children: [{ id: '1-1', href: '/', name: 'Home 1' }, { id: '1-2', href: '/home-2', name: 'Home 2' }, { id: '1-3', href: '/coming-soon', name: 'Coming Soon' }] },
-        { id: '2', href: '/#', name: 'Shop Pages', type: 'dropdown', children: [{ id: '2-1', href: '/collections/all', name: 'Collection 1' }, { id: '2-2', href: '/collections/page-style-2/all', name: 'Collection 2' }, { id: '2-3', href: '/products/leather-tote-bag', name: 'Product 1' }, { id: '2-5', href: '/cart', name: 'Cart' }, { id: '2-6', href: '/checkout', name: 'Checkout' }, { id: '2-7', href: '/orders', name: 'Orders history' }] },
-        { id: '3', href: '/#', name: 'Other Pages', type: 'dropdown', children: [{ id: '3-2', href: '/search', name: 'Search' }, { id: '3-4', href: '/account', name: 'Account' }, { id: '3-3', href: '/order-successful', name: 'Order Successful' }, { id: '3-5', href: '/orders', name: 'Orders history' }, { id: '3-6', href: '/orders/4657', name: 'Order detail' }] },
-        { id: '4', href: '/#', name: 'Info Pages', type: 'dropdown', children: [{ id: '4-1', href: '/blog', name: 'Blog' }, { id: '4-3', href: '/about', name: 'About' }, { id: '4-4', href: '/contact', name: 'Contact' }, { id: '4-5', href: '/login', name: 'Login' }, { id: '4-6', href: '/signup', name: 'Signup' }] },
-      ],
-    },
-    {
-      id: '6', href: '/collections/all', name: 'Explore', type: 'dropdown',
-      children: [
-        { id: '3', href: '/collections/all', name: 'Collection pages', type: 'dropdown', children: [{ id: '3-1', href: '/collections/all', name: 'Collection 1' }, { id: '3-2', href: '/collections/page-style-2/all', name: 'Collection 2' }] },
-        { id: '4', href: '/products/leather-tote-bag', name: 'Product Pages', type: 'dropdown', children: [{ id: '4-1', href: '/products/leather-tote-bag', name: 'Product 1' }, { id: '4-2', href: '/products/page-style-2/leather-tote-bag', name: 'Product 2' }] },
-        { id: '5', href: '/cart', name: 'Cart Page' },
-        { id: '6', href: '/checkout', name: 'Checkout' },
-        { id: '7', href: '/orders', name: 'Orders' },
-        { id: '8', href: '/search', name: 'Search Page' },
-        { id: '9', href: '/account', name: 'Account Page' },
-        { id: '10', href: '/blog', name: 'Blog Page', type: 'dropdown', children: [{ id: '10-1', href: '/blog', name: 'Blog Page' }, { id: '10-2', href: '/blog/graduation-dresses-style-guide', name: 'Blog Single' }] },
-      ],
-    },
-  ]
-}
-
-export async function getNavMegaMenu(): Promise<TNavigationItem> {
-  const navigation = await getNavigation()
-  return navigation[4]
-}
 
 /**
  * 헤더 카테고리 드롭다운
