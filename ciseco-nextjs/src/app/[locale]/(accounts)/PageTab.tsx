@@ -17,7 +17,6 @@ type LinkItem = {
     | 'dividends'
     | 'referralTree'
     | 'myshop'
-    | 'withdraw'
     | 'addresses'
     | 'upgradePaid'
   link: string
@@ -36,7 +35,6 @@ const links: LinkItem[] = [
   { nameKey: 'dividends', link: '/dividends', paidOnly: true },
   { nameKey: 'referralTree', link: '/tree', paidOnly: true },
   { nameKey: 'myshop', link: '/myshop', paidOnly: true },
-  { nameKey: 'withdraw', link: '/withdraw', paidOnly: true },
   { nameKey: 'addresses', link: '/addresses' },
   // generalOnly: 002(일반회원)에게만 노출. 목적지: /packages (유료전환 구매 페이지)
   { nameKey: 'upgradePaid', link: '/packages', generalOnly: true },
@@ -64,7 +62,6 @@ const PageTab = ({ variant = 'tabs' }: PageTabProps) => {
     if (item.link === '/orders' && pathname.includes('/orders/')) isActive = true
     if (item.link === '/myshop' && pathname.startsWith('/myshop')) isActive = true
     if (item.link === '/dividends' && pathname.startsWith('/dividends')) isActive = true
-    if (item.link === '/withdraw' && pathname.startsWith('/withdraw')) isActive = true
     if (item.link === '/packages' && pathname.startsWith('/packages')) isActive = true
     return isActive
   }

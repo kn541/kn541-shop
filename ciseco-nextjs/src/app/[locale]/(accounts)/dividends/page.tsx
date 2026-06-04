@@ -139,7 +139,7 @@ function DashboardContent() {
 
       {!loading && !error && (
         <>
-          {/* 출금 가능 잔액 */}
+          {/* 배당 포인트 잔액 (BE에서 포인트 기준 재정의 예정) */}
           <div className="rounded-2xl border border-neutral-200 bg-white py-8 text-center dark:border-neutral-700 dark:bg-neutral-900">
             <div className="mb-2 text-sm text-neutral-500 dark:text-neutral-400">
               💰 출금 가능 잔액
@@ -147,12 +147,7 @@ function DashboardContent() {
             <div className="mb-1 text-4xl font-black text-violet-600 sm:text-5xl">
               {balance.toLocaleString('ko-KR')}
             </div>
-            <div className="mb-6 text-xl font-semibold text-violet-600">원</div>
-            <div className="px-4">
-              <Link href="/withdraw/new" className="block w-full">
-                <BigButton fullWidth>출금 신청하기</BigButton>
-              </Link>
-            </div>
+            <div className="text-xl font-semibold text-violet-600">원</div>
           </div>
 
           {/* 이번 달 배당 */}
@@ -246,7 +241,7 @@ export default function DividendsPage() {
       lockBenefits={[
         '541 배당 실시간 확인',
         '동사가치 · 아지트 배당 내역',
-        '출금 신청 및 조직도 조회',
+        '조직도 조회',
       ]}
     >
       <DashboardContent />
