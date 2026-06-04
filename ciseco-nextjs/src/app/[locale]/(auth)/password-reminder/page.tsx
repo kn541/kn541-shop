@@ -1,4 +1,5 @@
 'use client'
+// fix: i18n — 하드코딩 한국어 전체 t() 치환 (PasswordReminder 섹션)
 
 import { PasswordChangePanel } from '@/components/auth/PasswordChangePanel'
 import {
@@ -8,6 +9,7 @@ import {
 } from '@/lib/auth/passwordSession'
 import { mypageFetch } from '@/lib/mypage/api'
 import { useRouter } from '@/i18n/navigation'
+import { useTranslations } from 'next-intl'
 import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import { toast } from 'react-hot-toast'
@@ -16,6 +18,7 @@ const LOGO_URL = 'https://ghtkropmnrelkxivzpim.supabase.co/storage/v1/object/pub
 
 export default function PasswordReminderPage() {
   const router = useRouter()
+  const t = useTranslations('PasswordReminder')
   const [days, setDays] = useState(0)
   const [showForm, setShowForm] = useState(false)
   const [skipping, setSkipping] = useState(false)
@@ -38,10 +41,10 @@ export default function PasswordReminderPage() {
     try {
       await mypageFetch<{ message?: string }>('/auth/password-change-skip', { method: 'POST' })
       clearPasswordReminderPending()
-      toast.success('30일 후에 다시 안내합니다.')
+      toast.success(t('skipSuccessToast'))
       router.replace('/')
     } catch {
-      toast.error('처리에 실패했습니다. 다시 시도해주세요.')
+      toast.error(t('skipErrorToast'))
     } finally {
       setSkipping(false)
     }
@@ -61,13 +64,13 @@ export default function PasswordReminderPage() {
           {!showForm ? (
             <>
               <h1 className="text-center text-xl font-bold text-neutral-900 dark:text-white">
-                비밀번호 변경 권고
+                {t('title')}
               </h1>
               <p className="mt-4 text-center text-sm text-neutral-700 dark:text-neutral-300">
-                비밀번호를 변경한 지 <strong>{days || 90}</strong>일이 지났습니다.
+                {t('body', { days: days || 90 })}
               </p>
               <p className="mt-2 text-center text-sm text-neutral-500 dark:text-neutral-400">
-                보안을 위해 비밀번호를 변경해주세요.
+                {t('hint')}
               </p>
               <div className="mt-8 flex flex-col gap-3">
                 <button
@@ -75,7 +78,7 @@ export default function PasswordReminderPage() {
                   onClick={() => setShowForm(true)}
                   className="w-full rounded-xl bg-neutral-900 py-3 text-sm font-semibold text-white hover:bg-neutral-700 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100"
                 >
-                  비밀번호 변경
+                  {t('changeBtn')}
                 </button>
                 <button
                   type="button"
@@ -83,14 +86,14 @@ export default function PasswordReminderPage() {
                   onClick={() => void handleSkip()}
                   className="w-full rounded-xl border border-neutral-200 py-3 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-800"
                 >
-                  {skipping ? '처리 중…' : '다음에 변경'}
+                  {skipping ? t('skipping') : t('skipBtn')}
                 </button>
               </div>
             </>
           ) : (
             <>
               <h1 className="text-center text-lg font-bold text-neutral-900 dark:text-white">
-                새 비밀번호 설정
+                {t('formTitle')}
               </h1>
               <div className="mt-6">
                 <PasswordChangePanel
@@ -106,7 +109,7 @@ export default function PasswordReminderPage() {
                 className="mt-4 w-full text-center text-xs text-neutral-500 underline"
                 onClick={() => setShowForm(false)}
               >
-                돌아가기
+                {t('backBtn')}
               </button>
             </>
           )}
