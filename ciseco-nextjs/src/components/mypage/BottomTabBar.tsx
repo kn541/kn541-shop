@@ -3,9 +3,11 @@ import Link from 'next/link'
 import { useLocale } from 'next-intl'
 import { usePathname } from 'next/navigation'
 
-/** (accounts) 그룹 경로 — 하단 '마이' 탭 활성 구간 */
+/** (accounts) 그룹 경로 — 하단 '마이' 탭 활성 구간
+ * packages 추가: upgradePaid 탭이 /packages로 이동하므로 활성 범위에 포함
+ */
 const MYPAGE_SECTION_RE =
-  /^\/(account|orders|points|coupons|commission|dividends|tree|myshop|withdraw|addresses|account-wishlists|account-billing|upgrade-paid)(\/|$)/
+  /^\/(account|orders|points|coupons|commission|dividends|tree|myshop|withdraw|addresses|account-wishlists|account-billing|upgrade-paid|packages)(\/|$)/
 
 const TABS = [
   { icon: '🏠', label: '홈', hrefSuffix: '' },
