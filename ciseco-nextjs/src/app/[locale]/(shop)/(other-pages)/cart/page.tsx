@@ -2,6 +2,7 @@
 // KN541 장바구니 페이지
 // fix: 폐쇄몰 — 비로그인 시 로그인 페이지로 이동
 // fix: locale 동적화, NcInputNumber key 추가
+// fix: i18n — 하드코딩 문자열 전체 t() 치환 (Cart 섹션)
 
 import { ConfirmDeleteDialog } from '@/components/common/ConfirmDeleteDialog'
 import NcInputNumber from '@/components/NcInputNumber'
@@ -65,8 +66,8 @@ export default function CartPage() {
   const hasSelectedSoldOut = [...selectedIds].some(id => soldOutIds.has(id))
 
   const handleCheckout = () => {
-    if (selectedCount === 0) { toast.error('상품을 선택해 주세요.'); return }
-    if (hasSelectedSoldOut) { toast.error('품절된 상품이 포함되어 있습니다. 선택을 해제해 주세요.'); return }
+    if (selectedCount === 0) { toast.error(t('checkoutNoSelection')); return }
+    if (hasSelectedSoldOut) { toast.error(t('checkoutHasSoldOut')); return }
     router.push(`/${locale}/checkout`)
   }
 
@@ -74,9 +75,9 @@ export default function CartPage() {
     return (
       <div className="container py-20 text-center">
         <ShoppingBagIcon className="mx-auto mb-6 h-20 w-20 text-neutral-300" />
-        <h2 className="text-2xl font-semibold text-neutral-700 dark:text-neutral-300">장바구니가 비어 있습니다</h2>
-        <p className="mt-3 text-neutral-500">마음에 드는 상품을 담아보세요.</p>
-        <ButtonPrimary href={`/${locale}/products`} className="mt-8">쇼핑 계속하기</ButtonPrimary>
+        <h2 className="text-2xl font-semibold text-neutral-700 dark:text-neutral-300">{t('empty')}</h2>
+        <p className="mt-3 text-neutral-500">{t('emptyHint')}</p>
+        <ButtonPrimary href={`/${locale}/products`} className="mt-8">{t('continueShopping')}</ButtonPrimary>
       </div>
     )
   }
@@ -95,7 +96,7 @@ export default function CartPage() {
         {soldOutIds.size > 0 && (
           <div className="mb-4 flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300">
             <ExclamationCircleIcon className="h-4 w-4 shrink-0" />
-            <span>품절된 상품 {soldOutIds.size}개가 있습니다. 주문 전 삭제하거나 선택 해제해 주세요.</span>
+            <span>{t('soldOutWarning', { count: soldOutIds.size })}</span>
           </div>
         )}
 
@@ -159,7 +160,7 @@ export default function CartPage() {
                       )}
                       {isSoldOut && (
                         <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/50">
-                          <span className="text-xs font-bold text-white">품절</span>
+                          <span className="text-xs font-bold text-white">{t('soldOutBadge')}</span>
                         </div>
                       )}
                     </div>
@@ -173,15 +174,15 @@ export default function CartPage() {
                           {item.option && <p className="mt-1 text-xs text-neutral-500">{item.option}</p>}
                           {ev?.event_name && (
                             <span className="mt-1 inline-block rounded bg-red-50 px-2 py-0.5 text-[10px] font-medium text-red-600">
-                              이벤트: {ev.event_name}
+                              {t('eventLabel', { name: ev.event_name })}
                             </span>
                           )}
                           {isSoldOut ? (
-                            <p className="mt-1 text-xs font-medium text-red-500">품절</p>
+                            <p className="mt-1 text-xs font-medium text-red-500">{t('soldOutBadge')}</p>
                           ) : (
                             <p className="mt-1 text-xs text-neutral-400">
-                              배송비: {itemShipping === 0
-                                ? <span className="font-medium text-green-600">무료</span>
+                              {t('shippingFeeLabel')}: {itemShipping === 0
+                                ? <span className="font-medium text-green-600">{t('shippingFree')}</span>
                                 : `${itemShipping.toLocaleString('ko-KR')}원`
                               }
                             </p>
@@ -194,7 +195,7 @@ export default function CartPage() {
                             setPendingDelete(p)
                           }}
                           className="ml-2 shrink-0 rounded-full p-1 text-neutral-400 hover:bg-neutral-100 hover:text-red-500 dark:hover:bg-neutral-800"
-                          aria-label="삭제"
+                          aria-label={t('removeAriaLabel')}
                         >
                           <TrashIcon className="h-4 w-4" />
                         </button>
@@ -203,7 +204,7 @@ export default function CartPage() {
                       <div className="mt-auto flex items-center justify-between pt-4">
                         {/* ★ key={item.id}로 수량 컴포넌트 재마운트 보장 */}
                         {isSoldOut ? (
-                          <span className="rounded-full border border-red-200 px-3 py-1.5 text-xs text-red-400">품절</span>
+                          <span className="rounded-full border border-red-200 px-3 py-1.5 text-xs text-red-400">{t('soldOutBadge')}</span>
                         ) : (
                           <NcInputNumber key={item.id} defaultValue={qty} min={1} max={maxQty}
                             onChange={val => updateQty(item.id, val)} />
@@ -219,7 +220,7 @@ export default function CartPage() {
                               {lineGross.toLocaleString('ko-KR')}원
                             </p>
                           )}
-                          <p className="text-xs text-neutral-400">단가 {price.toLocaleString('ko-KR')}원</p>
+                          <p className="text-xs text-neutral-400">{t('unitPrice', { price: price.toLocaleString('ko-KR') })}</p>
                         </div>
                       </div>
                     </div>
@@ -231,7 +232,7 @@ export default function CartPage() {
             <div className="mt-6">
               <Link href={`/${locale}/products`}
                 className="inline-flex items-center gap-2 text-sm font-medium text-primary-600 hover:text-primary-500">
-                <span>←</span><span>쇼핑 계속하기</span>
+                <span>←</span><span>{t('continueShopping')}</span>
               </Link>
             </div>
           </div>
@@ -241,18 +242,18 @@ export default function CartPage() {
           {/* 주문 요약 */}
           <div className="w-full lg:w-80 xl:w-96">
             <div className="sticky top-8 rounded-3xl border border-neutral-200 bg-neutral-50 p-6 dark:border-neutral-700 dark:bg-neutral-800">
-              <h3 className="mb-1 text-lg font-bold text-neutral-900 dark:text-neutral-100">주문 요약</h3>
-              <p className="mb-5 text-xs text-neutral-500">선택 상품 {selectedCount}개 기준</p>
+              <h3 className="mb-1 text-lg font-bold text-neutral-900 dark:text-neutral-100">{t('orderSummary')}</h3>
+              <p className="mb-5 text-xs text-neutral-500">{t('selectedBasisCount', { count: selectedCount })}</p>
 
               {selectedCount === 0 ? (
-                <div className="py-6 text-center text-sm text-neutral-400">상품을 선택해 주세요</div>
+                <div className="py-6 text-center text-sm text-neutral-400">{t('checkoutNoSelectionBtn')}</div>
               ) : (
                 <div className="space-y-3 text-sm">
                   {items.filter(i => selectedIds.has(i.id)).map(item => (
                     <div key={item.id} className="flex justify-between text-neutral-600 dark:text-neutral-400">
                       <span className="line-clamp-1 max-w-[60%]">
                         {item.name} ×{Number(item.quantity) || 1}
-                        {soldOutIds.has(item.id) && <span className="ml-1 text-red-400">(품절)</span>}
+                        {soldOutIds.has(item.id) && <span className="ml-1 text-red-400">({t('soldOutBadge')})</span>}
                       </span>
                       <span>{((Number(item.price)||0)*(Number(item.quantity)||1)).toLocaleString('ko-KR')}원</span>
                     </div>
@@ -264,17 +265,17 @@ export default function CartPage() {
 
               <div className="space-y-2.5 text-sm text-neutral-600 dark:text-neutral-400">
                 <div className="flex justify-between">
-                  <span>상품금액</span><span>{selectedPrice.toLocaleString('ko-KR')}원</span>
+                  <span>{t('productAmount')}</span><span>{selectedPrice.toLocaleString('ko-KR')}원</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>배송비</span>
+                  <span>{t('shippingFeeLabel')}</span>
                   <span className={selectedShipping === 0 ? 'font-medium text-green-600' : ''}>
-                    {selectedShipping === 0 ? '무료' : `${selectedShipping.toLocaleString('ko-KR')}원`}
+                    {selectedShipping === 0 ? t('shippingFree') : `${selectedShipping.toLocaleString('ko-KR')}원`}
                   </span>
                 </div>
                 {eventDiscountTotal > 0 && (
                   <div className="flex justify-between text-red-600">
-                    <span>이벤트 할인</span>
+                    <span>{t('eventDiscount')}</span>
                     <span>-{eventDiscountTotal.toLocaleString('ko-KR')}원</span>
                   </div>
                 )}
@@ -283,7 +284,7 @@ export default function CartPage() {
               <div className="my-4 border-t border-neutral-200 dark:border-neutral-700" />
 
               <div className="flex items-center justify-between">
-                <span className="font-bold text-neutral-900 dark:text-neutral-100">총 결제금액</span>
+                <span className="font-bold text-neutral-900 dark:text-neutral-100">{t('totalPayment')}</span>
                 <span className="text-xl font-bold text-primary-600">
                   {payableTotal.toLocaleString('ko-KR')}원
                 </span>
@@ -295,19 +296,19 @@ export default function CartPage() {
                 onClick={handleCheckout}
               >
                 {hasSelectedSoldOut
-                  ? '품절 상품 포함 (선택 해제 필요)'
+                  ? t('checkoutSoldOutBtn')
                   : selectedCount > 0
-                  ? `선택 ${selectedCount}개 주문하기`
-                  : '상품을 선택해 주세요'
+                  ? t('checkoutOrderBtn', { count: selectedCount })
+                  : t('checkoutNoSelectionBtn')
                 }
               </ButtonPrimary>
 
               <div className="mt-4 rounded-2xl bg-white p-4 dark:bg-neutral-900">
-                <p className="mb-2 text-xs font-semibold text-neutral-700 dark:text-neutral-300">유의사항</p>
+                <p className="mb-2 text-xs font-semibold text-neutral-700 dark:text-neutral-300">{t('precautions')}</p>
                 <ul className="space-y-1 text-xs text-neutral-500">
-                  <li>• 무통장 입금: 3일 이내</li>
-                  <li>• 배송: 결제 확인 후 2~3일</li>
-                  <li>• 교환/반품: 수령 7일 이내</li>
+                  <li>• {t('noteDirectDeposit')}</li>
+                  <li>• {t('noteDelivery')}</li>
+                  <li>• {t('noteExchangeReturn')}</li>
                 </ul>
               </div>
             </div>
