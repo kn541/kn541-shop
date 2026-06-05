@@ -2,6 +2,7 @@
 // KN541 결제 페이지 — 토스페이먼츠 API 개별 연동
 // feat: "회원정보와 동일" 체크박스 — /auth/me에서 이름·전화번호·이메일 자동 채움
 // fix: 간편결제(EASY_PAY) → 토스페이(pay.toss.im) 연동으로 전환 (토스페이먼츠와 별개 서비스)
+// fix: 가상계좌(VIRTUAL_ACCOUNT) virtualAccount.cashReceipt.type 필수 파라미터 추가
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
@@ -339,7 +340,17 @@ export default function CheckoutPage() {
       if (payMethod === 'CARD') {
         await paymentRef.current.requestPayment({ method: 'CARD', ...baseParams })
       } else if (payMethod === 'VIRTUAL_ACCOUNT') {
-        await paymentRef.current.requestPayment({ method: 'VIRTUAL_ACCOUNT', ...baseParams })
+        // 토스 SDK v2: 가상계좌는 virtualAccount.cashReceipt.type이 필수 파라미터
+        // 없으면 Toss 결제창 내부에서 검증 실패 → failUrl로 리다이렉트됨
+        // type: '소득공제' | '지출증빙' | '미발행'
+        await paymentRef.current.requestPayment({
+          method: 'VIRTUAL_ACCOUNT',
+          ...baseParams,
+          virtualAccount: {
+            cashReceipt: { type: '미발행' },  // 기본값: 미발행 (추후 UI 선택으로 개선 예정)
+            useEscrow: false,
+          },
+        })
       } else {
         await paymentRef.current.requestPayment({ method: 'TRANSFER', ...baseParams })
       }
