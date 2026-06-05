@@ -384,7 +384,7 @@ export async function getProducts(params?: {
       page,
       keyword: params?.q,
       category_id,
-      include_total: page === 1,
+      include_total: false,   // QA: 매 로드 전체 카운트(5만건 스캔) 생략 → has_next 기반 페이징
       sort_by,
       sort_order,
     })
