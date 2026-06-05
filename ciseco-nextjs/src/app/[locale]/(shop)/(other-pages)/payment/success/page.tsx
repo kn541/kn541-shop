@@ -8,6 +8,7 @@ import { useSearchParams } from 'next/navigation'
 import { useRouter } from '@/i18n/navigation'
 import { CheckCircleIcon } from '@heroicons/react/24/outline'
 import { useCart } from '@/lib/cart-context'
+import { useTranslations } from 'next-intl'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
 
@@ -21,7 +22,8 @@ function Spinner() {
 }
 
 function SuccessContent() {
-  const router       = useRouter()
+  const t        = useTranslations('Payment')
+  const router   = useRouter()
   const searchParams = useSearchParams()
   const { clearCart } = useCart()
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
@@ -84,7 +86,7 @@ function SuccessContent() {
     return (
       <div className="container flex min-h-[60vh] flex-col items-center justify-center gap-4 py-20">
         <Spinner />
-        <p className="text-sm text-neutral-600">결제를 승인하고 있습니다...</p>
+        <p className="text-sm text-neutral-600">{t('confirming')}</p>
       </div>
     )
   }
@@ -93,11 +95,11 @@ function SuccessContent() {
     return (
       <div className="container flex min-h-[60vh] flex-col items-center justify-center gap-4 py-20 text-center">
         <div className="text-5xl">⚠️</div>
-        <h2 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">결제 승인 실패</h2>
+        <h2 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">{t('confirmFailTitle')}</h2>
         <p className="max-w-sm text-sm text-neutral-500">{errorMsg}</p>
         <button onClick={() => router.push('/checkout')}
           className="mt-4 rounded-xl bg-primary-600 px-6 py-3 text-sm font-medium text-white transition hover:bg-primary-700">
-          다시 시도하기
+          {t('retry')}
         </button>
       </div>
     )
@@ -106,8 +108,8 @@ function SuccessContent() {
   return (
     <div className="container flex min-h-[60vh] flex-col items-center justify-center gap-4 py-20 text-center">
       <CheckCircleIcon className="h-16 w-16 text-green-500" />
-      <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">결제가 완료됐습니다!</h2>
-      <p className="text-sm text-neutral-500">주문 완료 페이지로 이동합니다...</p>
+      <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">{t('successTitle')}</h2>
+      <p className="text-sm text-neutral-500">{t('redirecting')}</p>
     </div>
   )
 }

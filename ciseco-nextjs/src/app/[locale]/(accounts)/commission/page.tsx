@@ -8,6 +8,7 @@ import { useRouter } from '@/i18n/navigation'
 import { toast } from 'react-hot-toast'
 import L3Guard from '@/components/mypage/L3Guard'
 import { mypageFetch, MypageApiError } from '@/lib/mypage/api'
+import { useTranslations } from 'next-intl'
 
 interface CommissionItem {
   commission_id: string
@@ -57,6 +58,7 @@ function formatDate(iso: string) {
 }
 
 function CommissionContent() {
+  const t      = useTranslations('Commission')
   const router = useRouter()
   const months = useMemo(() => monthOptions(14), [])
   const [month, setMonth] = useState(() => months[0] ?? '')
@@ -81,13 +83,13 @@ function CommissionContent() {
         router.replace('/login')
         return
       }
-      toast.error('수당 내역을 불러오지 못했습니다.')
+      toast.error(t('loadError'))
       setRows([])
       setMonthTotal(0)
     } finally {
       setLoading(false)
     }
-  }, [month, router])
+  }, [month, router, t])
 
   useEffect(() => {
     void load()
@@ -104,9 +106,9 @@ function CommissionContent() {
   return (
     <div className="flex flex-col gap-y-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <h1 className="text-2xl font-semibold sm:text-3xl">수당 현황</h1>
+        <h1 className="text-2xl font-semibold sm:text-3xl">{t('title')}</h1>
         <label className="flex flex-col gap-1 text-sm">
-          <span className="text-neutral-500">조회 월</span>
+          <span className="text-neutral-500">{t('filterMonth')}</span>
           <select
             value={month}
             onChange={e => setMonth(e.target.value)}
@@ -116,7 +118,7 @@ function CommissionContent() {
               const [y, mo] = m.split('-')
               return (
                 <option key={m} value={m}>
-                  {y}년 {Number(mo)}월
+                  {t('monthLabel', { year: y, month: Number(mo) })}
                 </option>
               )
             })}
@@ -126,13 +128,13 @@ function CommissionContent() {
 
       <div className="grid grid-cols-2 gap-4">
         <div className="rounded-2xl border border-neutral-200 p-5 dark:border-neutral-700">
-          <p className="text-xs text-neutral-500">해당 월 합계</p>
+          <p className="text-xs text-neutral-500">{t('monthTotal')}</p>
           <p className="mt-1 text-2xl font-bold">
             {loading ? '…' : monthTotal.toLocaleString('ko-KR')}원
           </p>
         </div>
         <div className="rounded-2xl border border-neutral-200 p-5 dark:border-neutral-700">
-          <p className="text-xs text-neutral-500">건수</p>
+          <p className="text-xs text-neutral-500">{t('count')}</p>
           <p className="mt-1 text-2xl font-bold">{loading ? '…' : rows.length}건</p>
         </div>
       </div>
@@ -142,7 +144,7 @@ function CommissionContent() {
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary-500 border-t-transparent" />
         </div>
       ) : rows.length === 0 ? (
-        <div className="py-12 text-center text-sm text-neutral-500">해당 월 수당 내역이 없습니다.</div>
+        <div className="py-12 text-center text-sm text-neutral-500">{t('empty')}</div>
       ) : (
         <div className="space-y-3">
           {rows.map((item, idx) => {
@@ -154,7 +156,7 @@ function CommissionContent() {
                 className="flex items-center justify-between rounded-2xl border border-neutral-200 p-4 dark:border-neutral-700"
               >
                 <div>
-                  <p className="text-sm font-medium">{item.commission_type_label || item.commission_type || '수당'}</p>
+                  <p className="text-sm font-medium">{item.commission_type_label || item.commission_type || t('defaultType')}</p>
                   {item.created_at && (
                     <p className="text-xs text-neutral-400">{formatDate(item.created_at)}</p>
                   )}
@@ -179,8 +181,9 @@ function CommissionContent() {
 }
 
 export default function CommissionPage() {
+  const t = useTranslations('Commission')
   return (
-    <L3Guard embedded title="수당 현황" lockBenefits={['월별 수당 내역 조회', '수당 유형·상태별 확인']}>
+    <L3Guard embedded title={t('title')} lockBenefits={[t('lockBenefit1'), t('lockBenefit2')]}>
       <CommissionContent />
     </L3Guard>
   )

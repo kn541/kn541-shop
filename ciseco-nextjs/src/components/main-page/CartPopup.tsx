@@ -17,6 +17,7 @@ type Props = {
 export function CartPopup({ payload, onClose }: Props) {
   const { addItem } = useCart()
   const t = useTranslations('Cart')
+  const tCommon = useTranslations('Common')
   const [qty, setQty] = useState(1)
 
   useEffect(() => {
@@ -34,7 +35,7 @@ export function CartPopup({ payload, onClose }: Props) {
   const inc = () => setQty((q) => Math.min(maxByStock, q + 1))
 
   const shippingLabel =
-    payload.shippingFee > 0 ? formatPrice(payload.shippingFee) : '무료'
+    payload.shippingFee > 0 ? formatPrice(payload.shippingFee) : t('shippingFree')
 
   const addToCart = () => {
     if (!payload.productId) {
@@ -42,7 +43,7 @@ export function CartPopup({ payload, onClose }: Props) {
       return
     }
     if (payload.stockQty <= 0) {
-      toast.error('품절된 상품입니다.')
+      toast.error(t('soldOutToast'))
       return
     }
     addItem({
@@ -85,9 +86,9 @@ export function CartPopup({ payload, onClose }: Props) {
       }}
     >
       <div className="cart-popup-panel">
-        <button type="button" className="cart-popup-close" aria-label="닫기" onClick={onClose} />
+        <button type="button" className="cart-popup-close" aria-label={t('closeAria')} onClick={onClose} />
         <div className="cart-popup-handle" aria-hidden />
-        <h2 id="cart-popup-title">상품선택</h2>
+        <h2 id="cart-popup-title">{t('popupTitle')}</h2>
         <div className="cart-popup-product">
           <Image
             src={payload.imageUrl}
@@ -108,28 +109,28 @@ export function CartPopup({ payload, onClose }: Props) {
             <del>{formatPrice(payload.originalPrice)}</del>
           )}
           {payload.discountRate > 0 && <span>{payload.discountRate}%</span>}
-          <div className="qty-control" aria-label="수량 선택">
-            <button type="button" className="qty-minus" aria-label="수량 감소" onClick={dec} />
+          <div className="qty-control" aria-label={t('qtyControlAria')}>
+            <button type="button" className="qty-minus" aria-label={t('qtyDecAria')} onClick={dec} />
             <output>{qty}</output>
-            <button type="button" className="qty-plus" aria-label="수량 증가" onClick={inc} />
+            <button type="button" className="qty-plus" aria-label={t('qtyIncAria')} onClick={inc} />
           </div>
         </div>
         <dl className="cart-popup-info">
           <div>
-            <dt>주문한도</dt>
-            <dd>최대 {maxOrder}개</dd>
+            <dt>{t('maxOrderLabel')}</dt>
+            <dd>{t('maxOrderValue', { count: maxOrder })}</dd>
           </div>
           <div>
-            <dt>배송방법</dt>
-            <dd>택배발송</dd>
+            <dt>{t('deliveryMethod')}</dt>
+            <dd>{t('deliveryParcel')}</dd>
           </div>
           <div>
-            <dt>배송비</dt>
+            <dt>{t('shippingFeeLabel')}</dt>
             <dd>{shippingLabel}</dd>
           </div>
         </dl>
         <button type="button" className="cart-popup-submit" onClick={addToCart}>
-          장바구니 담기
+          {tCommon('addToCart')}
         </button>
       </div>
     </div>
