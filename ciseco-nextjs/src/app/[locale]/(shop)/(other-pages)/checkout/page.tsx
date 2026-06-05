@@ -312,7 +312,9 @@ export default function CheckoutPage() {
       }
 
       if (payMethod === 'EASY_PAY') {
-        await paymentRef.current.requestPayment({ method: 'EASY_PAY', ...baseParams })
+        // 토스 SDK v2: 간편결제(카카오/토스/네이버페이)는 method 'CARD'로 호출한다.
+        // 'EASY_PAY'는 requestPayment의 유효한 method enum이 아니라서 오류가 난다.
+        await paymentRef.current.requestPayment({ method: 'CARD', ...baseParams })
       } else if (payMethod === 'CARD') {
         await paymentRef.current.requestPayment({ method: 'CARD', ...baseParams })
       } else if (payMethod === 'VIRTUAL_ACCOUNT') {
