@@ -18,7 +18,8 @@
     "outOfStock": "售罄",
     "sale": "特卖",
     "new": "新品",
-    "continue": "继续"
+    "continue": "继续",
+    "searchPlaceholder": "搜索商品"
   },
   "Nav": {
     "home": "首页",
@@ -27,7 +28,8 @@
     "categories": "分类",
     "about": "关于我们",
     "contact": "联系我们",
-    "templates": "模板"
+    "templates": "模板",
+    "mainCategoryAria": "主要分类"
   },
   "ProductSort": {
     "newest": "最新上架",
@@ -154,7 +156,17 @@
     "noteExchangeReturn": "换货/退货：收货后 7 天内",
     "checkoutSoldOutBtn": "含售罄商品（请先取消勾选）",
     "checkoutOrderBtn": "结算所选 {count} 件",
-    "checkoutNoSelectionBtn": "请选择商品"
+    "checkoutNoSelectionBtn": "请选择商品",
+    "closeAria": "关闭",
+    "popupTitle": "选择商品",
+    "qtyControlAria": "选择数量",
+    "qtyDecAria": "减少数量",
+    "qtyIncAria": "增加数量",
+    "maxOrderLabel": "订购限制",
+    "maxOrderValue": "最多 {count} 件",
+    "deliveryMethod": "配送方式",
+    "deliveryParcel": "快递配送",
+    "soldOutToast": "该商品已售罄。"
   },
   "Checkout": {
     "title": "结算",
@@ -308,7 +320,10 @@
     "metaSignupTitle": "注册",
     "metaSignupDescription": "注册页面",
     "metaForgotTitle": "忘记密码",
-    "metaForgotDescription": "通过短信验证重置密码"
+    "metaForgotDescription": "通过短信验证重置密码",
+    "loginIdPlaceholder": "会员号·账号·邮箱·手机",
+    "passwordPlaceholder": "密码",
+    "loggingIn": "登录中..."
   },
   "Account": {
     "title": "我的账户",
@@ -365,5 +380,28 @@
     "emailInquiry": "邮件咨询",
     "emailBlurb": "全年\n我们将在客服工作时间内依次回复。",
     "checkBizInfo": "营业执照核实"
+  },
+  "Payment": {
+    "failTitle": "支付失败",
+    "cancelTitle": "支付已取消",
+    "errorCodeLabel": "错误代码：",
+    "retry": "重试",
+    "backToCart": "返回购物车",
+    "confirming": "正在确认支付...",
+    "confirmFailTitle": "支付确认失败",
+    "successTitle": "支付完成！",
+    "redirecting": "正在跳转至订单页面..."
+  },
+  "Commission": {
+    "title": "佣金概览",
+    "loadError": "无法加载佣金记录。",
+    "filterMonth": "筛选月份",
+    "monthLabel": "{year}年{month}月",
+    "monthTotal": "当月合计",
+    "count": "笔数",
+    "empty": "本月暂无佣金记录。",
+    "defaultType": "佣金",
+    "lockBenefit1": "查看月度佣金记录",
+    "lockBenefit2": "按类型和状态查看"
   }
 }

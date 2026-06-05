@@ -18,7 +18,8 @@
     "outOfStock": "품절",
     "sale": "세일",
     "new": "신상",
-    "continue": "계속"
+    "continue": "계속",
+    "searchPlaceholder": "검색어를 입력해 주세요"
   },
   "Nav": {
     "home": "홈",
@@ -27,7 +28,8 @@
     "categories": "카테고리",
     "about": "소개",
     "contact": "문의",
-    "templates": "템플릿"
+    "templates": "템플릿",
+    "mainCategoryAria": "주요 카테고리"
   },
   "ProductSort": {
     "newest": "최신순",
@@ -154,7 +156,17 @@
     "noteExchangeReturn": "교환/반품: 수령 7일 이내",
     "checkoutSoldOutBtn": "품절 상품 포함 (선택 해제 필요)",
     "checkoutOrderBtn": "선택 {count}개 주문하기",
-    "checkoutNoSelectionBtn": "상품을 선택해 주세요"
+    "checkoutNoSelectionBtn": "상품을 선택해 주세요",
+    "closeAria": "닫기",
+    "popupTitle": "상품선택",
+    "qtyControlAria": "수량 선택",
+    "qtyDecAria": "수량 감소",
+    "qtyIncAria": "수량 증가",
+    "maxOrderLabel": "주문한도",
+    "maxOrderValue": "최대 {count}개",
+    "deliveryMethod": "배송방법",
+    "deliveryParcel": "택배발송",
+    "soldOutToast": "품절된 상품입니다."
   },
   "Checkout": {
     "title": "결제",
@@ -308,7 +320,10 @@
     "metaSignupTitle": "회원가입",
     "metaSignupDescription": "회원가입 페이지",
     "metaForgotTitle": "비밀번호 찾기",
-    "metaForgotDescription": "휴대폰 SMS 인증으로 비밀번호를 재설정합니다"
+    "metaForgotDescription": "휴대폰 SMS 인증으로 비밀번호를 재설정합니다",
+    "loginIdPlaceholder": "회원번호(8자리) · 아이디 · 이메일 · 휴대폰",
+    "passwordPlaceholder": "비밀번호",
+    "loggingIn": "로그인 중..."
   },
   "Account": {
     "title": "마이페이지",
@@ -365,5 +380,28 @@
     "emailInquiry": "이메일 문의",
     "emailBlurb": "365일\n고객센터 운영시간에 순차적으로 답변드리겠습니다.",
     "checkBizInfo": "사업자정보 확인"
+  },
+  "Payment": {
+    "failTitle": "결제에 실패했습니다",
+    "cancelTitle": "결제가 취소됐습니다",
+    "errorCodeLabel": "오류 코드: ",
+    "retry": "다시 시도하기",
+    "backToCart": "장바구니로 돌아가기",
+    "confirming": "결제를 승인하고 있습니다...",
+    "confirmFailTitle": "결제 승인 실패",
+    "successTitle": "결제가 완료됐습니다!",
+    "redirecting": "주문 완료 페이지로 이동합니다..."
+  },
+  "Commission": {
+    "title": "수당 현황",
+    "loadError": "수당 내역을 불러오지 못했습니다.",
+    "filterMonth": "조회 월",
+    "monthLabel": "{year}년 {month}월",
+    "monthTotal": "해당 월 합계",
+    "count": "건수",
+    "empty": "해당 월 수당 내역이 없습니다.",
+    "defaultType": "수당",
+    "lockBenefit1": "월별 수당 내역 조회",
+    "lockBenefit2": "수당 유형·상태별 확인"
   }
 }
