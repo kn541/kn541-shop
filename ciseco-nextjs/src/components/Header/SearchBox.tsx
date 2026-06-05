@@ -5,10 +5,13 @@
 import { useRouter } from '@/i18n/navigation'
 import { Search01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
+import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 
 export default function SearchBox() {
   const router = useRouter()
+  const tCommon = useTranslations('Common')
+  const tSearch = useTranslations('Search')
   const [q, setQ] = useState('')
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -28,14 +31,14 @@ export default function SearchBox() {
         type="text"
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        placeholder="검색어를 입력해 주세요"
-        aria-label="상품 검색"
+        placeholder={tCommon('searchPlaceholder')}
+        aria-label={tSearch('ariaLabel')}
         className="flex-1 border-none bg-transparent text-sm text-neutral-700 outline-none ring-0 placeholder:text-neutral-400 focus:ring-0 dark:text-neutral-200 dark:placeholder:text-neutral-500"
         autoComplete="off"
       />
       <button
         type="submit"
-        aria-label="검색"
+        aria-label={tCommon('search')}
         className="ml-2 flex items-center justify-center text-primary-600 hover:text-primary-700 dark:text-primary-400"
       >
         <HugeiconsIcon icon={Search01Icon} size={18} color="currentColor" strokeWidth={1.5} />
