@@ -3,13 +3,13 @@
 // 한국 🇰🇷 / 미국 🇺🇸 / 중국 🇨🇳 국기 클릭 시 레이어 팝오버
 
 import { usePathname, useRouter } from '@/i18n/navigation'
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { useTransition, useState, useRef, useEffect } from 'react'
 
 const LANGS = [
-  { code: 'ko', label: '한국어', flag: '🇰🇷', name: '한국' },
-  { code: 'en', label: 'English', flag: '🇺🇸', name: 'USA' },
-  { code: 'zh', label: '中文',    flag: '🇨🇳', name: '中国' },
+  { code: 'ko', label: '\ud55c\uad6d\uc5b4', flag: '\ud83c\uddf0\ud83c\uddf7', name: '\ud55c\uad6d' },
+  { code: 'en', label: 'English', flag: '\ud83c\uddfa\ud83c\uddf8', name: 'USA' },
+  { code: 'zh', label: '\u4e2d\u6587', flag: '\ud83c\udde8\ud83c\uddf3', name: '\u4e2d\u56fd' },
 ] as const
 
 type LangCode = (typeof LANGS)[number]['code']
@@ -18,6 +18,7 @@ export default function LangSwitcher({ className }: { className?: string }) {
   const locale = useLocale()
   const router = useRouter()
   const pathname = usePathname()
+  const tHeader = useTranslations('Header')
   const [isPending, startTransition] = useTransition()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -49,7 +50,7 @@ export default function LangSwitcher({ className }: { className?: string }) {
         type="button"
         onClick={() => setOpen(v => !v)}
         disabled={isPending}
-        aria-label="언어 선택"
+        aria-label={tHeader('langSelectAria')}
         className="flex items-center gap-1 rounded-full px-2 py-1.5 text-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors select-none"
       >
         <span>{current.flag}</span>
