@@ -1,6 +1,7 @@
 'use client'
 // KN541 결제 페이지 — 토스페이먼츠 API 개별 연동
 // feat: "회원정보와 동일" 체크박스 — /auth/me에서 이름·전화번호·이메일 자동 채움
+// fix: 간편결제(EASY_PAY) → 토스페이(pay.toss.im) 연동으로 전환 (토스페이먼츠와 별개 서비스)
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
@@ -235,7 +236,8 @@ export default function CheckoutPage() {
       if (!address.address1)   { toast.error('배송지 주소를 입력해 주세요.'); return }
     }
 
-    if (!paymentRef.current) { toast.error('결제 로드 중입니다. 잠시 후 다시 시도해 주세요.'); return }
+    // 토스페이(EASY_PAY)는 토스페이먼츠 SDK를 사용하지 않으므로 초기화 체크 제외
+    if (payMethod !== 'EASY_PAY' && !paymentRef.current) { toast.error('결제 로드 중입니다. 잠시 후 다시 시도해 주세요.'); return }
 
     setIsSubmitting(true)
     try {
@@ -292,6 +294,30 @@ export default function CheckoutPage() {
         ? orderableItems[0].name
         : `${orderableItems[0].name} 외 ${orderableItems.length - 1}건`
 
+      const origin = window.location.origin
+
+      // ── 토스페이 (간편결제) ──────────────────────────────────────────────
+      // 토스페이(pay.toss.im)는 토스페이먼츠(api.tosspayments.com)와 별개 서비스.
+      // 백엔드가 pay.toss.im API를 호출해 checkoutPage URL을 받고,
+      // 프론트는 그 URL로 사용자를 리다이렉트한다. SDK 사용 없음.
+      if (payMethod === 'EASY_PAY') {
+        const tosspayRes = await fetch(`${BASE}/payments/tosspay/create`, {
+          method: 'POST', headers,
+          body: JSON.stringify({
+            order_id,
+            amount:         Math.round(total_amount),
+            order_name:     orderName,
+            ret_url:        `${origin}/${locale}/payment/tosspay/success?internal_order_id=${order_id}`,
+            ret_cancel_url: `${origin}/${locale}/payment/tosspay/cancel?internal_order_id=${order_id}`,
+          }),
+        })
+        const tosspayData = await tosspayRes.json()
+        if (!tosspayRes.ok) throw new Error(tosspayData.detail ?? '토스페이 결제 생성에 실패했습니다')
+        window.location.href = tosspayData.data.checkout_page
+        return
+      }
+
+      // ── 토스페이먼츠 (카드 / 가상계좌 / 계좌이체) ───────────────────────
       const prepareRes  = await fetch(`${BASE}/payments/prepare`, {
         method: 'POST', headers,
         body: JSON.stringify({ order_id, amount: Math.round(total_amount), order_name: orderName }),
@@ -299,7 +325,6 @@ export default function CheckoutPage() {
       const prepareData = await prepareRes.json()
       if (!prepareRes.ok) throw new Error(prepareData.detail ?? '결제 사전등록에 실패했습니다')
 
-      const origin = window.location.origin
       const baseParams = {
         orderId:             order_no,
         orderName,
@@ -311,11 +336,7 @@ export default function CheckoutPage() {
         amount: { currency: 'KRW', value: Math.round(total_amount) } as const,
       }
 
-      if (payMethod === 'EASY_PAY') {
-        // 토스 SDK v2: 간편결제(카카오/토스/네이버페이)는 method 'CARD'로 호출한다.
-        // 'EASY_PAY'는 requestPayment의 유효한 method enum이 아니라서 오류가 난다.
-        await paymentRef.current.requestPayment({ method: 'CARD', ...baseParams })
-      } else if (payMethod === 'CARD') {
+      if (payMethod === 'CARD') {
         await paymentRef.current.requestPayment({ method: 'CARD', ...baseParams })
       } else if (payMethod === 'VIRTUAL_ACCOUNT') {
         await paymentRef.current.requestPayment({ method: 'VIRTUAL_ACCOUNT', ...baseParams })
