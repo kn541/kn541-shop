@@ -29,13 +29,15 @@
     "about": "소개",
     "contact": "문의",
     "templates": "템플릿",
-    "mainCategoryAria": "주요 카테고리"
+    "mainCategoryAria": "주요 카테고리",
+    "preorder": "사전예약",
+    "valueUp": "벨류업"
   },
   "ProductSort": {
     "newest": "최신순",
     "sales_count": "판매량순",
     "review_count": "상품평순",
-    "price_asc": "낮은가격순",
+    "price_asc": "낙은가격순",
     "price_desc": "높은가격순"
   },
   "Home": {
@@ -360,11 +362,15 @@
     "wishlistRemoveError": "삭제에 실패했습니다.",
     "wishlistEmpty": "찜하기가 비어 있습니다.",
     "wishlistLoading": "불러오는 중…",
-    "wishlistShopCta": "쇼핑하기"
+    "wishlistShopCta": "쇼핑하기",
+    "myInfo": "내 정보"
   },
   "Search": {
     "ariaLabel": "상품 검색",
-    "searchMobileHelp": "검색하려면 Enter를 누르거나 Esc로 닫을 수 있습니다."
+    "searchMobileHelp": "검색하려면 Enter를 누르거나 Esc로 닫을 수 있습니다.",
+    "popoverTitle": "상품 검색",
+    "popoverPlaceholder": "찾으시는 상품을 검색하세요...",
+    "keyHint": "Enter 키로 검색 · ESC로 닫기"
   },
   "Footer": {
     "menuAria": "푸터 메뉴",
@@ -403,5 +409,11 @@
     "defaultType": "수당",
     "lockBenefit1": "월별 수당 내역 조회",
     "lockBenefit2": "수당 유형·상태별 확인"
+  },
+  "Header": {
+    "loggedOut": "로그아웃되었습니다",
+    "welcomeAria": "{greeting} 환영",
+    "langSelectAria": "언어 선택",
+    "myPage": "마이페이지"
   }
 }
