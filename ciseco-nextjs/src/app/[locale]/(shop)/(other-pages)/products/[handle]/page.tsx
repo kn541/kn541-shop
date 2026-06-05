@@ -152,7 +152,12 @@ export default async function Page({
   const stock = Number(p.stockQty ?? 0)
   const isSoldout = Boolean(p.isSoldout || p.is_soldout)
   const isDiscontinued = Boolean(p.isDiscontinued || p.is_discontinued)
-  const isSoldoutOrUnavailable = isSoldout || isDiscontinued || stock <= 0 ||
+  const sourceType = String(
+    rawProduct?.source_type ?? rawProduct?.sourceType ?? p.source_type ?? p.sourceType ?? ''
+  ).toUpperCase()
+  const stockIsReal = sourceType !== 'KMC'
+  const isSoldoutOrUnavailable = isSoldout || isDiscontinued ||
+    (stockIsReal && stock <= 0) ||
     ['SOLDOUT', 'SOLD_OUT', 'DISCONTINUED', 'INACTIVE'].includes(productStatus.toUpperCase()) ||
     status === '품절' || status === 'Sold Out' || status === '판매종료'
 
@@ -254,7 +259,7 @@ export default async function Page({
               ) : (
                 <>
                   <ProductStatus status={status} />
-                  {stock > 0 && stock <= 10 && (
+                  {stockIsReal && stock > 0 && stock <= 10 && (
                     <span className="text-xs bg-orange-50 text-orange-600 border border-orange-200 rounded px-2 py-0.5">
                       재고 {stock}개
                     </span>
@@ -340,6 +345,7 @@ export default async function Page({
               scType={scType}
               productStatus={productStatus}
               stock={stock}
+              stockIsReal={stockIsReal}
               hasColorOption={hasColorOption}
               hasSizeOption={hasSizeOption}
               kn541Options={kn541Options}

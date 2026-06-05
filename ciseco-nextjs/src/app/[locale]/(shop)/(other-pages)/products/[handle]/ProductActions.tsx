@@ -33,6 +33,7 @@ interface Props {
   scType?: number
   productStatus: string
   stock: number
+  stockIsReal?: boolean
   hasColorOption: boolean
   hasSizeOption: boolean
   kn541Options?: Kn541ProductOption[]
@@ -56,11 +57,12 @@ function validateCartAction(p: {
   comboValue2: string
   listingStatus?: string
   isSoldout?: boolean
+  stockIsReal?: boolean
 }): string | null {
   const {
     productStatus, stock, qty, hasColorOption, hasSizeOption, hasKn541Options, hasComboOptions,
     colorSelected, sizeSelected, kn541OptionSelected, comboValue1, comboValue2,
-    listingStatus, isSoldout,
+    listingStatus, isSoldout, stockIsReal = true,
   } = p
   if (isSoldout) return '현재 구매할 수 없는 상품입니다.'
   const list = (listingStatus || '').trim()
@@ -69,8 +71,9 @@ function validateCartAction(p: {
   if (ps && ['SOLDOUT', 'SOLD_OUT', 'DISCONTINUED', 'INACTIVE', 'WAITING', 'PENDING'].includes(ps))
     return '현재 구매할 수 없는 상품입니다.'
   if (ps && ps !== 'ON_SALE' && ps !== 'ACTIVE') return '현재 구매할 수 없는 상품입니다.'
-  if (stock <= 0) return '품절된 상품입니다.'
-  if (qty > stock) return `최대 ${stock.toLocaleString('ko-KR')}개까지 구매할 수 있습니다.`
+  const useStockQty = hasComboOptions || stockIsReal
+  if (useStockQty && stock <= 0) return '품절된 상품입니다.'
+  if (useStockQty && qty > stock) return `최대 ${stock.toLocaleString('ko-KR')}개까지 구매할 수 있습니다.`
   if (hasComboOptions) {
     if (!comboValue1 || !comboValue2) return '옵션을 선택해 주세요.'
     return null
@@ -85,7 +88,7 @@ export default function ProductActions({
   productId, options, price, productName, productImage,
   shippingFee = 0, freeShippingOver = 0, scType = 1,
   productStatus, stock, hasColorOption, hasSizeOption,
-  kn541Options = [], isOption = false, listingStatus, isSoldout = false,
+  kn541Options = [], isOption = false, listingStatus, isSoldout = false, stockIsReal = true,
 }: Props) {
   const router   = useRouter()
   const pathname = usePathname()
@@ -129,9 +132,9 @@ export default function ProductActions({
   const hasKn541Options = legacyKn541Options.length > 0
   const maxQty = selectedCombo
     ? Math.max(selectedCombo.stock_qty, 0) || 1
-    : stock > 0
+    : stockIsReal && stock > 0
       ? stock
-      : 1
+      : 99
 
   const selectedKn541Option = legacyKn541Options.find(o => o.id === kn541Sel)
   const unitPrice =
@@ -144,14 +147,14 @@ export default function ProductActions({
     hasComboOptions: hasComboMode,
     colorSelected: colorSel, sizeSelected: sizeSel, kn541OptionSelected: kn541Sel,
     comboValue1, comboValue2,
-    listingStatus, isSoldout,
+    listingStatus, isSoldout, stockIsReal,
   }
 
   const blockReason = useMemo(
     () => validateCartAction(validationParams),
     [
       productStatus, stock, qty, hasColorOption, hasSizeOption, hasKn541Options, hasComboMode,
-      colorSel, sizeSel, kn541Sel, comboValue1, comboValue2, listingStatus, isSoldout, selectedCombo,
+      colorSel, sizeSel, kn541Sel, comboValue1, comboValue2, listingStatus, isSoldout, stockIsReal, selectedCombo,
     ],
   )
 
@@ -223,7 +226,7 @@ export default function ProductActions({
 
   const buttonsDisabled = Boolean(blockReason)
   const optionHints = ['옵션을 선택해 주세요.', '색상을 선택해 주세요.', '사이즈를 선택해 주세요.']
-  const hint = stock > 0 && blockReason && !optionHints.includes(blockReason) ? blockReason : null
+  const hint = (stockIsReal ? stock > 0 : true) && blockReason && !optionHints.includes(blockReason) ? blockReason : null
 
   const ctaButtons = (
     <>
@@ -253,14 +256,14 @@ export default function ProductActions({
           selectedValue2={comboValue2}
           onSelectValue1={setComboValue1}
           onSelectValue2={setComboValue2}
-          disabled={isSoldout || stock <= 0}
+          disabled={isSoldout || (stockIsReal && stock <= 0)}
         />
       ) : hasKn541Options ? (
         <ProductKn541Options
           options={legacyKn541Options}
           selectedId={kn541Sel}
           onSelect={setKn541Sel}
-          disabled={isSoldout || stock <= 0}
+          disabled={isSoldout || (stockIsReal && stock <= 0)}
         />
       ) : (
         <>
@@ -283,11 +286,11 @@ export default function ProductActions({
             defaultValue={1}
             min={1}
             max={maxQty}
-            disabled={isSoldout || (selectedCombo ? selectedCombo.stock_qty <= 0 : stock <= 0)}
+            disabled={isSoldout || (selectedCombo ? selectedCombo.stock_qty <= 0 : stockIsReal && stock <= 0)}
             onChange={val => setQty(val)}
           />
         </div>
-        {(selectedCombo ? selectedCombo.stock_qty : stock) > 0 && (
+        {(selectedCombo ? selectedCombo.stock_qty > 0 : stockIsReal && stock > 0) && (
           <span className="text-xs text-neutral-500 dark:text-neutral-400">
             (재고 {(selectedCombo ? selectedCombo.stock_qty : stock).toLocaleString('ko-KR')}개)
           </span>
