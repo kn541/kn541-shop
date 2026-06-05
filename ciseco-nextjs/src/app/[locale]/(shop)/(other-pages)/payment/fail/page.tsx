@@ -2,6 +2,7 @@
 // KN541 결제 실패 페이지
 // fix: 주문취소 API /mypage/orders/{id}/cancel 통일
 // fix: 직접 fetch → mypageFetch (토큰·envelope 일관 처리)
+// fix: Toss SDK v2 failUrl 파라미터 code/message로 수정 (errorCode/errorMessage → code/message)
 
 import { Suspense, useEffect, useRef } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
@@ -25,6 +26,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   INVALID_PASSWORD:                                '비밀번호가 올바르지 않습니다.',
   USER_CANCEL:                                     '결제를 취소했습니다.',
   NOT_SUPPORTED_INSTALLMENT_PLAN_CARD_OR_MERCHANT: '이 카드는 할부 결제를 지원하지 않습니다.',
+  NOT_ALLOWED_METHODS:                             '계약되지 않은 결제수단입니다. 토스페이먼츠 대시보드에서 확인해 주세요.',
 }
 
 const CANCEL_CODES = new Set(['PAY_PROCESS_CANCELED', 'USER_CANCEL'])
@@ -37,8 +39,9 @@ function FailContent() {
   const searchParams = useSearchParams()
   const cancelCalled = useRef(false)
 
-  const errorCode    = searchParams.get('errorCode') ?? ''
-  const errorMessage = searchParams.get('errorMessage') ?? '결제에 실패했습니다.'
+  // Toss SDK v2 failUrl 파라미터: code / message (v1: errorCode / errorMessage)
+  const errorCode    = searchParams.get('code') ?? searchParams.get('errorCode') ?? ''
+  const errorMessage = searchParams.get('message') ?? searchParams.get('errorMessage') ?? '결제에 실패했습니다.'
   const orderId      = searchParams.get('internal_order_id')
 
   const isCanceled     = CANCEL_CODES.has(errorCode)
