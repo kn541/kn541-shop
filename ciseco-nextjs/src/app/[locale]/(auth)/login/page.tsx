@@ -1,6 +1,6 @@
 'use client'
 // KN541 쇼핑몰 — 로그인 페이지
-// 비밀번호: 정책 미충족 → /force-change-password, 90일 경과 → /password-reminder
+// 비밀번호: 정링 미충족 → /force-change-password, 90일 경과 → /password-reminder
 
 import { Suspense, useState, useTransition } from 'react'
 import Image from 'next/image'
@@ -105,7 +105,7 @@ function LoginForm() {
         type="text"
         value={username}
         onChange={e => setUsername(e.target.value)}
-        placeholder="회원번호(8자리) · 아이디 · 이메일 · 휴대폰"
+        placeholder={t('loginIdPlaceholder')}
         autoComplete="username"
         className="w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 px-4 py-3 text-sm text-neutral-900 dark:text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
       />
@@ -113,7 +113,7 @@ function LoginForm() {
         type="password"
         value={password}
         onChange={e => setPassword(e.target.value)}
-        placeholder="비밀번호"
+        placeholder={t('passwordPlaceholder')}
         autoComplete="current-password"
         className="w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 px-4 py-3 text-sm text-neutral-900 dark:text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
       />
@@ -127,7 +127,7 @@ function LoginForm() {
         disabled={isPending}
         className="w-full rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 font-semibold py-3 text-sm hover:bg-neutral-700 dark:hover:bg-neutral-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-1"
       >
-        {isPending ? '로그인 중...' : '로그인'}
+        {isPending ? t('loggingIn') : t('loginBtn')}
       </button>
 
       <div className="mt-0.5 text-center text-xs text-neutral-400 dark:text-neutral-500">
@@ -146,11 +146,13 @@ function LoginForm() {
 }
 
 export default function LoginPage() {
+  const t       = useTranslations('Auth')
+  const tCommon = useTranslations('Common')
+
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-[360px]">
         <div className="flex justify-center mb-8">
-          {/* 하드코딩 <a href="/ko"> 제거 → next-intl Link 사용 */}
           <Link href="/" className="block">
             <Image
               src={LOGO_URL}
@@ -165,17 +167,16 @@ export default function LoginPage() {
         </div>
         <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-sm border border-neutral-100 dark:border-neutral-800 px-8 py-8">
           <h1 className="text-[22px] font-bold text-neutral-900 dark:text-white mb-6 text-center tracking-tight">
-            로그인
+            {t('loginTitle')}
           </h1>
-          <Suspense fallback={<div className="h-40 flex items-center justify-center text-sm text-neutral-400">로딩 중...</div>}>
+          <Suspense fallback={<div className="h-40 flex items-center justify-center text-sm text-neutral-400">{tCommon('loading')}</div>}>
             <LoginForm />
           </Suspense>
         </div>
         <p className="text-center text-sm text-neutral-500 dark:text-neutral-400 mt-6">
-          아직 계정이 없으신가요?{' '}
-          {/* 하드코딩 <a href="/ko/signup"> 제거 → next-intl Link 사용 */}
+          {t('noAccount')}{' '}
           <Link href="/signup" className="font-semibold text-neutral-900 dark:text-white hover:underline">
-            회원가입
+            {t('signupBtn')}
           </Link>
         </p>
       </div>
