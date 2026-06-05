@@ -41,6 +41,8 @@ export type MainHeaderProps = {
 
 export default function MainHeader({ categoryTabs }: MainHeaderProps) {
   const tAccount = useTranslations('Account')
+  const tCommon  = useTranslations('Common')
+  const tNav     = useTranslations('Nav')
   const locale = useLocale()
   const pathname = usePathname()
   const router = useRouter()
@@ -140,13 +142,13 @@ export default function MainHeader({ categoryTabs }: MainHeaderProps) {
               type="search"
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="검색어를 입력해 주세요"
+              placeholder={tCommon('searchPlaceholder')}
               className="min-w-0 flex-1 border-0 bg-transparent py-0 pr-3 pl-[14px] text-[16px] font-normal text-kn541-black outline-none placeholder:text-[#b5b5b5]"
             />
             <button
               type="submit"
               className="grid h-full w-[53px] flex-[0_0_53px] place-items-center border-0 bg-transparent p-0"
-              aria-label="검색"
+              aria-label={tCommon('search')}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={ICON.search} alt="" width={19} height={19} className="size-[19px]" />
@@ -165,7 +167,7 @@ export default function MainHeader({ categoryTabs }: MainHeaderProps) {
             <button
               type="button"
               className="block h-[21px] w-[22px] border-0 bg-transparent p-0"
-              aria-label="장바구니"
+              aria-label={tCommon('cart')}
               onClick={openCartOrLogin}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -249,12 +251,12 @@ export default function MainHeader({ categoryTabs }: MainHeaderProps) {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             className="min-w-0 flex-1 border-0 bg-transparent pr-[30px] text-[14px] text-[#121212] outline-none placeholder:text-[#9b9b9b]"
-            placeholder="검색어를 입력해 주세요"
+            placeholder={tCommon('searchPlaceholder')}
           />
           <button
             type="submit"
             className="absolute right-2 inline-flex size-5 items-center justify-center border-0 bg-transparent p-0"
-            aria-label="검색"
+            aria-label={tCommon('search')}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={ICON.search} alt="" width={18} height={18} className="size-[18px]" />
@@ -263,7 +265,7 @@ export default function MainHeader({ categoryTabs }: MainHeaderProps) {
         <button
           type="button"
           className="btn-cart ml-[15px] border-0 bg-transparent p-0"
-          aria-label="장바구니"
+          aria-label={tCommon('cart')}
           onClick={openCartOrLogin}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -273,7 +275,7 @@ export default function MainHeader({ categoryTabs }: MainHeaderProps) {
 
       {/* 카테고리 네비 */}
       <div className="category-container mx-auto flex w-full max-w-[1280px] items-center justify-between gap-2 px-4 md:px-0">
-        <nav className="category-nav flex min-w-0 max-w-[970px] flex-1 items-center overflow-hidden bg-white" aria-label="주요 카테고리">
+        <nav className="category-nav flex min-w-0 max-w-[970px] flex-1 items-center overflow-hidden bg-white" aria-label={tNav('mainCategoryAria')}>
           <div
             ref={innerRef}
             className="category-nav-inner relative flex h-12 w-full items-center gap-6 overflow-x-auto overflow-y-hidden [scrollbar-width:none] md:gap-6 [&::-webkit-scrollbar]:hidden"
@@ -313,14 +315,14 @@ export default function MainHeader({ categoryTabs }: MainHeaderProps) {
             href="/login"
             className="nav-auth-btn whitespace-nowrap rounded-[5px] bg-white px-2 py-1 text-[16px] font-normal text-kn541-black"
           >
-            로그인
+            {tCommon('login')}
           </Link>
           <div className="nav-line mx-0.5 h-px w-[15px] rotate-90 border border-[#B5B5B5]" aria-hidden />
           <Link
             href="/signup"
             className="nav-auth-btn primary whitespace-nowrap rounded-[5px] bg-white px-2 py-1 text-[16px] font-normal text-kn541-green"
           >
-            회원가입
+            {tCommon('signup')}
           </Link>
         </div>
       </div>
