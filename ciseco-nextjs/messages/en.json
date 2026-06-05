@@ -29,7 +29,9 @@
     "about": "About",
     "contact": "Contact",
     "templates": "Templates",
-    "mainCategoryAria": "Main categories"
+    "mainCategoryAria": "Main categories",
+    "preorder": "Pre-order",
+    "valueUp": "Value-up"
   },
   "ProductSort": {
     "newest": "Latest",
@@ -52,14 +54,14 @@
     "newsSubtitle": "From the Ciseco blog",
     "showAllBlog": "Show all blog articles",
     "metaTitle": "Home",
-    "metaDescription": "KN541 shop — modern e-commerce with Next.js, Tailwind CSS, and TypeScript."
+    "metaDescription": "KN541 shop \u2014 modern e-commerce with Next.js, Tailwind CSS, and TypeScript."
   },
   "MainPage": {
     "metaTitle": "Home | KN541",
-    "metaDescription": "KN541 SHOP — value-driven shopping.",
-    "welcomePromoLine": "May pre-order picks are open — shop smarter.",
+    "metaDescription": "KN541 SHOP \u2014 value-driven shopping.",
+    "welcomePromoLine": "May pre-order picks are open \u2014 shop smarter.",
     "welcomeEyebrow": "WELCOME TO KN541 SHOP",
-    "welcomeTitle": "Welcome to KN541 SHOP — where value comes back as benefits.",
+    "welcomeTitle": "Welcome to KN541 SHOP \u2014 where value comes back as benefits.",
     "tilesAria": "Quick links",
     "tileBest": "Best sellers",
     "tileNew": "New arrivals",
@@ -78,7 +80,7 @@
     "viewAll": "View all",
     "bestEyebrow": "BEST ITEMS",
     "bestTitle": "Bestsellers",
-    "bestDescription": "See what's trending — sample layout.",
+    "bestDescription": "See what's trending \u2014 sample layout.",
     "bestPlaceholderNote": "Images and prices are design placeholders until sort=best is available from the API.",
     "bestLoadMore": "More best products",
     "newEyebrow": "New products",
@@ -152,7 +154,7 @@
     "totalPayment": "Total to pay",
     "precautions": "Notes",
     "noteDirectDeposit": "Bank transfer: within 3 days",
-    "noteDelivery": "Delivery: 2–3 days after payment confirmed",
+    "noteDelivery": "Delivery: 2\u20133 days after payment confirmed",
     "noteExchangeReturn": "Exchange/return: within 7 days of receipt",
     "checkoutSoldOutBtn": "Sold-out items included (deselect first)",
     "checkoutOrderBtn": "Order {count} selected",
@@ -213,7 +215,7 @@
     "vaAccount": "Account number",
     "vaDueDate": "Payment due by",
     "vaAmount": "Amount to deposit",
-    "vaWarning": "※ Your order will be automatically cancelled if not paid by the due date.",
+    "vaWarning": "\u203b Your order will be automatically cancelled if not paid by the due date.",
     "vaLoading": "Loading account information...",
     "itemsSectionTitle": "Items ordered",
     "itemsLoading": "Loading order items...",
@@ -230,15 +232,15 @@
     "payStatusWaiting": "Awaiting deposit",
     "shippingTitle": "Shipping address",
     "deliveryTitle": "Delivery information",
-    "deliveryVAPre": "Ships within 2–3 business days after deposit confirmed",
+    "deliveryVAPre": "Ships within 2\u20133 business days after deposit confirmed",
     "deliveryVAWarn": "Order automatically cancelled if deposit not received by due date",
-    "deliveryNormal": "Ships within 2–3 business days after payment confirmed",
+    "deliveryNormal": "Ships within 2\u20133 business days after payment confirmed",
     "deliveryTrack": "Tracking number sent to your registered contact on dispatch",
     "deliveryPhone": "Delivery inquiry: 070-4436-0928",
     "btnHome": "Go to home",
     "btnOrderDetail": "View order details",
     "btnKeepShopping": "Continue shopping",
-    "footer": "Thank you for shopping with KN541 🙏",
+    "footer": "Thank you for shopping with KN541 \ud83d\ude4f",
     "methodCard": "Credit card",
     "methodVA": "Virtual account",
     "methodTransfer": "Bank transfer",
@@ -251,7 +253,7 @@
     "body": "It has been {days} days since you last changed your password.",
     "hint": "Please update your password to keep your account secure.",
     "changeBtn": "Change password",
-    "skipping": "Processing…",
+    "skipping": "Processing\u2026",
     "skipBtn": "Remind me later",
     "formTitle": "Set new password",
     "backBtn": "Go back",
@@ -275,7 +277,7 @@
     "forgotPasswordLink": "Forgot password",
     "findUsernameTitle": "Find username",
     "findUsernameHint": "Verify the phone number on your account by SMS to see your username.",
-    "findUsernameConfirming": "Verifying…",
+    "findUsernameConfirming": "Verifying\u2026",
     "findUsernameResultLabel": "Your username",
     "findUsernameGoLogin": "Sign in",
     "findUsernameGoPasswordReset": "Reset password",
@@ -286,7 +288,7 @@
     "forgotPasswordPhoneLabel": "Phone number",
     "forgotPasswordPhonePlaceholder": "01012345678",
     "forgotPasswordSendCode": "Send verification code",
-    "forgotPasswordSending": "Sending…",
+    "forgotPasswordSending": "Sending\u2026",
     "forgotPasswordSmsSentToast": "We sent a verification code by SMS.",
     "forgotPasswordCodeLabel": "6-digit code",
     "forgotPasswordCodeHint": "Time remaining: {time}",
@@ -294,7 +296,7 @@
     "forgotPasswordNext": "Next",
     "forgotPasswordPrev": "Back",
     "forgotPasswordSubmit": "Update password",
-    "forgotPasswordSubmitting": "Processing…",
+    "forgotPasswordSubmitting": "Processing\u2026",
     "forgotPasswordSuccessToast": "Your password was updated. Please sign in.",
     "forgotPasswordPhoneInvalid": "Please enter a valid phone number.",
     "forgotPasswordCodeInvalid": "Please enter the 6-digit code.",
@@ -321,7 +323,7 @@
     "metaSignupDescription": "Signup page for the application",
     "metaForgotTitle": "Forgot Password",
     "metaForgotDescription": "Reset your password with SMS verification",
-    "loginIdPlaceholder": "Member No. · ID · Email · Phone",
+    "loginIdPlaceholder": "Member No. \u00b7 ID \u00b7 Email \u00b7 Phone",
     "passwordPlaceholder": "Password",
     "loggingIn": "Signing in..."
   },
@@ -346,7 +348,7 @@
     "upgradePaid": "Upgrade to paid member",
     "changePassword": "Change password",
     "billing": "Billing",
-    "accountHeaderLoading": "Loading your profile…",
+    "accountHeaderLoading": "Loading your profile\u2026",
     "accountHeaderGuest": "Please sign in to continue.",
     "accountLoginPlease": "Please sign in.",
     "defaultDisplayName": "Member",
@@ -359,12 +361,16 @@
     "wishlistRemovedToast": "Removed from favorites.",
     "wishlistRemoveError": "Could not remove the item.",
     "wishlistEmpty": "Your favorites are empty.",
-    "wishlistLoading": "Loading…",
-    "wishlistShopCta": "Shop now"
+    "wishlistLoading": "Loading\u2026",
+    "wishlistShopCta": "Shop now",
+    "myInfo": "My profile"
   },
   "Search": {
     "ariaLabel": "Search for products",
-    "searchMobileHelp": "Press Enter to search or Esc to cancel."
+    "searchMobileHelp": "Press Enter to search or Esc to cancel.",
+    "popoverTitle": "Product search",
+    "popoverPlaceholder": "Search for products...",
+    "keyHint": "Press Enter to search \u00b7 ESC to close"
   },
   "Footer": {
     "menuAria": "Footer menu",
@@ -374,9 +380,9 @@
     "vendor": "Vendor application",
     "vendorBanner": "Vendor inquiry",
     "csTitle": "Customer service",
-    "csHours": "Mon–Fri 10:00–18:00 / Closed Sat, Sun & holidays",
+    "csHours": "Mon\u2013Fri 10:00\u201318:00 / Closed Sat, Sun & holidays",
     "kakaoInquiry": "KakaoTalk",
-    "kakaoBlurb": "Mon–Fri | 10:00–18:00\nClosed Sat, Sun & holidays",
+    "kakaoBlurb": "Mon\u2013Fri | 10:00\u201318:00\nClosed Sat, Sun & holidays",
     "emailInquiry": "Email us",
     "emailBlurb": "Every day\nReplies during business hours in order received.",
     "checkBizInfo": "Verify business registration"
@@ -403,5 +409,11 @@
     "defaultType": "Commission",
     "lockBenefit1": "Monthly commission history",
     "lockBenefit2": "Track by type and status"
+  },
+  "Header": {
+    "loggedOut": "You have been logged out.",
+    "welcomeAria": "Welcome, {greeting}",
+    "langSelectAria": "Select language",
+    "myPage": "My page"
   }
 }

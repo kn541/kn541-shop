@@ -15,9 +15,10 @@ interface Props {
 
 export default function AvatarDropdown({ className }: Props) {
   const { user, logout } = useAuth()
-  const t = useTranslations('Account')
+  const t       = useTranslations('Account')
+  const tCommon = useTranslations('Common')
 
-  const displayName = user?.name || user?.username || user?.email?.split('@')[0] || '회원'
+  const displayName = user?.name || user?.username || user?.email?.split('@')[0] || t('defaultDisplayName')
 
   return (
     <div className={className}>
@@ -54,7 +55,7 @@ export default function AvatarDropdown({ className }: Props) {
                 </svg>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium">내 정보</p>
+                <p className="text-sm font-medium">{t('myInfo')}</p>
               </div>
             </Link>
 
@@ -72,7 +73,7 @@ export default function AvatarDropdown({ className }: Props) {
                 </svg>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium">주문 내역</p>
+                <p className="text-sm font-medium">{t('orders')}</p>
               </div>
             </Link>
 
@@ -106,7 +107,7 @@ export default function AvatarDropdown({ className }: Props) {
                 </svg>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium">로그아웃</p>
+                <p className="text-sm font-medium">{tCommon('logout')}</p>
               </div>
             </button>
           </div>

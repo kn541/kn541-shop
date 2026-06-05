@@ -27,7 +27,7 @@ const SearchBtnPopover = () => {
           {/* 검색 폼: 화면 정중앙 */}
           <div className="flex flex-col items-center justify-center py-8">
             <p className="mb-4 text-xs font-medium uppercase tracking-widest text-neutral-400">
-              상품 검색
+              {t('popoverTitle')}
             </p>
             <form
               className="flex w-full max-w-2xl items-center rounded-2xl border-2 border-neutral-200 bg-white px-4 py-3 shadow-sm transition-shadow focus-within:border-neutral-400 focus-within:shadow-md dark:border-neutral-700 dark:bg-neutral-800 dark:focus-within:border-neutral-500"
@@ -45,7 +45,7 @@ const SearchBtnPopover = () => {
                 type="text"
                 className="flex-1 !border-none bg-transparent px-3 py-0.5 text-base !ring-0 placeholder:text-neutral-300 focus-visible:outline-none dark:placeholder:text-neutral-600"
                 name="q"
-                placeholder="찾으시는 상품을 검색하세요..."
+                placeholder={t('popoverPlaceholder')}
                 aria-label={t('ariaLabel')}
                 autoComplete="off"
                 autoCorrect="off"
@@ -57,7 +57,7 @@ const SearchBtnPopover = () => {
               </CloseButton>
             </form>
             <p className="mt-3 text-xs text-neutral-300 dark:text-neutral-600">
-              Enter 키로 검색 · ESC로 닫기
+              {t('keyHint')}
             </p>
           </div>
 

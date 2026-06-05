@@ -7,7 +7,7 @@
 
 import { useRef, useState } from 'react'
 import Link from 'next/link'
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 
 interface Category {
   id: string
@@ -19,6 +19,7 @@ interface Category {
 
 export default function CategoryNavClient({ categories }: { categories: Category[] }) {
   const locale = useLocale()
+  const tNav = useTranslations('Nav')
   const [openId, setOpenId] = useState<string | null>(null)
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -42,7 +43,7 @@ export default function CategoryNavClient({ categories }: { categories: Category
         href={`/${locale}`}
         className={`${staticLinkBase} text-primary-600 hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-900/20`}
       >
-        홈
+        {tNav('home')}
       </Link>
 
       {/* 카테고리 DB (동적, hover 드롭다운) */}
@@ -100,7 +101,7 @@ export default function CategoryNavClient({ categories }: { categories: Category
         href={`/${locale}/preorder`}
         className={`${staticLinkBase} text-orange-600 hover:bg-orange-50 dark:text-orange-400 dark:hover:bg-orange-900/20`}
       >
-        사전예약
+        {tNav('preorder')}
       </Link>
 
       {/* 벨류업 (정적) */}
@@ -108,7 +109,7 @@ export default function CategoryNavClient({ categories }: { categories: Category
         href={`/${locale}/value-up`}
         className={`${staticLinkBase} text-orange-600 hover:bg-orange-50 dark:text-orange-400 dark:hover:bg-orange-900/20`}
       >
-        벨류업
+        {tNav('valueUp')}
       </Link>
     </nav>
   )

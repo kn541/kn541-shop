@@ -10,7 +10,7 @@ import {
   useCart,
 } from '@/lib/cart-context'
 import { useRouter } from '@/i18n/navigation'
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { useCallback } from 'react'
 import { toast } from 'react-hot-toast'
 
@@ -19,6 +19,9 @@ export default function HeaderUserActions() {
   const router = useRouter()
   const { clearCart } = useCart()
   const { isMounted, loading, isLoggedIn, clearUser } = useHeaderUser()
+  const tCommon  = useTranslations('Common')
+  const tAccount = useTranslations('Account')
+  const tHeader  = useTranslations('Header')
 
   const logout = useCallback(() => {
     localStorage.removeItem('access_token')
@@ -28,9 +31,9 @@ export default function HeaderUserActions() {
     localStorage.removeItem(KN541_CART_SELECTED_STORAGE_KEY)
     clearCart()
     clearUser()
-    toast.success('로그아웃되었습니다')
+    toast.success(tHeader('loggedOut'))
     router.push('/')
-  }, [router, clearCart, clearUser])
+  }, [router, clearCart, clearUser, tHeader])
 
   if (!isMounted) {
     return <div className="h-9 w-24" />
@@ -47,13 +50,13 @@ export default function HeaderUserActions() {
           href={`/${locale}/login`}
           className="rounded-md px-2.5 py-1.5 text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800 whitespace-nowrap"
         >
-          로그인
+          {tCommon('login')}
         </a>
         <a
           href={`/${locale}/signup`}
           className="rounded-md px-2.5 py-1.5 text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800 whitespace-nowrap"
         >
-          회원가입
+          {tCommon('signup')}
         </a>
       </div>
     )
@@ -66,13 +69,13 @@ export default function HeaderUserActions() {
         onClick={logout}
         className="rounded-md px-2.5 py-1.5 text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800 whitespace-nowrap"
       >
-        로그아웃
+        {tCommon('logout')}
       </button>
       <a
         href={`/${locale}/account`}
         className="rounded-md px-2.5 py-1.5 text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800 whitespace-nowrap"
       >
-        마이페이지
+        {tAccount('title')}
       </a>
     </div>
   )

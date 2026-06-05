@@ -7,7 +7,7 @@ import {
   useCart,
 } from '@/lib/cart-context'
 import { useRouter } from '@/i18n/navigation'
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { useCallback } from 'react'
 import { toast } from 'react-hot-toast'
 import { UserIcon } from '@heroicons/react/24/outline'
@@ -19,6 +19,9 @@ export default function HeaderUserBar() {
   const router = useRouter()
   const { clearCart } = useCart()
   const { isMounted, loading, isLoggedIn, greeting, clearUser } = useHeaderUser()
+  const tCommon  = useTranslations('Common')
+  const tAccount = useTranslations('Account')
+  const tHeader  = useTranslations('Header')
 
   const logout = useCallback(() => {
     localStorage.removeItem('access_token')
@@ -28,9 +31,9 @@ export default function HeaderUserBar() {
     localStorage.removeItem(KN541_CART_SELECTED_STORAGE_KEY)
     clearCart()
     clearUser()
-    toast.success('로그아웃되었습니다')
+    toast.success(tHeader('loggedOut'))
     router.push('/')
-  }, [router, clearCart, clearUser])
+  }, [router, clearCart, clearUser, tHeader])
 
   const iconBtnCls =
     'inline-flex min-h-11 min-w-11 items-center justify-center rounded-md text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800 md:hidden'
@@ -60,7 +63,7 @@ export default function HeaderUserBar() {
       {isLoggedIn && greeting ? (
         <span
           className="max-w-[88px] truncate whitespace-nowrap px-1 text-xs font-medium text-neutral-800 dark:text-neutral-100 sm:max-w-none sm:text-sm hidden md:inline"
-          aria-label={`${greeting} 환영`}
+          aria-label={tHeader('welcomeAria', { greeting })}
           title={greeting}
         >
           {greeting}
@@ -71,7 +74,7 @@ export default function HeaderUserBar() {
 
       {!isLoggedIn ? (
         <>
-          <a href={`/${locale}/login`} className={iconBtnCls} aria-label="로그인">
+          <a href={`/${locale}/login`} className={iconBtnCls} aria-label={tCommon('login')}>
             <UserIcon className="h-6 w-6" aria-hidden />
           </a>
           <div className="hidden items-center text-sm md:flex">
@@ -79,19 +82,19 @@ export default function HeaderUserBar() {
               href={`/${locale}/login`}
               className="rounded-md px-2.5 py-1.5 text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800 whitespace-nowrap"
             >
-              로그인
+              {tCommon('login')}
             </a>
             <a
               href={`/${locale}/signup`}
               className="rounded-md px-2.5 py-1.5 text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800 whitespace-nowrap"
             >
-              회원가입
+              {tCommon('signup')}
             </a>
           </div>
         </>
       ) : (
         <>
-          <a href={`/${locale}/account`} className={iconBtnCls} aria-label="마이페이지">
+          <a href={`/${locale}/account`} className={iconBtnCls} aria-label={tAccount('title')}>
             <UserIcon className="h-6 w-6" aria-hidden />
           </a>
           <div className="hidden items-center text-sm md:flex">
@@ -100,13 +103,13 @@ export default function HeaderUserBar() {
               onClick={logout}
               className="rounded-md px-2.5 py-1.5 text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800 whitespace-nowrap"
             >
-              로그아웃
+              {tCommon('logout')}
             </button>
             <a
               href={`/${locale}/account`}
               className="rounded-md px-2.5 py-1.5 text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800 whitespace-nowrap"
             >
-              마이페이지
+              {tAccount('title')}
             </a>
           </div>
         </>
