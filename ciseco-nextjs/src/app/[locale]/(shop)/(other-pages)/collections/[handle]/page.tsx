@@ -17,12 +17,12 @@ import { getPaginationItems } from '@/utils/paginationRange'
 
 const PAGE_SIZE = PRODUCT_LIST_PAGE_SIZE
 
-function collectionListQuery(page: number, sortRaw?: string) {
+function collectionListQuery(handle: string, page: number, sortRaw?: string) {
   const sort = normalizeProductSortParam(sortRaw)
   const q = new URLSearchParams()
   if (page > 1) q.set('page', String(page))
   q.set('sort', sort)
-  return `?${q.toString()}`
+  return `/collections/${handle}?${q.toString()}`   // next-intl이 locale 자동 prefix
 }
 
 export default async function Page({
@@ -74,7 +74,7 @@ export default async function Page({
       {showPagination && (
         <div className="mt-20 flex justify-center lg:mt-24">
           <Pagination className="mx-auto">
-            <PaginationPrevious href={page > 1 ? collectionListQuery(page - 1, sp?.sort) : null} />
+            <PaginationPrevious href={page > 1 ? collectionListQuery(handle, page - 1, sp?.sort) : null} />
             <PaginationList>
               {pageItems.map((item, idx) =>
                 item === 'gap' ? (
@@ -82,7 +82,7 @@ export default async function Page({
                 ) : (
                   <PaginationPage
                     key={item}
-                    href={collectionListQuery(item as number, sp?.sort)}
+                    href={collectionListQuery(handle, item as number, sp?.sort)}
                     current={item === page}
                   >
                     {item}
@@ -93,7 +93,7 @@ export default async function Page({
             <PaginationNext
               href={
                 page < totalPages || (total === 0 && hasNext)
-                  ? collectionListQuery(page + 1, sp?.sort)
+                  ? collectionListQuery(handle, page + 1, sp?.sort)
                   : null
               }
             />

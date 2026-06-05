@@ -21,8 +21,7 @@ export function adaptProduct(p: Product): TProductItem {
   const pid = p.product_id || p.id || ''
 
   let status = '판매중'
-  if (p.stock_qty === 0) status = '품절'
-  else if (p.is_soldout || p.product_status === 'SOLDOUT') status = '품절'
+  if (p.is_soldout || p.product_status === 'SOLDOUT') status = '품절'
   else if (p.is_discontinued || p.product_status === 'DISCONTINUED') status = '판매종료'
   else if (p.is_new) status = '신상품'
   else if (p.is_best) status = '베스트'

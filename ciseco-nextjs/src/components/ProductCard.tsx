@@ -47,10 +47,8 @@ const ProductCard: FC<Props> = ({ className = '', data, isLiked, hrefSearch, car
   const isFreeShipping = delivery?.sc_type === 1 || (delivery?.shipping_fee ?? 0) === 0
 
   const rawPs = String((data as { productStatus?: string }).productStatus ?? '').toUpperCase()
-  const stockQty = Number((data as { stockQty?: number }).stockQty ?? 0) || 0
-  // 품절 여부 (재고 + 목록 status + API product_status SOLDOUT)
+  // 품절 여부 (is_soldout/SOLDOUT 단일 소스)
   const isSoldOut =
-    stockQty <= 0 ||
     status === '품절' ||
     status === '판매종료' ||
     rawPs === 'SOLDOUT' ||
