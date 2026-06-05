@@ -1,6 +1,7 @@
 'use client'
 // KN541 마이페이지 주문 상세
 // feat: PAID 상태 주문 취소 버튼 + 토스 취소 연동
+// fix: 취소 API → PATCH /orders/{id}/cancel, body: { cancel_reason }
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
@@ -148,9 +149,9 @@ export default function OrderDetailPage() {
   const router  = useRouter()
   const orderId = params?.id as string
 
-  const [order, setOrder]           = useState<OrderDetail | null>(null)
-  const [loading, setLoading]       = useState(true)
-  const [error, setError]           = useState('')
+  const [order, setOrder]                     = useState<OrderDetail | null>(null)
+  const [loading, setLoading]                 = useState(true)
+  const [error, setError]                     = useState('')
   const [showCancelModal, setShowCancelModal] = useState(false)
   const [cancelLoading, setCancelLoading]     = useState(false)
 
@@ -177,10 +178,12 @@ export default function OrderDetailPage() {
 
     setCancelLoading(true)
     try {
-      const res = await fetch(`${BASE}/mypage/orders/${orderId}/cancel`, {
-        method: 'POST',
+      // ✅ 기존 customer.py API: PATCH /orders/{id}/cancel
+      // body 필드: cancel_reason (str, 필수)
+      const res = await fetch(`${BASE}/orders/${orderId}/cancel`, {
+        method: 'PATCH',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason: reason || null }),
+        body: JSON.stringify({ cancel_reason: reason.trim() || '회원 취소 요청' }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -224,7 +227,7 @@ export default function OrderDetailPage() {
     )
   }
 
-  const subtotal = order.items.reduce((s, i) => s + i.subtotal, 0)
+  const subtotal  = order.items.reduce((s, i) => s + i.subtotal, 0)
   const canCancel = order.order_status === 'PAID'
 
   return (
