@@ -18,7 +18,8 @@
     "outOfStock": "Sold Out",
     "sale": "Sale",
     "new": "New",
-    "continue": "Continue"
+    "continue": "Continue",
+    "searchPlaceholder": "Search for products"
   },
   "Nav": {
     "home": "Home",
@@ -27,7 +28,8 @@
     "categories": "Categories",
     "about": "About",
     "contact": "Contact",
-    "templates": "Templates"
+    "templates": "Templates",
+    "mainCategoryAria": "Main categories"
   },
   "ProductSort": {
     "newest": "Latest",
@@ -154,7 +156,17 @@
     "noteExchangeReturn": "Exchange/return: within 7 days of receipt",
     "checkoutSoldOutBtn": "Sold-out items included (deselect first)",
     "checkoutOrderBtn": "Order {count} selected",
-    "checkoutNoSelectionBtn": "Select items to order"
+    "checkoutNoSelectionBtn": "Select items to order",
+    "closeAria": "Close",
+    "popupTitle": "Select product",
+    "qtyControlAria": "Select quantity",
+    "qtyDecAria": "Decrease quantity",
+    "qtyIncAria": "Increase quantity",
+    "maxOrderLabel": "Order limit",
+    "maxOrderValue": "Max {count}",
+    "deliveryMethod": "Delivery method",
+    "deliveryParcel": "Courier delivery",
+    "soldOutToast": "This item is out of stock."
   },
   "Checkout": {
     "title": "Checkout",
@@ -308,7 +320,10 @@
     "metaSignupTitle": "Signup",
     "metaSignupDescription": "Signup page for the application",
     "metaForgotTitle": "Forgot Password",
-    "metaForgotDescription": "Reset your password with SMS verification"
+    "metaForgotDescription": "Reset your password with SMS verification",
+    "loginIdPlaceholder": "Member No. · ID · Email · Phone",
+    "passwordPlaceholder": "Password",
+    "loggingIn": "Signing in..."
   },
   "Account": {
     "title": "Account",
@@ -365,5 +380,28 @@
     "emailInquiry": "Email us",
     "emailBlurb": "Every day\nReplies during business hours in order received.",
     "checkBizInfo": "Verify business registration"
+  },
+  "Payment": {
+    "failTitle": "Payment Failed",
+    "cancelTitle": "Payment Cancelled",
+    "errorCodeLabel": "Error code: ",
+    "retry": "Try again",
+    "backToCart": "Back to cart",
+    "confirming": "Confirming payment...",
+    "confirmFailTitle": "Payment Confirmation Failed",
+    "successTitle": "Payment complete!",
+    "redirecting": "Redirecting to your order..."
+  },
+  "Commission": {
+    "title": "Commission Overview",
+    "loadError": "Failed to load commission history.",
+    "filterMonth": "Filter by month",
+    "monthLabel": "{month}/{year}",
+    "monthTotal": "Monthly total",
+    "count": "Count",
+    "empty": "No commission history for this month.",
+    "defaultType": "Commission",
+    "lockBenefit1": "Monthly commission history",
+    "lockBenefit2": "Track by type and status"
   }
 }

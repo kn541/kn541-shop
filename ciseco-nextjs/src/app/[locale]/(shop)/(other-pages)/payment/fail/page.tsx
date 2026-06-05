@@ -7,6 +7,7 @@ import { Suspense, useEffect, useRef } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline'
 import { mypageFetch } from '@/lib/mypage/api'
+import { useTranslations } from 'next-intl'
 
 const ERROR_MESSAGES: Record<string, string> = {
   PAY_PROCESS_CANCELED:                            '결제를 취소했습니다.',
@@ -29,9 +30,10 @@ const ERROR_MESSAGES: Record<string, string> = {
 const CANCEL_CODES = new Set(['PAY_PROCESS_CANCELED', 'USER_CANCEL'])
 
 function FailContent() {
-  const router       = useRouter()
-  const pathname     = usePathname()
-  const locale       = pathname.split('/')[1] || 'ko'
+  const t          = useTranslations('Payment')
+  const router     = useRouter()
+  const pathname   = usePathname()
+  const locale     = pathname.split('/')[1] || 'ko'
   const searchParams = useSearchParams()
   const cancelCalled = useRef(false)
 
@@ -62,7 +64,7 @@ function FailContent() {
       <ExclamationTriangleIcon className="h-16 w-16 text-yellow-500" />
 
       <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
-        {isCanceled ? '결제가 취소됐습니다' : '결제에 실패했습니다'}
+        {isCanceled ? t('cancelTitle') : t('failTitle')}
       </h2>
 
       <p className="max-w-sm text-sm text-neutral-600 dark:text-neutral-400">
@@ -70,7 +72,7 @@ function FailContent() {
       </p>
 
       {errorCode && !isCanceled && (
-        <p className="text-xs text-neutral-400">오류 코드: {errorCode}</p>
+        <p className="text-xs text-neutral-400">{t('errorCodeLabel')}{errorCode}</p>
       )}
 
       <div className="mt-6 flex flex-col gap-3 sm:flex-row">
@@ -78,13 +80,13 @@ function FailContent() {
           onClick={() => router.push(`/${locale}/checkout`)}
           className="rounded-xl bg-primary-600 px-6 py-3 text-sm font-medium text-white transition hover:bg-primary-700"
         >
-          다시 시도하기
+          {t('retry')}
         </button>
         <button
           onClick={() => router.push(`/${locale}/cart`)}
           className="rounded-xl border border-neutral-200 px-6 py-3 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
         >
-          장바구니로 돌아가기
+          {t('backToCart')}
         </button>
       </div>
     </div>
