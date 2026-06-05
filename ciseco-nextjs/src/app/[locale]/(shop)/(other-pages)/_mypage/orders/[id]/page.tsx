@@ -1,7 +1,6 @@
 'use client'
-// KN541 마이페이지 주문 상세
-// feat: PAID 상태 주문 취소 버튼 + 토스 취소 연동
-// fix: 취소 API → PATCH /orders/{id}/cancel, body: { cancel_reason }
+// KN541 마이페이지 주문 상세 — DEBUG 버전
+// 실제 요청 URL/메서드/응답을 toast에 표시
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
@@ -65,7 +64,6 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   return <h2 className="mb-3 text-sm font-bold text-neutral-500 uppercase tracking-wide dark:text-neutral-400">{children}</h2>
 }
 
-// ── 취소 확인 모달 ──────────────────────────────────────────────────────
 function CancelModal({
   orderNo,
   totalAmount,
@@ -143,7 +141,6 @@ function CancelModal({
   )
 }
 
-// ── 메인 페이지 ──────────────────────────────────────────────────────────
 export default function OrderDetailPage() {
   const params  = useParams()
   const router  = useRouter()
@@ -176,20 +173,28 @@ export default function OrderDetailPage() {
     const token = getToken()
     if (!token || !order) return
 
+    // ─── DEBUG: 실제 요청 정보 표시 ───────────────────────────────────
+    const cancelUrl = `${BASE}/orders/${orderId}/cancel`
+    toast(`[DEBUG] URL: ${cancelUrl}\nMETHOD: PATCH\nbody: ${JSON.stringify({ cancel_reason: reason.trim() || '회원 취소 요청' })}`, { duration: 10000 })
+    // ──────────────────────────────────────────────────────────────────
+
     setCancelLoading(true)
     try {
-      // ✅ 기존 customer.py API: PATCH /orders/{id}/cancel
-      // body 필드: cancel_reason (str, 필수)
-      const res = await fetch(`${BASE}/orders/${orderId}/cancel`, {
+      const res = await fetch(cancelUrl, {
         method: 'PATCH',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ cancel_reason: reason.trim() || '회원 취소 요청' }),
       })
-      const data = await res.json()
+
+      // ─── DEBUG: 응답 상태 표시 ─────────────────────────────────────
+      const rawText = await res.text()
+      toast(`[DEBUG] STATUS: ${res.status}\nRESP: ${rawText.substring(0, 200)}`, { duration: 15000 })
+      // ──────────────────────────────────────────────────────────────
+
+      const data = JSON.parse(rawText)
       if (!res.ok) {
         throw new Error(data.detail ?? '주문 취소에 실패했습니다')
       }
-      // 로컬 상태 즉시 반영
       setOrder(prev => prev ? { ...prev, order_status: 'CANCELLED', status_label: '취소' } : null)
       setShowCancelModal(false)
       toast.success('주문이 취소됐습니다. 환불은 3~5 영업일 내 처리됩니다.')
@@ -259,7 +264,6 @@ export default function OrderDetailPage() {
         </div>
 
         <div className="space-y-6">
-          {/* 주문 상품 */}
           <section className="rounded-3xl border border-neutral-200 p-5 dark:border-neutral-700">
             <SectionTitle>주문 상품</SectionTitle>
             <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
@@ -293,7 +297,6 @@ export default function OrderDetailPage() {
             </div>
           </section>
 
-          {/* 결제 요약 */}
           <section className="rounded-3xl border border-neutral-200 p-5 dark:border-neutral-700">
             <SectionTitle>결제 정보</SectionTitle>
             <div className="space-y-2 text-sm">
@@ -320,7 +323,6 @@ export default function OrderDetailPage() {
             </div>
           </section>
 
-          {/* 배송지 */}
           <section className="rounded-3xl border border-neutral-200 p-5 dark:border-neutral-700">
             <SectionTitle>배송지</SectionTitle>
             <div className="flex items-start gap-2 text-sm">
@@ -333,7 +335,6 @@ export default function OrderDetailPage() {
             </div>
           </section>
 
-          {/* 배송 추적 */}
           {order.tracking_no && (
             <section className="rounded-3xl border border-neutral-200 p-5 dark:border-neutral-700">
               <SectionTitle>배송 추적</SectionTitle>
@@ -344,12 +345,10 @@ export default function OrderDetailPage() {
             </section>
           )}
 
-          {/* 주문 일시 */}
           <p className="text-center text-xs text-neutral-400">
             주문일시: {formatDate(order.created_at)}
           </p>
 
-          {/* 주문 취소 버튼 — PAID 상태만 노출 */}
           {canCancel && (
             <section className="rounded-3xl border border-red-100 bg-red-50 p-5 dark:border-red-900/30 dark:bg-red-900/10">
               <div className="flex items-start justify-between gap-4">
