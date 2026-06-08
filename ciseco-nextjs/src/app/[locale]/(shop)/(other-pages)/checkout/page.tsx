@@ -3,6 +3,7 @@
 // feat: "회원정보와 동일" 체크박스 — /auth/me에서 이름·전화번호·이메일 자동 채움
 // fix: 간편결제(EASY_PAY) → 토스페이(pay.toss.im) 연동으로 전환 (토스페이먼츠와 별개 서비스)
 // fix: 가상계좌(VIRTUAL_ACCOUNT) virtualAccount.cashReceipt.type 필수 파라미터 추가
+// fix: 결제수단 간편결제·카드만 노출 (가상계좌·계좌이체 운영 준비 전 숨김)
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
@@ -318,7 +319,8 @@ export default function CheckoutPage() {
         return
       }
 
-      // ── 토스페이먼츠 (카드 / 가상계좌 / 계좌이체) ───────────────────────
+      // ── 토스페이먼츠 (카드) ───────────────────────────────────────────────
+      // 가상계좌·계좌이체는 운영 준비 전 숨김 처리 (PAY_METHODS 배열에서 제외)
       const prepareRes  = await fetch(`${BASE}/payments/prepare`, {
         method: 'POST', headers,
         body: JSON.stringify({ order_id, amount: Math.round(total_amount), order_name: orderName }),
@@ -340,14 +342,11 @@ export default function CheckoutPage() {
       if (payMethod === 'CARD') {
         await paymentRef.current.requestPayment({ method: 'CARD', ...baseParams })
       } else if (payMethod === 'VIRTUAL_ACCOUNT') {
-        // 토스 SDK v2: 가상계좌는 virtualAccount.cashReceipt.type이 필수 파라미터
-        // 없으면 Toss 결제창 내부에서 검증 실패 → failUrl로 리다이렉트됨
-        // type: '소득공제' | '지출증빙' | '미발행'
         await paymentRef.current.requestPayment({
           method: 'VIRTUAL_ACCOUNT',
           ...baseParams,
           virtualAccount: {
-            cashReceipt: { type: '미발행' },  // 기본값: 미발행 (추후 UI 선택으로 개선 예정)
+            cashReceipt: { type: '미발행' },
             useEscrow: false,
           },
         })
@@ -368,11 +367,11 @@ export default function CheckoutPage() {
   if (!mounted || !getToken()) return null
   if (orderableItems.length === 0) return null
 
+  // 현재 사용 가능한 결제수단: 간편결제·카드만 노출
+  // 가상계좌·계좌이체는 운영 준비 완료 후 추가 예정
   const PAY_METHODS: { key: PayMethod; label: string; desc: string; icon: React.ReactNode }[] = [
-    { key: 'EASY_PAY',        label: '간편결제', desc: '카카오페이·토스페이·네이버페이 등', icon: <DevicePhoneMobileIcon className="h-5 w-5" /> },
-    { key: 'CARD',            label: '신용카드', desc: '비자카드, 마스터카드 등',            icon: <CreditCardIcon className="h-5 w-5" /> },
-    { key: 'VIRTUAL_ACCOUNT', label: '가상계좌', desc: '무통장 입금',                        icon: <BuildingLibraryIcon className="h-5 w-5" /> },
-    { key: 'TRANSFER',        label: '계좌이체', desc: '실시간 계좌이체',                    icon: <BuildingLibraryIcon className="h-5 w-5" /> },
+    { key: 'EASY_PAY', label: '간편결제', desc: '카카오페이·토스페이·네이버페이 등', icon: <DevicePhoneMobileIcon className="h-5 w-5" /> },
+    { key: 'CARD',     label: '신용카드', desc: '비자카드, 마스터카드 등',            icon: <CreditCardIcon className="h-5 w-5" /> },
   ]
 
   const MemoInput = () => (
@@ -659,7 +658,7 @@ export default function CheckoutPage() {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3">
               {PAY_METHODS.map(m => (
                 <button key={m.key} onClick={() => setPayMethod(m.key)}
                   className={`flex flex-col items-center gap-2 rounded-2xl border p-4 text-center transition-all ${
