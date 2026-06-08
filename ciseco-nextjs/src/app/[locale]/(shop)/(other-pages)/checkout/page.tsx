@@ -1,9 +1,11 @@
 'use client'
 // KN541 결제 페이지 — 토스페이먼츠 API 개별 연동
 // feat: 무통장입금(BANK_TRANSFER) 결제수단 추가 — 신한은행 140-014-744885
-// feat: "회원정보와 동일" 체크박스 — /auth/me에서 이름·전화번호·이메일 자동 채움
+// fix: 결제 팝업 취소 후 재시도 시 중복 주문 생성 버그 수정
+//   원인: 팝업 취소 → isSubmitting=false → 재클릭 → 매번 새 주문 생성
+//   수정: pendingOrderRef로 기존 PENDING 주문 캐시, 재시도 시 재사용
 // fix: 간편결제(EASY_PAY) → 토스페이(pay.toss.im) 연동으로 전환
-// fix: 결제수단 간편결제·카드·무통장입금 노출 (가상계좌·계좌이체 운영 준비 전 숨김)
+// fix: 결제수단 간편결제·카드·무통장입금 노출
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
@@ -47,6 +49,13 @@ function getToken(): string | null {
 }
 
 type PayMethod = 'CARD' | 'EASY_PAY' | 'VIRTUAL_ACCOUNT' | 'TRANSFER' | 'BANK_TRANSFER'
+
+/** 결제 팝업 취소 후 재시도에서 재사용되는 pending 주문 정보 */
+interface PendingOrder {
+  order_id:     string
+  order_no:     string
+  total_amount: number
+}
 
 interface SavedAddress {
   id: string
@@ -105,6 +114,20 @@ export default function CheckoutPage() {
   const [sameAsMember, setSameAsMember] = useState(false)
   const [memberInfo, setMemberInfo]     = useState<{ name: string; phone: string; email: string } | null>(null)
   const [digitalOrdererLoading, setDigitalOrdererLoading] = useState(false)
+
+  // ── 중복 주문 방지: 팝업 취소 후 재시도 시 기존 pending 주문 재사용 ──────────
+  // CARD/VIRTUAL_ACCOUNT/TRANSFER 경로에서 결제 팝업을 닫으면
+  // pendingOrderRef에 생성된 주문이 캐시됨. 다음 결제하기 클릭 시 재사용.
+  // 배송지 변경 시 무효화하여 새 주문 생성.
+  const pendingOrderRef = useRef<PendingOrder | null>(null)
+
+  // 배송지·상품이 바뀌면 pending 주문 무효화
+  useEffect(() => {
+    pendingOrderRef.current = null
+  }, [
+    form.name, form.phone, address.address1, address.address2, address.zipcode,
+    orderableItems.length,
+  ])
 
   useEffect(() => {
     if (!mounted) return
@@ -260,41 +283,44 @@ export default function CheckoutPage() {
         } catch {}
       }
 
-      const orderBody = isDigitalOnly
-        ? {
-            items: orderableItems.map(i => ({ product_id: i.productId, option_id: i.optionId ?? null, quantity: Number(i.quantity)||1 })),
-            recipient_name: payName,
-            recipient_phone: payPhone,
-            zip_code: '',
-            address1: '디지털상품',
-            address2: '',
-            delivery_memo: '',
-            payment_method: payMethod === 'BANK_TRANSFER' ? 'BANK_TRANSFER' : 'TOSS',
-          }
-        : {
-            items: orderableItems.map(i => ({ product_id: i.productId, option_id: i.optionId ?? null, quantity: Number(i.quantity)||1 })),
-            recipient_name: form.name.trim(), recipient_phone: form.phone.trim(),
-            zip_code: address.zipcode, address1: address.address1,
-            address2: address.address2 ?? '', delivery_memo: form.memo,
-            payment_method: payMethod === 'BANK_TRANSFER' ? 'BANK_TRANSFER' : 'TOSS',
-          }
-
-      const orderRes  = await fetch(`${BASE}/orders`, { method: 'POST', headers, body: JSON.stringify(orderBody) })
-      const orderData = await orderRes.json()
-      if (!orderRes.ok) throw new Error(orderData.detail ?? '주문 생성에 실패했습니다')
-      const { order_id, total_amount, skipped_product_ids: skippedProducts } = orderData.data
-      if (Array.isArray(skippedProducts) && skippedProducts.length > 0) {
-        toast(`판매 불가·종료된 상품 ${skippedProducts.length}건은 주문에서 제외되었습니다.`, { icon: 'ℹ️' })
-      }
-
-      // ── 무통장입금 ───────────────────────────────────────────────────────
-      // PG 미경유. 주문 생성(PENDING) 후 바로 주문완료 페이지로 이동.
-      // 고객이 계좌에 직접 입금하면 관리자가 수동 또는 자동으로 PAID 처리.
+      // ── 무통장입금 ─────────────────────────────────────────────────────────
+      // 항상 새 주문 생성 (pendingOrderRef 사용 안 함)
       if (payMethod === 'BANK_TRANSFER') {
+        pendingOrderRef.current = null
+        const orderBody = isDigitalOnly
+          ? { items: orderableItems.map(i => ({ product_id: i.productId, option_id: i.optionId ?? null, quantity: Number(i.quantity)||1 })), recipient_name: payName, recipient_phone: payPhone, zip_code: '', address1: '디지털상품', address2: '', delivery_memo: '', payment_method: 'BANK_TRANSFER' }
+          : { items: orderableItems.map(i => ({ product_id: i.productId, option_id: i.optionId ?? null, quantity: Number(i.quantity)||1 })), recipient_name: form.name.trim(), recipient_phone: form.phone.trim(), zip_code: address.zipcode, address1: address.address1, address2: address.address2 ?? '', delivery_memo: form.memo, payment_method: 'BANK_TRANSFER' }
+        const orderRes  = await fetch(`${BASE}/orders`, { method: 'POST', headers, body: JSON.stringify(orderBody) })
+        const orderData = await orderRes.json()
+        if (!orderRes.ok) throw new Error(orderData.detail ?? '주문 생성에 실패했습니다')
         clearCart()
-        router.push(`/${locale}/order-successful?order_id=${order_id}`)
+        router.push(`/${locale}/order-successful?order_id=${orderData.data.order_id}`)
         return
       }
+
+      // ── 토스 결제 공통: 주문 생성 (중복 방지) ─────────────────────────────
+      // [FIX] pendingOrderRef에 캐시된 주문이 있으면 새 주문 생성 스킵.
+      // 결제 팝업 취소 후 재시도 시에도 동일 주문번호·금액을 재사용함.
+      // 배송지가 변경되면 useEffect에서 pendingOrderRef를 null로 초기화.
+      let currentOrder = pendingOrderRef.current
+
+      if (!currentOrder) {
+        const orderBody = isDigitalOnly
+          ? { items: orderableItems.map(i => ({ product_id: i.productId, option_id: i.optionId ?? null, quantity: Number(i.quantity)||1 })), recipient_name: payName, recipient_phone: payPhone, zip_code: '', address1: '디지털상품', address2: '', delivery_memo: '', payment_method: 'TOSS' }
+          : { items: orderableItems.map(i => ({ product_id: i.productId, option_id: i.optionId ?? null, quantity: Number(i.quantity)||1 })), recipient_name: form.name.trim(), recipient_phone: form.phone.trim(), zip_code: address.zipcode, address1: address.address1, address2: address.address2 ?? '', delivery_memo: form.memo, payment_method: 'TOSS' }
+        const orderRes  = await fetch(`${BASE}/orders`, { method: 'POST', headers, body: JSON.stringify(orderBody) })
+        const orderData = await orderRes.json()
+        if (!orderRes.ok) throw new Error(orderData.detail ?? '주문 생성에 실패했습니다')
+
+        const { order_id, order_no, total_amount, skipped_product_ids: skippedProducts } = orderData.data
+        if (Array.isArray(skippedProducts) && skippedProducts.length > 0) {
+          toast(`판매 불가·종료된 상품 ${skippedProducts.length}건은 주문에서 제외되었습니다.`, { icon: 'ℹ️' })
+        }
+        currentOrder = { order_id, order_no, total_amount }
+        pendingOrderRef.current = currentOrder  // 캐시
+      }
+
+      const { order_id, order_no, total_amount } = currentOrder
 
       const orderName = orderableItems.length === 1
         ? orderableItems[0].name
@@ -304,6 +330,8 @@ export default function CheckoutPage() {
 
       // ── 토스페이 (간편결제) ──────────────────────────────────────────────
       if (payMethod === 'EASY_PAY') {
+        // 간편결제는 외부 페이지로 리다이렉트 → pendingOrderRef 필요 없음
+        pendingOrderRef.current = null
         const tosspayRes = await fetch(`${BASE}/payments/tosspay/create`, {
           method: 'POST', headers,
           body: JSON.stringify({
@@ -320,7 +348,8 @@ export default function CheckoutPage() {
         return
       }
 
-      // ── 토스페이먼츠 (카드) ───────────────────────────────────────────────
+      // ── 토스페이먼츠 (카드 등) ───────────────────────────────────────────
+      // prepare는 매 시도마다 새로 호출해도 무방 (토스 측에서 orderId로 멱등 처리)
       const prepareRes  = await fetch(`${BASE}/payments/prepare`, {
         method: 'POST', headers,
         body: JSON.stringify({ order_id, amount: Math.round(total_amount), order_name: orderName }),
@@ -329,7 +358,7 @@ export default function CheckoutPage() {
       if (!prepareRes.ok) throw new Error(prepareData.detail ?? '결제 사전등록에 실패했습니다')
 
       const baseParams = {
-        orderId:             orderData.data.order_no,
+        orderId:             order_no,
         orderName,
         customerName:        payName,
         customerEmail:       payEmail || undefined,
@@ -351,9 +380,20 @@ export default function CheckoutPage() {
         await paymentRef.current.requestPayment({ method: 'TRANSFER', ...baseParams })
       }
 
+      // 성공 시 (success URL로 리다이렉트 전에 도달하지 않음 — SDK가 자동 리다이렉트)
+      pendingOrderRef.current = null
+
     } catch (err: any) {
       const msg = err?.message ?? '결제 요청 중 오류가 발생했습니다.'
-      if (!msg.includes('취소')) toast.error(msg)
+      const isCancellation = msg.includes('취소') || msg.toLowerCase().includes('cancel')
+
+      if (!isCancellation) {
+        // 실제 오류 — pending 주문 무효화 (재시도 시 새 주문 필요할 수 있음)
+        pendingOrderRef.current = null
+        toast.error(msg)
+      }
+      // 팝업 취소 — pendingOrderRef 유지 → 재시도 시 기존 주문 재사용
+
       setIsSubmitting(false)
     }
   }
