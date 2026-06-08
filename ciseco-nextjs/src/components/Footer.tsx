@@ -1,4 +1,5 @@
 'use client'
+// feat: 푸터 무통장 입금계좌 정보 추가
 
 import Logo from '@/components/Logo'
 import { COMPANY_INFO } from '@/data/company-info'
@@ -6,6 +7,13 @@ import { Link } from '@/shared/link'
 import SocialsList1 from '@/shared/SocialsList1/SocialsList1'
 import clsx from 'clsx'
 import { useTranslations } from 'next-intl'
+
+// 무통장 입금 계좌 정보
+const BANK_ACCOUNT = {
+  bank:   '신한은행',
+  number: '140-014-744885',
+  holder: '(주)케이엔541',
+} as const
 
 function FooterNavLinks({
   className,
@@ -93,19 +101,8 @@ export default function Footer() {
                 href="/vendor-inquiry"
                 className="inline-flex w-fit items-center gap-2 rounded-xl border-2 border-kn541-gray-700 px-4 py-2 text-sm font-semibold text-kn541-gray-900 transition-colors hover:bg-kn541-gray-900 hover:text-white dark:border-neutral-300 dark:text-neutral-100 dark:hover:bg-neutral-100 dark:hover:text-neutral-900"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                  />
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
                 {t('vendorBanner')}
               </Link>
@@ -150,6 +147,20 @@ export default function Footer() {
                 </a>
               </p>
               <p>개인정보관리자 : {COMPANY_INFO.privacyOfficer}</p>
+
+              {/* 무통장 입금계좌 */}
+              <div className="mt-5 rounded-xl border border-kn541-gray-300 bg-white/50 px-4 py-3 dark:border-neutral-600 dark:bg-neutral-800/50">
+                <p className="mb-1.5 text-[11px] font-bold text-kn541-gray-700 dark:text-neutral-400">
+                  입금하실 곳
+                </p>
+                <p className="font-semibold text-kn541-black dark:text-neutral-100">
+                  {BANK_ACCOUNT.bank}&nbsp;&nbsp;
+                  <span className="tracking-widest">{BANK_ACCOUNT.number}</span>
+                </p>
+                <p className="mt-0.5 text-kn541-gray-700 dark:text-neutral-400">
+                  예금주 : {BANK_ACCOUNT.holder}
+                </p>
+              </div>
             </div>
           </div>
         </div>
