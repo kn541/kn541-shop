@@ -1,9 +1,9 @@
 'use client'
 // KN541 결제 페이지 — 토스페이먼츠 API 개별 연동
+// feat: 무통장입금(BANK_TRANSFER) 결제수단 추가 — 신한은행 140-014-744885
 // feat: "회원정보와 동일" 체크박스 — /auth/me에서 이름·전화번호·이메일 자동 채움
-// fix: 간편결제(EASY_PAY) → 토스페이(pay.toss.im) 연동으로 전환 (토스페이먼츠와 별개 서비스)
-// fix: 가상계좌(VIRTUAL_ACCOUNT) virtualAccount.cashReceipt.type 필수 파라미터 추가
-// fix: 결제수단 간편결제·카드만 노출 (가상계좌·계좌이체 운영 준비 전 숨김)
+// fix: 간편결제(EASY_PAY) → 토스페이(pay.toss.im) 연동으로 전환
+// fix: 결제수단 간편결제·카드·무통장입금 노출 (가상계좌·계좌이체 운영 준비 전 숨김)
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
@@ -25,6 +25,13 @@ import toast from 'react-hot-toast'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
 
+// ── 무통장 입금 계좌 정보 ──────────────────────────────────────────────────
+const BANK_ACCOUNT = {
+  bank:   '신한은행',
+  number: '140-014-744885',
+  holder: '(주)케이엔541',
+} as const
+
 const MEMO_OPTIONS = [
   { value: '',            label: '선택해 주세요' },
   { value: '문앞에 두고 가주세요', label: '문앞에 두고 가주세요' },
@@ -39,7 +46,7 @@ function getToken(): string | null {
   return localStorage.getItem('access_token')
 }
 
-type PayMethod = 'CARD' | 'EASY_PAY' | 'VIRTUAL_ACCOUNT' | 'TRANSFER'
+type PayMethod = 'CARD' | 'EASY_PAY' | 'VIRTUAL_ACCOUNT' | 'TRANSFER' | 'BANK_TRANSFER'
 
 interface SavedAddress {
   id: string
@@ -81,7 +88,6 @@ export default function CheckoutPage() {
   const orderTotal    = orderableItems.reduce((s, i) => s + (Number(i.price)||0) * (Number(i.quantity)||0), 0)
   const orderShipping = orderableItems.reduce((s, i) => s + calcItemShipping(i), 0)
   const total         = orderTotal + orderShipping
-  /** 디지털 전용 결제 UI: 요약·버튼 금액은 상품액만 표시(배송비 행 숨김과 정합) */
   const summaryTotal  = isDigitalOnly ? orderTotal : total
 
   const [savedAddresses, setSavedAddresses]       = useState<SavedAddress[]>([])
@@ -98,7 +104,6 @@ export default function CheckoutPage() {
   const paymentRef = useRef<any>(null)
   const [sameAsMember, setSameAsMember] = useState(false)
   const [memberInfo, setMemberInfo]     = useState<{ name: string; phone: string; email: string } | null>(null)
-  /** 패키지(005) 체크아웃: /auth/me 선로딩 */
   const [digitalOrdererLoading, setDigitalOrdererLoading] = useState(false)
 
   useEffect(() => {
@@ -217,29 +222,19 @@ export default function CheckoutPage() {
     let payEmail = form.email.trim()
 
     if (isDigitalOnly) {
-      if (digitalOrdererLoading) {
-        toast.error('회원 정보를 불러오는 중입니다.')
-        return
-      }
-      payName = form.name.trim()
-      payPhone = form.phone.trim()
-      payEmail = form.email.trim()
-      if (!payName) {
-        toast.error('회원 이름이 등록되어 있지 않습니다.')
-        return
-      }
-      if (!payPhone) {
-        toast.error('회원 전화번호가 등록되어 있지 않습니다.')
-        return
-      }
+      if (digitalOrdererLoading) { toast.error('회원 정보를 불러오는 중입니다.'); return }
+      if (!payName)  { toast.error('회원 이름이 등록되어 있지 않습니다.'); return }
+      if (!payPhone) { toast.error('회원 전화번호가 등록되어 있지 않습니다.'); return }
     } else {
       if (!form.name.trim())   { toast.error('수령자 이름을 입력해 주세요.'); return }
       if (!form.phone.trim())  { toast.error('휴대폰 번호를 입력해 주세요.'); return }
       if (!address.address1)   { toast.error('배송지 주소를 입력해 주세요.'); return }
     }
 
-    // 토스페이(EASY_PAY)는 토스페이먼츠 SDK를 사용하지 않으므로 초기화 체크 제외
-    if (payMethod !== 'EASY_PAY' && !paymentRef.current) { toast.error('결제 로드 중입니다. 잠시 후 다시 시도해 주세요.'); return }
+    // 토스페이·무통장입금은 토스페이먼츠 SDK 미사용 → 초기화 체크 제외
+    if (payMethod !== 'EASY_PAY' && payMethod !== 'BANK_TRANSFER' && !paymentRef.current) {
+      toast.error('결제 로드 중입니다. 잠시 후 다시 시도해 주세요.'); return
+    }
 
     setIsSubmitting(true)
     try {
@@ -265,7 +260,6 @@ export default function CheckoutPage() {
         } catch {}
       }
 
-      // M2-B: option_id — CartItem.optionId(UUID)를 BE로 전달. 없으면 null(옵션 없는 상품·구형 색상/사이즈 옵션)
       const orderBody = isDigitalOnly
         ? {
             items: orderableItems.map(i => ({ product_id: i.productId, option_id: i.optionId ?? null, quantity: Number(i.quantity)||1 })),
@@ -275,21 +269,31 @@ export default function CheckoutPage() {
             address1: '디지털상품',
             address2: '',
             delivery_memo: '',
-            payment_method: 'TOSS',
+            payment_method: payMethod === 'BANK_TRANSFER' ? 'BANK_TRANSFER' : 'TOSS',
           }
         : {
             items: orderableItems.map(i => ({ product_id: i.productId, option_id: i.optionId ?? null, quantity: Number(i.quantity)||1 })),
             recipient_name: form.name.trim(), recipient_phone: form.phone.trim(),
             zip_code: address.zipcode, address1: address.address1,
             address2: address.address2 ?? '', delivery_memo: form.memo,
-            payment_method: 'TOSS',
+            payment_method: payMethod === 'BANK_TRANSFER' ? 'BANK_TRANSFER' : 'TOSS',
           }
+
       const orderRes  = await fetch(`${BASE}/orders`, { method: 'POST', headers, body: JSON.stringify(orderBody) })
       const orderData = await orderRes.json()
       if (!orderRes.ok) throw new Error(orderData.detail ?? '주문 생성에 실패했습니다')
-      const { order_id, order_no, total_amount, skipped_product_ids: skippedProducts } = orderData.data
+      const { order_id, total_amount, skipped_product_ids: skippedProducts } = orderData.data
       if (Array.isArray(skippedProducts) && skippedProducts.length > 0) {
         toast(`판매 불가·종료된 상품 ${skippedProducts.length}건은 주문에서 제외되었습니다.`, { icon: 'ℹ️' })
+      }
+
+      // ── 무통장입금 ───────────────────────────────────────────────────────
+      // PG 미경유. 주문 생성(PENDING) 후 바로 주문완료 페이지로 이동.
+      // 고객이 계좌에 직접 입금하면 관리자가 수동 또는 자동으로 PAID 처리.
+      if (payMethod === 'BANK_TRANSFER') {
+        clearCart()
+        router.push(`/${locale}/order-successful?order_id=${order_id}`)
+        return
       }
 
       const orderName = orderableItems.length === 1
@@ -299,9 +303,6 @@ export default function CheckoutPage() {
       const origin = window.location.origin
 
       // ── 토스페이 (간편결제) ──────────────────────────────────────────────
-      // 토스페이(pay.toss.im)는 토스페이먼츠(api.tosspayments.com)와 별개 서비스.
-      // 백엔드가 pay.toss.im API를 호출해 checkoutPage URL을 받고,
-      // 프론트는 그 URL로 사용자를 리다이렉트한다. SDK 사용 없음.
       if (payMethod === 'EASY_PAY') {
         const tosspayRes = await fetch(`${BASE}/payments/tosspay/create`, {
           method: 'POST', headers,
@@ -320,7 +321,6 @@ export default function CheckoutPage() {
       }
 
       // ── 토스페이먼츠 (카드) ───────────────────────────────────────────────
-      // 가상계좌·계좌이체는 운영 준비 전 숨김 처리 (PAY_METHODS 배열에서 제외)
       const prepareRes  = await fetch(`${BASE}/payments/prepare`, {
         method: 'POST', headers,
         body: JSON.stringify({ order_id, amount: Math.round(total_amount), order_name: orderName }),
@@ -329,7 +329,7 @@ export default function CheckoutPage() {
       if (!prepareRes.ok) throw new Error(prepareData.detail ?? '결제 사전등록에 실패했습니다')
 
       const baseParams = {
-        orderId:             order_no,
+        orderId:             orderData.data.order_no,
         orderName,
         customerName:        payName,
         customerEmail:       payEmail || undefined,
@@ -345,10 +345,7 @@ export default function CheckoutPage() {
         await paymentRef.current.requestPayment({
           method: 'VIRTUAL_ACCOUNT',
           ...baseParams,
-          virtualAccount: {
-            cashReceipt: { type: '미발행' },
-            useEscrow: false,
-          },
+          virtualAccount: { cashReceipt: { type: '미발행' }, useEscrow: false },
         })
       } else {
         await paymentRef.current.requestPayment({ method: 'TRANSFER', ...baseParams })
@@ -367,11 +364,10 @@ export default function CheckoutPage() {
   if (!mounted || !getToken()) return null
   if (orderableItems.length === 0) return null
 
-  // 현재 사용 가능한 결제수단: 간편결제·카드만 노출
-  // 가상계좌·계좌이체는 운영 준비 완료 후 추가 예정
   const PAY_METHODS: { key: PayMethod; label: string; desc: string; icon: React.ReactNode }[] = [
-    { key: 'EASY_PAY', label: '간편결제', desc: '카카오페이·토스페이·네이버페이 등', icon: <DevicePhoneMobileIcon className="h-5 w-5" /> },
-    { key: 'CARD',     label: '신용카드', desc: '비자카드, 마스터카드 등',            icon: <CreditCardIcon className="h-5 w-5" /> },
+    { key: 'EASY_PAY',      label: '간편결제',   desc: '카카오페이·토스페이·네이버페이 등', icon: <DevicePhoneMobileIcon className="h-5 w-5" /> },
+    { key: 'CARD',          label: '신용카드',   desc: '비자카드, 마스터카드 등',            icon: <CreditCardIcon className="h-5 w-5" /> },
+    { key: 'BANK_TRANSFER', label: '무통장입금', desc: '신한은행 입금 후 주문 확정',          icon: <BuildingLibraryIcon className="h-5 w-5" /> },
   ]
 
   const MemoInput = () => (
@@ -432,36 +428,18 @@ export default function CheckoutPage() {
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="sm:col-span-2">
                       <label className={labelCls}>이름</label>
-                      <input
-                        className={`${inputCls} cursor-not-allowed bg-neutral-100 opacity-90 dark:bg-neutral-800`}
-                        type="text"
-                        value={form.name}
-                        readOnly
-                        disabled
-                        autoComplete="name"
-                      />
+                      <input className={`${inputCls} cursor-not-allowed bg-neutral-100 opacity-90 dark:bg-neutral-800`}
+                        type="text" value={form.name} readOnly disabled autoComplete="name" />
                     </div>
                     <div className="sm:col-span-2">
                       <label className={labelCls}>휴대폰</label>
-                      <input
-                        className={`${inputCls} cursor-not-allowed bg-neutral-100 opacity-90 dark:bg-neutral-800`}
-                        type="tel"
-                        value={form.phone}
-                        readOnly
-                        disabled
-                        autoComplete="tel"
-                      />
+                      <input className={`${inputCls} cursor-not-allowed bg-neutral-100 opacity-90 dark:bg-neutral-800`}
+                        type="tel" value={form.phone} readOnly disabled autoComplete="tel" />
                     </div>
                     <div className="sm:col-span-2">
                       <label className={labelCls}>이메일 (영수증·주문 확인 발송)</label>
-                      <input
-                        className={inputCls}
-                        placeholder="example@email.com"
-                        type="email"
-                        value={form.email}
-                        onChange={e => setForm({ ...form, email: e.target.value })}
-                        autoComplete="email"
-                      />
+                      <input className={inputCls} placeholder="example@email.com" type="email"
+                        value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} autoComplete="email" />
                     </div>
                   </div>
                 </>
@@ -477,41 +455,14 @@ export default function CheckoutPage() {
             </h2>
 
             <div className="mb-4 flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowNewForm(true)
-                  setSameAsMember(false)
-                  setSelectedAddressId(null)
-                  setMemoSelect('')
-                  setForm((f) => ({ ...f, name: '', phone: '', memo: '' }))
-                  setAddress({ zipcode: '', address1: '', address2: '' })
-                }}
-                className={`rounded-xl px-4 py-2 text-sm font-medium transition-all ${
-                  showNewForm
-                    ? 'bg-primary-600 text-white'
-                    : 'border border-neutral-200 text-neutral-600 hover:border-neutral-300 dark:border-neutral-600 dark:text-neutral-300'
-                }`}
-              >
+              <button type="button"
+                onClick={() => { setShowNewForm(true); setSameAsMember(false); setSelectedAddressId(null); setMemoSelect(''); setForm((f) => ({ ...f, name: '', phone: '', memo: '' })); setAddress({ zipcode: '', address1: '', address2: '' }) }}
+                className={`rounded-xl px-4 py-2 text-sm font-medium transition-all ${showNewForm ? 'bg-primary-600 text-white' : 'border border-neutral-200 text-neutral-600 hover:border-neutral-300 dark:border-neutral-600 dark:text-neutral-300'}`}>
                 새 배송지 입력
               </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowNewForm(false)
-                  setSameAsMember(false)
-                  if (savedAddresses.length > 0) {
-                    const sel = savedAddresses.find((a) => a.id === selectedAddressId) ?? savedAddresses[0]
-                    setSelectedAddressId(sel.id)
-                    applyAddress(sel)
-                  }
-                }}
-                className={`rounded-xl px-4 py-2 text-sm font-medium transition-all ${
-                  !showNewForm
-                    ? 'bg-primary-600 text-white'
-                    : 'border border-neutral-200 text-neutral-600 hover:border-neutral-300 dark:border-neutral-600 dark:text-neutral-300'
-                }`}
-              >
+              <button type="button"
+                onClick={() => { setShowNewForm(false); setSameAsMember(false); if (savedAddresses.length > 0) { const sel = savedAddresses.find((a) => a.id === selectedAddressId) ?? savedAddresses[0]; setSelectedAddressId(sel.id); applyAddress(sel) } }}
+                className={`rounded-xl px-4 py-2 text-sm font-medium transition-all ${!showNewForm ? 'bg-primary-600 text-white' : 'border border-neutral-200 text-neutral-600 hover:border-neutral-300 dark:border-neutral-600 dark:text-neutral-300'}`}>
                 저장된 배송지 ({savedAddresses.length})
               </button>
             </div>
@@ -519,42 +470,26 @@ export default function CheckoutPage() {
             {!showNewForm && savedAddresses.length === 0 && (
               <div className="rounded-2xl border border-dashed border-neutral-300 p-8 text-center dark:border-neutral-600">
                 <p className="mb-2 text-sm text-neutral-400">저장된 배송지가 없습니다</p>
-                <Link href="/addresses" className="text-sm font-medium text-primary-600 hover:underline">
-                  배송지 관리에서 등록하기
-                </Link>
+                <Link href="/addresses" className="text-sm font-medium text-primary-600 hover:underline">배송지 관리에서 등록하기</Link>
               </div>
             )}
 
             {!showNewForm && savedAddresses.length > 0 && (
               <div className="mb-4 space-y-2">
                 {savedAddresses.map((addr) => (
-                  <button
-                    key={addr.id}
-                    type="button"
-                    onClick={() => handleSelectAddress(addr)}
-                    className={`w-full rounded-2xl border p-4 text-left transition-all ${
-                      selectedAddressId === addr.id
-                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                        : 'border-neutral-200 hover:border-neutral-300 dark:border-neutral-700'
-                    }`}
-                  >
+                  <button key={addr.id} type="button" onClick={() => handleSelectAddress(addr)}
+                    className={`w-full rounded-2xl border p-4 text-left transition-all ${selectedAddressId === addr.id ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20' : 'border-neutral-200 hover:border-neutral-300 dark:border-neutral-700'}`}>
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-2">
                         <MapPinIcon className={`h-4 w-4 shrink-0 mt-0.5 ${selectedAddressId === addr.id ? 'text-primary-600' : 'text-neutral-400'}`} />
                         <div>
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{addr.recipient_name}</span>
-                            {addr.address_name && (
-                              <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-500 dark:bg-neutral-700">{addr.address_name}</span>
-                            )}
-                            {addr.is_default && (
-                              <span className="rounded-full bg-primary-100 px-2 py-0.5 text-xs font-medium text-primary-600 dark:bg-primary-900/30">기본</span>
-                            )}
+                            {addr.address_name && <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-500 dark:bg-neutral-700">{addr.address_name}</span>}
+                            {addr.is_default && <span className="rounded-full bg-primary-100 px-2 py-0.5 text-xs font-medium text-primary-600 dark:bg-primary-900/30">기본</span>}
                           </div>
                           <p className="mt-0.5 text-sm text-neutral-500">{addr.recipient_phone}</p>
-                          <p className="mt-0.5 text-sm text-neutral-600 dark:text-neutral-400">
-                            [{addr.zip_code}] {addr.address1} {addr.address2}
-                          </p>
+                          <p className="mt-0.5 text-sm text-neutral-600 dark:text-neutral-400">[{addr.zip_code}] {addr.address1} {addr.address2}</p>
                         </div>
                       </div>
                       {selectedAddressId === addr.id && <CheckCircleIcon className="h-5 w-5 shrink-0 text-primary-600" />}
@@ -566,11 +501,8 @@ export default function CheckoutPage() {
 
             {showNewForm && (
               <div className="space-y-4 pt-2">
-                {/* 회원정보와 동일 체크 */}
                 <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-primary-200 bg-primary-50 px-4 py-3 text-sm font-medium text-primary-700 dark:border-primary-800 dark:bg-primary-900/20 dark:text-primary-300">
-                  <input
-                    type="checkbox"
-                    checked={sameAsMember}
+                  <input type="checkbox" checked={sameAsMember}
                     onChange={async (e) => {
                       const checked = e.target.checked
                       setSameAsMember(checked)
@@ -644,7 +576,7 @@ export default function CheckoutPage() {
           </section>
           )}
 
-          {/* 결제 수단 — 배송(1) 또는 주문자(1) 다음 단계 */}
+          {/* 결제 수단 */}
           <section className="rounded-3xl border border-neutral-200 p-6 dark:border-neutral-700">
             <h2 className="mb-5 flex items-center gap-2 text-lg font-bold text-neutral-900 dark:text-neutral-100">
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-600 text-sm font-bold text-white">2</span>
@@ -658,14 +590,10 @@ export default function CheckoutPage() {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               {PAY_METHODS.map(m => (
                 <button key={m.key} onClick={() => setPayMethod(m.key)}
-                  className={`flex flex-col items-center gap-2 rounded-2xl border p-4 text-center transition-all ${
-                    payMethod === m.key
-                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                      : 'border-neutral-200 hover:border-neutral-300 dark:border-neutral-700'
-                  }`}>
+                  className={`flex flex-col items-center gap-2 rounded-2xl border p-4 text-center transition-all ${payMethod === m.key ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20' : 'border-neutral-200 hover:border-neutral-300 dark:border-neutral-700'}`}>
                   <span className={payMethod === m.key ? 'text-primary-600' : 'text-neutral-400'}>{m.icon}</span>
                   <div>
                     <p className={`text-sm font-semibold ${payMethod === m.key ? 'text-primary-700 dark:text-primary-400' : 'text-neutral-800 dark:text-neutral-200'}`}>{m.label}</p>
@@ -675,6 +603,39 @@ export default function CheckoutPage() {
                 </button>
               ))}
             </div>
+
+            {/* 무통장입금 계좌 안내 박스 */}
+            {payMethod === 'BANK_TRANSFER' && (
+              <div className="mt-5 rounded-2xl border-2 border-amber-300 bg-amber-50 p-5 dark:border-amber-700 dark:bg-amber-900/20">
+                <div className="mb-3 flex items-center gap-2">
+                  <BuildingLibraryIcon className="h-5 w-5 text-amber-600" />
+                  <p className="font-bold text-amber-800 dark:text-amber-300">무통장 입금 계좌 안내</p>
+                </div>
+                <div className="space-y-2.5 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-amber-700 dark:text-amber-400">은행</span>
+                    <span className="font-semibold text-amber-900 dark:text-amber-200">{BANK_ACCOUNT.bank}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-amber-700 dark:text-amber-400">계좌번호</span>
+                    <span className="font-bold tracking-widest text-amber-900 dark:text-amber-200">{BANK_ACCOUNT.number}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-amber-700 dark:text-amber-400">예금주</span>
+                    <span className="font-semibold text-amber-900 dark:text-amber-200">{BANK_ACCOUNT.holder}</span>
+                  </div>
+                  <div className="flex justify-between border-t border-amber-200 pt-2.5 dark:border-amber-700">
+                    <span className="text-amber-700 dark:text-amber-400">입금금액</span>
+                    <span className="text-xl font-bold text-amber-900 dark:text-amber-200">
+                      {summaryTotal.toLocaleString()}원
+                    </span>
+                  </div>
+                </div>
+                <p className="mt-3 text-xs text-amber-600 dark:text-amber-500">
+                  ⚠️ 주문 후 3일 이내 미입금 시 주문이 자동 취소됩니다.
+                </p>
+              </div>
+            )}
           </section>
         </div>
 
@@ -727,7 +688,8 @@ export default function CheckoutPage() {
               <span className="text-xl font-bold text-primary-600">{summaryTotal.toLocaleString()}원</span>
             </div>
 
-            <ButtonPrimary className="mt-6 w-full" onClick={handlePay} disabled={isSubmitting || (isDigitalOnly && digitalOrdererLoading)}>
+            <ButtonPrimary className="mt-6 w-full" onClick={handlePay}
+              disabled={isSubmitting || (isDigitalOnly && digitalOrdererLoading)}>
               {isSubmitting ? (
                 <span className="flex items-center gap-2">
                   <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
@@ -736,6 +698,11 @@ export default function CheckoutPage() {
                   </svg>
                   처리 중...
                 </span>
+              ) : payMethod === 'BANK_TRANSFER' ? (
+                <span className="flex items-center gap-2">
+                  <BuildingLibraryIcon className="h-4 w-4" />
+                  {summaryTotal.toLocaleString()}원 주문하기
+                </span>
               ) : (
                 <span className="flex items-center gap-2">
                   <LockClosedIcon className="h-4 w-4" />
@@ -743,6 +710,13 @@ export default function CheckoutPage() {
                 </span>
               )}
             </ButtonPrimary>
+
+            {payMethod === 'BANK_TRANSFER' && (
+              <p className="mt-3 text-center text-xs text-amber-600">
+                주문 후 {BANK_ACCOUNT.bank} {BANK_ACCOUNT.number}으로<br/>
+                {summaryTotal.toLocaleString()}원 입금해 주세요
+              </p>
+            )}
 
             <div className="mt-4 flex items-center justify-center gap-1.5 text-xs text-neutral-400">
               <LockClosedIcon className="h-3.5 w-3.5" />
