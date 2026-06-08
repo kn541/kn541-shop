@@ -1,6 +1,8 @@
 'use client'
-// KN541 마이페이지 주문 상세 — DEBUG 버전
-// 실제 요청 URL/메서드/응답을 toast에 표시
+// KN541 마이페이지 주문 상세
+// fix: 취소 API URL/메서드 수정 — POST /mypage/orders/{id}/cancel
+// fix: canCancel 조건 — PENDING 상태도 취소 버튼 표시
+// fix: DEBUG 코드 제거
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
@@ -58,6 +60,7 @@ const STATUS_COLOR: Record<string, string> = {
 const METHOD_LABEL: Record<string, string> = {
   CARD: '신용카드', VIRTUAL_ACCOUNT: '가상계좌', TRANSFER: '계좌이체',
   TOSS: '토스페이먼츠', KAKAO: '카카오페이',
+  BANK_TRANSFER: '무통장입금',
 }
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
@@ -67,17 +70,20 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 function CancelModal({
   orderNo,
   totalAmount,
+  orderStatus,
   onConfirm,
   onClose,
   loading,
 }: {
   orderNo: string
   totalAmount: number
+  orderStatus: string
   onConfirm: (reason: string) => void
   onClose: () => void
   loading: boolean
 }) {
   const [reason, setReason] = useState('')
+  const isPending = orderStatus === 'PENDING'
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
@@ -90,8 +96,15 @@ function CancelModal({
         <div className="mb-5 rounded-2xl bg-neutral-50 p-4 dark:bg-neutral-800">
           <p className="text-sm text-neutral-600 dark:text-neutral-400">주문번호</p>
           <p className="font-semibold text-neutral-900 dark:text-neutral-100">{orderNo}</p>
-          <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">취소 금액</p>
-          <p className="text-lg font-bold text-red-600">{totalAmount.toLocaleString('ko-KR')}원 환불</p>
+          {!isPending && (
+            <>
+              <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">취소 금액</p>
+              <p className="text-lg font-bold text-red-600">{totalAmount.toLocaleString('ko-KR')}원 환불</p>
+            </>
+          )}
+          {isPending && (
+            <p className="mt-2 text-sm text-amber-600">결제 미완료 주문을 취소합니다.</p>
+          )}
         </div>
 
         <div className="mb-5">
@@ -108,9 +121,11 @@ function CancelModal({
           />
         </div>
 
-        <p className="mb-5 text-xs text-neutral-400">
-          결제 취소 후 환불은 결제 수단에 따라 3~5 영업일 소요될 수 있습니다.
-        </p>
+        {!isPending && (
+          <p className="mb-5 text-xs text-neutral-400">
+            결제 취소 후 환불은 결제 수단에 따라 3~5 영업일 소요될 수 있습니다.
+          </p>
+        )}
 
         <div className="flex gap-3">
           <button
@@ -173,31 +188,29 @@ export default function OrderDetailPage() {
     const token = getToken()
     if (!token || !order) return
 
-    // ─── DEBUG: 실제 요청 정보 표시 ───────────────────────────────────
-    const cancelUrl = `${BASE}/orders/${orderId}/cancel`
-    toast(`[DEBUG] URL: ${cancelUrl}\nMETHOD: PATCH\nbody: ${JSON.stringify({ cancel_reason: reason.trim() || '회원 취소 요청' })}`, { duration: 10000 })
-    // ──────────────────────────────────────────────────────────────────
-
     setCancelLoading(true)
     try {
-      const res = await fetch(cancelUrl, {
-        method: 'PATCH',
+      // ★ fix: POST /mypage/orders/{id}/cancel (기존 PATCH /orders/{id}/cancel → 405 원인)
+      const res = await fetch(`${BASE}/mypage/orders/${orderId}/cancel`, {
+        method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cancel_reason: reason.trim() || '회원 취소 요청' }),
+        body: JSON.stringify({ reason: reason.trim() || '회원 취소 요청' }),
       })
 
-      // ─── DEBUG: 응답 상태 표시 ─────────────────────────────────────
-      const rawText = await res.text()
-      toast(`[DEBUG] STATUS: ${res.status}\nRESP: ${rawText.substring(0, 200)}`, { duration: 15000 })
-      // ──────────────────────────────────────────────────────────────
-
-      const data = JSON.parse(rawText)
+      const data = await res.json()
       if (!res.ok) {
         throw new Error(data.detail ?? '주문 취소에 실패했습니다')
       }
+
       setOrder(prev => prev ? { ...prev, order_status: 'CANCELLED', status_label: '취소' } : null)
       setShowCancelModal(false)
-      toast.success('주문이 취소됐습니다. 환불은 3~5 영업일 내 처리됩니다.')
+
+      const isPaid = order.order_status === 'PAID'
+      toast.success(
+        isPaid
+          ? '주문이 취소됐습니다. 환불은 3~5 영업일 내 처리됩니다.'
+          : '주문이 취소됐습니다.'
+      )
     } catch (err: any) {
       toast.error(err.message ?? '주문 취소 중 오류가 발생했습니다')
     } finally {
@@ -232,8 +245,9 @@ export default function OrderDetailPage() {
     )
   }
 
-  const subtotal  = order.items.reduce((s, i) => s + i.subtotal, 0)
-  const canCancel = order.order_status === 'PAID'
+  const subtotal = order.items.reduce((s, i) => s + i.subtotal, 0)
+  // ★ fix: PENDING(결제대기) + PAID(결제완료) 모두 취소 버튼 표시
+  const canCancel = order.order_status === 'PAID' || order.order_status === 'PENDING'
 
   return (
     <>
@@ -241,6 +255,7 @@ export default function OrderDetailPage() {
         <CancelModal
           orderNo={order.order_no}
           totalAmount={order.total_amount}
+          orderStatus={order.order_status}
           onConfirm={handleCancel}
           onClose={() => setShowCancelModal(false)}
           loading={cancelLoading}
@@ -355,7 +370,9 @@ export default function OrderDetailPage() {
                 <div>
                   <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">주문 취소</p>
                   <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-                    결제완료 상태에서만 취소 가능합니다. 상품 준비 시작 후에는 취소할 수 없습니다.
+                    {order.order_status === 'PAID'
+                      ? '결제완료 상태에서만 취소 가능합니다. 상품 준비 시작 후에는 취소할 수 없습니다.'
+                      : '결제 미완료 주문을 취소합니다.'}
                   </p>
                 </div>
                 <button
