@@ -11,7 +11,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useTranslations } from 'next-intl'
 
-const BASE = process.env.NEXT_PUBLIC_API_URL
+import { apiUrl } from '@/lib/api/base'
 
 type Step = 1 | 2 | 3
 
@@ -58,10 +58,6 @@ export default function ForgotPasswordClient() {
   }, [router])
 
   const sendCode = async () => {
-    if (!BASE) {
-      toast.error(t('forgotPasswordApiMissing'))
-      return
-    }
     if (!accountUsername.trim()) {
       toast.error(t('forgotPasswordUsernameInvalid'))
       return
@@ -73,7 +69,7 @@ export default function ForgotPasswordClient() {
     }
     setSending(true)
     try {
-      const res = await fetch(`${BASE}/auth/password-reset/request`, {
+      const res = await fetch(apiUrl('/auth/password-reset/request'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: accountUsername.trim(), phone: digits }),
@@ -99,10 +95,6 @@ export default function ForgotPasswordClient() {
   }
 
   const confirmReset = async () => {
-    if (!BASE) {
-      toast.error(t('forgotPasswordApiMissing'))
-      return
-    }
     if (deadlineMs != null && Date.now() > deadlineMs) {
       toast.error(t('forgotPasswordCodeExpired'))
       return
@@ -117,7 +109,7 @@ export default function ForgotPasswordClient() {
     }
     setSubmitting(true)
     try {
-      const res = await fetch(`${BASE}/auth/password-reset/confirm`, {
+      const res = await fetch(apiUrl('/auth/password-reset/confirm'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

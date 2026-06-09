@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { ShoppingBagIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
+import { apiUrl } from '@/lib/api/base'
 
 function getToken() {
   if (typeof window === 'undefined') return null
@@ -64,7 +64,7 @@ export default function MyOrdersPage() {
       page: String(page),
       size: String(SIZE),
     })
-    fetch(`${BASE}/mypage/orders?${params}`, {
+    fetch(apiUrl(`/mypage/orders?${params}`), {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(r => r.json())

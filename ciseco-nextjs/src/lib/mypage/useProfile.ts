@@ -4,7 +4,7 @@ import type { MypageProfile } from './types'
 import { MOCK_PROFILE } from './mocks'
 import { getAuthHeader, isLoggedIn } from './auth'
 
-const BASE = process.env.NEXT_PUBLIC_API_URL
+import { apiUrl } from '@/lib/api/base'
 
 export function useProfile() {
   const [data, setData] = useState<MypageProfile | null>(null)
@@ -12,11 +12,6 @@ export function useProfile() {
   const [error, setError] = useState<string | null>(null)
 
   const load = useCallback(() => {
-    if (!BASE) {
-      setData(MOCK_PROFILE)
-      setLoading(false)
-      return
-    }
     if (!isLoggedIn()) {
       setData(MOCK_PROFILE)
       setLoading(false)
@@ -24,7 +19,7 @@ export function useProfile() {
     }
 
     setLoading(true)
-    fetch(`${BASE}/auth/me`, {
+    fetch(apiUrl('/auth/me'), {
       headers: getAuthHeader() as HeadersInit,
     })
       .then(r => {

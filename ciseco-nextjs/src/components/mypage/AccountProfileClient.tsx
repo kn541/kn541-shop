@@ -21,7 +21,7 @@ import {
   passwordContainsHangul,
 } from '@/lib/passwordPolicy'
 
-const BASE = process.env.NEXT_PUBLIC_API_URL
+import { apiUrl } from '@/lib/api/base'
 
 function EyeIcon({ open }: { open: boolean }) {
   if (open) {
@@ -154,7 +154,7 @@ export default function AccountProfileClient() {
   ])
 
   const saveAll = async () => {
-    if (!BASE || !data) {
+    if (!data) {
       toast.error('설정을 불러올 수 없습니다.')
       return
     }
@@ -172,7 +172,7 @@ export default function AccountProfileClient() {
 
     setSaving(true)
     try {
-      const patchRes = await fetch(`${BASE}/members/${data.user_id}`, {
+      const patchRes = await fetch(apiUrl(`/members/${data.user_id}`), {
         method: 'PATCH',
         headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -230,10 +230,6 @@ export default function AccountProfileClient() {
   }, [])
 
   const submitWithdraw = async () => {
-    if (!BASE) {
-      toast.error('설정을 불러올 수 없습니다.')
-      return
-    }
     if (withdrawReasonCode === 'OTHER' && withdrawReasonDetail.trim().length < 2) {
       toast.error('기타 사유를 입력해 주세요.')
       return

@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   description: '진행 중인 사전예약 상품을 만나보세요.',
 }
 
-const BASE = process.env.NEXT_PUBLIC_API_URL || 'https://kn541-production.up.railway.app'
+import { apiUrl } from '@/lib/api/base'
 
 function mapProduct(p: any) {
   const pid = String(p.product_id || p.id || '')
@@ -45,7 +45,7 @@ function mapProduct(p: any) {
 async function fetchPreorder(page: number) {
   try {
     const qs = new URLSearchParams({ page: String(page), size: String(PRODUCT_LIST_PAGE_SIZE) })
-    const res = await fetch(`${BASE}/public/products/preorder?${qs}`, { cache: 'no-store' })
+    const res = await fetch(apiUrl(`/public/products/preorder?${qs}`), { cache: 'no-store' })
     if (!res.ok) return { products: [], total: 0 }
     const json = await res.json()
     const items = json.data?.items ?? []

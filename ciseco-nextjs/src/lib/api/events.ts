@@ -1,7 +1,7 @@
 /**
  * KN541 할인 이벤트 API (공개)
  */
-const BASE = process.env.NEXT_PUBLIC_API_URL
+import { apiUrl } from '@/lib/api/base'
 
 export interface ActiveDiscountEvent {
   id: string
@@ -46,7 +46,7 @@ async function parseJson<T>(res: Response): Promise<T> {
 
 /** 진행 중 할인 이벤트 목록 */
 export async function fetchActiveDiscountEvents(): Promise<ActiveDiscountEvent[]> {
-  const res = await fetch(`${BASE}/events/discount/active`, { cache: 'no-store' })
+  const res = await fetch(apiUrl('/events/discount/active'), { cache: 'no-store' })
   const data = await parseJson<{ items: ActiveDiscountEvent[] }>(res)
   return data.items ?? []
 }
@@ -65,7 +65,7 @@ export async function calculateEventDiscount(
   q.set('quantities', quantities.join(','))
   if (memberId) q.set('member_id', memberId)
 
-  const res = await fetch(`${BASE}/events/discount/calculate?${q}`, { cache: 'no-store' })
+  const res = await fetch(apiUrl(`/events/discount/calculate?${q}`), { cache: 'no-store' })
   return parseJson<EventDiscountCalcResult>(res)
 }
 

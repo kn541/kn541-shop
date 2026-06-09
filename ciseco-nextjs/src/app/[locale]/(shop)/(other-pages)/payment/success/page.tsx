@@ -10,7 +10,7 @@ import { CheckCircleIcon } from '@heroicons/react/24/outline'
 import { useCart } from '@/lib/cart-context'
 import { useTranslations } from 'next-intl'
 
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
+import { apiUrl } from '@/lib/api/base'
 
 function Spinner() {
   return (
@@ -52,7 +52,7 @@ function SuccessContent() {
         const headers: Record<string, string> = { 'Content-Type': 'application/json' }
         if (token) headers['Authorization'] = `Bearer ${token}`
 
-        const res = await fetch(`${BASE}/payments/confirm`, {
+        const res = await fetch(apiUrl('/payments/confirm'), {
           method: 'POST',
           headers,
           body: JSON.stringify({

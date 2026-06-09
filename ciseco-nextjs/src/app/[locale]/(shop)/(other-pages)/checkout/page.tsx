@@ -25,7 +25,7 @@ import { Link } from '@/shared/link'
 import { useCart, calcItemShipping } from '@/lib/cart-context'
 import toast from 'react-hot-toast'
 
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
+import { apiUrl } from '@/lib/api/base'
 
 // ── 무통장 입금 계좌 정보 ──────────────────────────────────────────────────
 const BANK_ACCOUNT = {
@@ -138,7 +138,7 @@ export default function CheckoutPage() {
     setDigitalOrdererLoading(true)
     ;(async () => {
       try {
-        const meRes = await fetch(`${BASE}/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
+        const meRes = await fetch(apiUrl('/auth/me'), { headers: { Authorization: `Bearer ${token}` } })
         if (!meRes.ok) throw new Error('회원 정보를 불러올 수 없습니다.')
         const d = (await meRes.json()).data
         const info = {
@@ -169,7 +169,7 @@ export default function CheckoutPage() {
     if (isDigitalOnly) return
     const token = getToken()
     if (!token) { setShowNewForm(true); return }
-    fetch(`${BASE}/my/addresses`, { headers: { Authorization: `Bearer ${token}` } })
+    fetch(apiUrl('/my/addresses'), { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json())
       .then(data => {
         const addrs: SavedAddress[] = data?.data?.items ?? []
@@ -191,7 +191,7 @@ export default function CheckoutPage() {
     async function initPayment() {
       try {
         const token = getToken()
-        const configRes = await fetch(`${BASE}/payments/config`, {
+        const configRes = await fetch(apiUrl('/payments/config'), {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         })
         if (!configRes.ok) throw new Error('결제 설정을 불러올 수 없습니다')
@@ -203,7 +203,7 @@ export default function CheckoutPage() {
         let customerKey = ANONYMOUS
         if (token) {
           try {
-            const meRes = await fetch(`${BASE}/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
+            const meRes = await fetch(apiUrl('/auth/me'), { headers: { Authorization: `Bearer ${token}` } })
             if (meRes.ok) {
               const uid = (await meRes.json()).data?.user_id
               if (uid) customerKey = uid
@@ -271,7 +271,7 @@ export default function CheckoutPage() {
 
       if (!isDigitalOnly && showNewForm && saveNewAddress) {
         try {
-          await fetch(`${BASE}/my/addresses`, {
+          await fetch(apiUrl('/my/addresses'), {
             method: 'POST', headers,
             body: JSON.stringify({
               recipient_name: form.name.trim(), recipient_phone: form.phone.trim(),
@@ -290,7 +290,7 @@ export default function CheckoutPage() {
         const orderBody = isDigitalOnly
           ? { items: orderableItems.map(i => ({ product_id: i.productId, option_id: i.optionId ?? null, quantity: Number(i.quantity)||1 })), recipient_name: payName, recipient_phone: payPhone, zip_code: '', address1: '디지털상품', address2: '', delivery_memo: '', payment_method: 'BANK_TRANSFER' }
           : { items: orderableItems.map(i => ({ product_id: i.productId, option_id: i.optionId ?? null, quantity: Number(i.quantity)||1 })), recipient_name: form.name.trim(), recipient_phone: form.phone.trim(), zip_code: address.zipcode, address1: address.address1, address2: address.address2 ?? '', delivery_memo: form.memo, payment_method: 'BANK_TRANSFER' }
-        const orderRes  = await fetch(`${BASE}/orders`, { method: 'POST', headers, body: JSON.stringify(orderBody) })
+        const orderRes  = await fetch(apiUrl('/orders'), { method: 'POST', headers, body: JSON.stringify(orderBody) })
         const orderData = await orderRes.json()
         if (!orderRes.ok) throw new Error(orderData.detail ?? '주문 생성에 실패했습니다')
         clearCart()
@@ -308,7 +308,7 @@ export default function CheckoutPage() {
         const orderBody = isDigitalOnly
           ? { items: orderableItems.map(i => ({ product_id: i.productId, option_id: i.optionId ?? null, quantity: Number(i.quantity)||1 })), recipient_name: payName, recipient_phone: payPhone, zip_code: '', address1: '디지털상품', address2: '', delivery_memo: '', payment_method: 'TOSS' }
           : { items: orderableItems.map(i => ({ product_id: i.productId, option_id: i.optionId ?? null, quantity: Number(i.quantity)||1 })), recipient_name: form.name.trim(), recipient_phone: form.phone.trim(), zip_code: address.zipcode, address1: address.address1, address2: address.address2 ?? '', delivery_memo: form.memo, payment_method: 'TOSS' }
-        const orderRes  = await fetch(`${BASE}/orders`, { method: 'POST', headers, body: JSON.stringify(orderBody) })
+        const orderRes  = await fetch(apiUrl('/orders'), { method: 'POST', headers, body: JSON.stringify(orderBody) })
         const orderData = await orderRes.json()
         if (!orderRes.ok) throw new Error(orderData.detail ?? '주문 생성에 실패했습니다')
 
@@ -332,7 +332,7 @@ export default function CheckoutPage() {
       if (payMethod === 'EASY_PAY') {
         // 간편결제는 외부 페이지로 리다이렉트 → pendingOrderRef 필요 없음
         pendingOrderRef.current = null
-        const tosspayRes = await fetch(`${BASE}/payments/tosspay/create`, {
+        const tosspayRes = await fetch(apiUrl('/payments/tosspay/create'), {
           method: 'POST', headers,
           body: JSON.stringify({
             order_id,
@@ -350,7 +350,7 @@ export default function CheckoutPage() {
 
       // ── 토스페이먼츠 (카드 등) ───────────────────────────────────────────
       // prepare는 매 시도마다 새로 호출해도 무방 (토스 측에서 orderId로 멱등 처리)
-      const prepareRes  = await fetch(`${BASE}/payments/prepare`, {
+      const prepareRes  = await fetch(apiUrl('/payments/prepare'), {
         method: 'POST', headers,
         body: JSON.stringify({ order_id, amount: Math.round(total_amount), order_name: orderName }),
       })
@@ -553,7 +553,7 @@ export default function CheckoutPage() {
                           try {
                             const token = getToken()
                             if (!token) return
-                            const res = await fetch(`${BASE}/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
+                            const res = await fetch(apiUrl('/auth/me'), { headers: { Authorization: `Bearer ${token}` } })
                             if (res.ok) {
                               const d = (await res.json()).data
                               const info = { name: d?.name ?? '', phone: d?.phone ?? '', email: d?.email ?? '' }

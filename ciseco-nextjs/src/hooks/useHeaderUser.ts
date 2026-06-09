@@ -7,7 +7,7 @@ import {
 } from '@/lib/auth/headerUser'
 import { useCallback, useEffect, useState } from 'react'
 
-const BASE = process.env.NEXT_PUBLIC_API_URL
+import { apiUrl } from '@/lib/api/base'
 
 export function useHeaderUser() {
   const [isMounted, setIsMounted] = useState(false)
@@ -39,13 +39,8 @@ export function useHeaderUser() {
     const cached = readCachedHeaderGreeting()
     if (cached) setGreeting(cached)
 
-    if (!BASE) {
-      setLoading(false)
-      return
-    }
-
     let cancelled = false
-    fetch(`${BASE}/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
+    fetch(apiUrl('/auth/me'), { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => (r.ok ? r.json() : null))
       .then((json) => {
         if (cancelled) return

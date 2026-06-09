@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   description: '소비의 가치를 높여주는 밸류업 상품입니다.',
 }
 
-const BASE = process.env.NEXT_PUBLIC_API_URL || 'https://kn541-production.up.railway.app'
+import { apiUrl } from '@/lib/api/base'
 
 function mapProduct(p: any) {
   const pid = String(p.product_id || p.id || '')
@@ -45,7 +45,7 @@ function mapProduct(p: any) {
 async function fetchValueUp(page: number) {
   try {
     const qs = new URLSearchParams({ page: String(page), size: String(PRODUCT_LIST_PAGE_SIZE) })
-    const res = await fetch(`${BASE}/public/products/value-up?${qs}`, { cache: 'no-store' })
+    const res = await fetch(apiUrl(`/public/products/value-up?${qs}`), { cache: 'no-store' })
     if (!res.ok) return { products: [], total: 0 }
     const json = await res.json()
     const items = json.data?.items ?? []

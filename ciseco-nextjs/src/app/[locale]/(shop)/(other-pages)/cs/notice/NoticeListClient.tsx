@@ -13,7 +13,7 @@ interface NoticeItem {
   created_at: string
 }
 
-const BASE = process.env.NEXT_PUBLIC_API_URL || 'https://kn541-production.up.railway.app'
+import { apiUrl } from '@/lib/api/base'
 const PAGE_SIZE = 15
 
 export default function NoticeListClient({
@@ -38,7 +38,7 @@ export default function NoticeListClient({
   const fetchPage = async (p: number) => {
     setLoading(true)
     try {
-      const res = await fetch(`${BASE}/cs/notices?page=${p}&size=${PAGE_SIZE}`)
+      const res = await fetch(apiUrl(`/cs/notices?page=${p}&size=${PAGE_SIZE}`))
       if (!res.ok) throw new Error('fail')
       const json = await res.json()
       const nextItems = json.data?.items ?? json.data ?? []

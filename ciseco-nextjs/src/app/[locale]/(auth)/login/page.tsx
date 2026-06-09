@@ -12,8 +12,7 @@ import {
   setForceChangeSession,
   setPasswordReminderPending,
 } from '@/lib/auth/passwordSession'
-
-const BASE = process.env.NEXT_PUBLIC_API_URL
+import { apiUrl } from '@/lib/api/base'
 const LOGO_URL = 'https://ghtkropmnrelkxivzpim.supabase.co/storage/v1/object/public/brands/white_logo.png'
 
 // next-intl router.push()에 locale prefix가 중복되지 않도록 strip
@@ -46,11 +45,7 @@ function LoginForm() {
     }
     startTransition(async () => {
       try {
-        if (!BASE) {
-          setError('API 서버 주소가 설정되지 않았습니다.')
-          return
-        }
-        const res = await fetch(`${BASE}/auth/login`, {
+        const res = await fetch(apiUrl('/auth/login'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, password }),

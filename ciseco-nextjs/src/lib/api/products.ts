@@ -6,7 +6,7 @@
  * fix: getProductByCode — UUID 직접 조회 + keyword 없이 전체 목록 조회 후 product_code 필터
  */
 
-const BASE = process.env.NEXT_PUBLIC_API_URL
+import { apiUrl } from '@/lib/api/base'
 
 /** UUID v4 패턴 */
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -134,7 +134,7 @@ export async function getProducts(params?: {
   if (params?.sort_by) query.set('sort_by', params.sort_by)
   if (params?.sort_order) query.set('sort_order', params.sort_order)
 
-  const url = `${BASE}/products${query.toString() ? `?${query}` : ''}`
+  const url = apiUrl(`/products${query.toString() ? `?${query}` : ''}`)
   const res = await fetch(url, { next: { revalidate: 60 } })
   if (!res.ok) throw new Error('상품 조회 실패')
   const data = await res.json()
@@ -143,7 +143,6 @@ export async function getProducts(params?: {
 
 /** 마이페이지 패키지(동사가치) — product_type=005, 판매중, sale_price 오름차순 상위 4건 */
 export async function getPackageProducts(): Promise<Product[]> {
-  if (!BASE) return []
   try {
     const res = await getProducts({
       page: 1,
@@ -162,10 +161,9 @@ export async function getPackageProducts(): Promise<Product[]> {
 
 /** 메인 디자인 진열 — GET /public/main-products?section_code=001|002|003|004 + 단건 상세 병합 (정렬 유지) */
 export async function getMainDisplayProducts(sectionCode: string): Promise<Product[]> {
-  if (!BASE) return []
   try {
     const res = await fetch(
-      `${BASE}/public/main-products?section_code=${encodeURIComponent(sectionCode)}`,
+      apiUrl(`/public/main-products?section_code=${encodeURIComponent(sectionCode)}`),
       { next: { revalidate: 60 } }
     )
     if (!res.ok) return []
@@ -188,13 +186,12 @@ export async function getMainDisplayProducts(sectionCode: string): Promise<Produ
 
 /** 메인 추천 영역 — 응답 `{ data: { items } }`, 실패·BASE 없으면 빈 배열 */
 export async function getRecommendedProductsForMain(size = 4): Promise<Product[]> {
-  if (!BASE) return []
   const query = new URLSearchParams({
     is_recommended: 'true',
     size: String(size),
     page: '1',
   })
-  const res = await fetch(`${BASE}/products?${query}`, { next: { revalidate: 60 } })
+  const res = await fetch(apiUrl(`/products?${query}`), { next: { revalidate: 60 } })
   if (!res.ok) return []
   const json = await res.json()
   return json.data?.items ?? []
@@ -202,7 +199,7 @@ export async function getRecommendedProductsForMain(size = 4): Promise<Product[]
 
 // ★ 상품 단건 조회 — product_id (UUID) 사용
 export async function getProductById(productId: string): Promise<Product> {
-  const res = await fetch(`${BASE}/products/${productId}`, {
+  const res = await fetch(apiUrl(`/products/${productId}`), {
     next: { revalidate: 60 },
   })
   if (!res.ok) throw new Error(`상품 조회 실패: ${productId}`)
@@ -231,7 +228,7 @@ export async function getProductByCode(productCode: string): Promise<Product | n
     // 2. keyword 없이 전체 목록 조회 후 product_code 정확 매칭
     //    (백엔드 keyword 검색은 상품명 기반 — product_code 숫자 매칭 안 됨)
     const query = new URLSearchParams({ size: '200' })
-    const res = await fetch(`${BASE}/products?${query}`, { next: { revalidate: 60 } })
+    const res = await fetch(apiUrl(`/products?${query}`), { next: { revalidate: 60 } })
     if (!res.ok) return null
     const data = await res.json()
     const items: Product[] = data.data?.items ?? []

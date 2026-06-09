@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from '@/i18n/navigation'
 
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
+import { apiUrl } from '@/lib/api/base'
 
 export default function ChangePasswordPage() {
   const router = useRouter()
@@ -23,7 +23,7 @@ export default function ChangePasswordPage() {
     setLoading(true)
     try {
       const token = localStorage.getItem('access_token')
-      const res = await fetch(`${BASE}/mypage/change-password`, {
+      const res = await fetch(apiUrl('/mypage/change-password'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({

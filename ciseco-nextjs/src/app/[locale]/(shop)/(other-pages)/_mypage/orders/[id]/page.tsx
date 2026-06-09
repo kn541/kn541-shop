@@ -10,7 +10,7 @@ import Image from 'next/image'
 import { ShoppingBagIcon, MapPinIcon, CreditCardIcon, ChevronLeftIcon, XCircleIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
+import { apiUrl } from '@/lib/api/base'
 
 function getToken() {
   if (typeof window === 'undefined') return null
@@ -172,7 +172,7 @@ export default function OrderDetailPage() {
     if (!token) { router.push('/ko/login'); return }
     if (!orderId) { setLoading(false); return }
 
-    fetch(`${BASE}/mypage/orders/${orderId}`, {
+    fetch(apiUrl(`/mypage/orders/${orderId}`), {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(async r => {
@@ -191,7 +191,7 @@ export default function OrderDetailPage() {
     setCancelLoading(true)
     try {
       // ★ fix: POST /mypage/orders/{id}/cancel (기존 PATCH /orders/{id}/cancel → 405 원인)
-      const res = await fetch(`${BASE}/mypage/orders/${orderId}/cancel`, {
+      const res = await fetch(apiUrl(`/mypage/orders/${orderId}/cancel`), {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ reason: reason.trim() || '회원 취소 요청' }),

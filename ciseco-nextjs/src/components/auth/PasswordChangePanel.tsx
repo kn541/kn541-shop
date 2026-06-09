@@ -10,7 +10,7 @@ import { toast } from 'react-hot-toast'
 import { checkPasswordPolicy, isPasswordValid, passwordContainsHangul, stripHangulFromPassword } from '@/lib/passwordPolicy'
 import { mypageFetch, MypageApiError } from '@/lib/mypage/api'
 
-const apiBase = process.env.NEXT_PUBLIC_API_URL
+import { apiUrl } from '@/lib/api/base'
 
 /** 표시/숨김 토글용 눈 아이콘 */
 function EyeIcon({ open }: { open: boolean }) {
@@ -116,10 +116,6 @@ export function PasswordChangePanel(props: PasswordChangePanelProps) {
     'w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 px-4 py-3 text-sm text-neutral-900 dark:text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all'
 
   const submit = async () => {
-    if (!apiBase) {
-      toast.error('API 서버 주소가 설정되지 않았습니다.')
-      return
-    }
     if (!canSubmit) return
     setServerErr('')
     setSubmitting(true)
@@ -132,7 +128,7 @@ export function PasswordChangePanel(props: PasswordChangePanelProps) {
         if (forcedNeedsCurrent) {
           body.current_password = currentPassword
         }
-        const res = await fetch(`${apiBase}/auth/force-change-password`, {
+        const res = await fetch(apiUrl('/auth/force-change-password'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body),

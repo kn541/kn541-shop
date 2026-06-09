@@ -4,7 +4,7 @@
  * 인증 불필요 (공개 API)
  */
 
-const BASE = process.env.NEXT_PUBLIC_API_URL
+import { apiUrl } from '@/lib/api/base'
 
 export interface Category {
   id: string
@@ -22,7 +22,7 @@ export interface Category {
 
 // 카테고리 트리 전체 조회
 export async function getCategories(): Promise<Category[]> {
-  const res = await fetch(`${BASE}/categories`, {
+  const res = await fetch(apiUrl('/categories'), {
     next: { revalidate: 300 }, // 5분 캐시
   })
   if (!res.ok) throw new Error('카테고리 조회 실패')
@@ -32,7 +32,7 @@ export async function getCategories(): Promise<Category[]> {
 
 // 카테고리 단건 + 하위 포함 조회
 export async function getCategoryById(id: string): Promise<Category> {
-  const res = await fetch(`${BASE}/categories/${id}`, {
+  const res = await fetch(apiUrl(`/categories/${id}`), {
     next: { revalidate: 300 },
   })
   if (!res.ok) throw new Error('카테고리 조회 실패')

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from '@/i18n/navigation'
 
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
+import { apiUrl } from '@/lib/api/base'
 
 export default function ChangeUsernamePage() {
   const router = useRouter()
@@ -23,7 +23,7 @@ export default function ChangeUsernamePage() {
     setError('')
     setCheckLoading(true)
     try {
-      const res = await fetch(`${BASE}/auth/check-duplicate`, {
+      const res = await fetch(apiUrl('/auth/check-duplicate'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ field: 'username', value: val }),
@@ -54,7 +54,7 @@ export default function ChangeUsernamePage() {
     setLoading(true)
     try {
       const token = localStorage.getItem('access_token')
-      const res = await fetch(`${BASE}/mypage/change-username`, {
+      const res = await fetch(apiUrl('/mypage/change-username'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({

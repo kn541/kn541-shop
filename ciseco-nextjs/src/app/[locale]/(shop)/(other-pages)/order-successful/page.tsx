@@ -16,7 +16,7 @@ import {
 } from '@heroicons/react/24/outline'
 import Image from 'next/image'
 
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
+import { apiUrl } from '@/lib/api/base'
 
 // ── 무통장 입금 계좌 정보 ──────────────────────────────────────────────────
 const BANK_ACCOUNT = {
@@ -122,7 +122,7 @@ function OrderContent() {
     const token = getToken()
     if (!token)   { setLoading(false); return }
 
-    fetch(`${BASE}/mypage/orders/${orderId}`, {
+    fetch(apiUrl(`/mypage/orders/${orderId}`), {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(r => r.json())

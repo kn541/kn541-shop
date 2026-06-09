@@ -3,7 +3,7 @@
 import { useAuth } from '@/hooks/useAuth'
 import { useEffect, useState } from 'react'
 
-const BASE = process.env.NEXT_PUBLIC_API_URL
+import { apiUrl } from '@/lib/api/base'
 
 /**
  * JWT → localStorage user_type → /auth/me 순으로 회원 유형 확인
@@ -27,14 +27,14 @@ export function useEffectiveUserType() {
 
     const token =
       typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
-    if (!token || !BASE) {
+    if (!token) {
       setUserType('')
       setResolved(true)
       return
     }
 
     let cancelled = false
-    fetch(`${BASE}/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
+    fetch(apiUrl('/auth/me'), { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => (r.ok ? r.json() : null))
       .then((json) => {
         if (cancelled) return

@@ -4,6 +4,7 @@
  * Bearer access_token (localStorage) — mypageFetch와 동일 패턴
  */
 import { useCallback, useEffect, useState } from 'react'
+import { apiUrl } from '@/lib/api/base'
 import { mypageFetch, MypageApiError } from './api'
 import type { ShopTemplateCode } from './types'
 
@@ -182,14 +183,12 @@ export async function patchMyShopDesign(templateCode: string): Promise<{ message
 
 /** POST /upload/file — shop 로고용 (bucket=members) */
 export async function uploadMemberImage(file: File, folder = 'shop-logos'): Promise<string> {
-  const API_BASE =
-    process.env.NEXT_PUBLIC_API_URL || 'https://kn541-production.up.railway.app'
   const token =
     typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
   const qs = new URLSearchParams({ bucket: 'members', folder })
   const fd = new FormData()
   fd.append('file', file)
-  const res = await fetch(`${API_BASE}/upload/file?${qs.toString()}`, {
+  const res = await fetch(apiUrl(`/upload/file?${qs.toString()}`), {
     method: 'POST',
     headers: token ? { Authorization: `Bearer ${token}` } : {},
     body: fd,

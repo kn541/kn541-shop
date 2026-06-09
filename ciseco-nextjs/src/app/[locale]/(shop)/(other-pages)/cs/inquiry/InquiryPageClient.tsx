@@ -10,7 +10,7 @@ import { Field, FieldGroup, Fieldset, Label } from '@/shared/fieldset'
 import { Input } from '@/shared/input'
 import { Textarea } from '@/shared/textarea'
 
-const BASE = process.env.NEXT_PUBLIC_API_URL
+import { apiUrl } from '@/lib/api/base'
 
 const CATEGORIES = [
   { value: 'order', label: '주문/결제 문의' },
@@ -49,7 +49,7 @@ export default function InquiryPageClient() {
     const token = localStorage.getItem('access_token')
 
     try {
-      const res = await fetch(`${BASE}/cs/inquiries`, {
+      const res = await fetch(apiUrl('/cs/inquiries'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

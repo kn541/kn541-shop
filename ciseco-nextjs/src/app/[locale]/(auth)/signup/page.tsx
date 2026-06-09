@@ -9,7 +9,7 @@ import { useSearchParams } from 'next/navigation'
 import { LockClosedIcon } from '@heroicons/react/24/solid'
 import { checkPasswordPolicy, isPasswordValid, passwordContainsHangul, stripHangulFromPassword } from '@/lib/passwordPolicy'
 
-const BASE = process.env.NEXT_PUBLIC_API_URL
+import { apiUrl } from '@/lib/api/base'
 const LOGO_URL = 'https://ghtkropmnrelkxivzpim.supabase.co/storage/v1/object/public/brands/white_logo.png'
 
 /** system_codes user_type — 일반회원 */
@@ -135,7 +135,7 @@ function SignupPageContent() {
     if (dupTimerRef.current) clearTimeout(dupTimerRef.current)
     dupTimerRef.current = setTimeout(async () => {
       try {
-        const res = await fetch(`${BASE}/auth/check-duplicate`, {
+        const res = await fetch(apiUrl('/auth/check-duplicate'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ field, value }),
@@ -160,7 +160,7 @@ function SignupPageContent() {
     setRecommenderValid('checking')
     try {
       const res = await fetch(
-        `${BASE}/auth/validate-recommender?${new URLSearchParams({ code: trimmed })}`
+        apiUrl(`/auth/validate-recommender?${new URLSearchParams({ code: trimmed })}`)
       )
       const json = await res.json()
       if (json?.data?.valid) {
@@ -222,7 +222,7 @@ function SignupPageContent() {
           }
         }
 
-        const res = await fetch(`${BASE}/auth/register`, {
+        const res = await fetch(apiUrl('/auth/register'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body),

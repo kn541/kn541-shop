@@ -4,9 +4,7 @@
  */
 import type { MypageHomeResponse } from './types'
 import { clearHeaderUserCache } from '@/lib/auth/headerUser'
-
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL || 'https://kn541-production.up.railway.app'
+import { apiUrl } from '@/lib/api/base'
 
 // ─── 에러 클래스 ─────────────────────────────────────────────────
 export class MypageApiError extends Error {
@@ -76,7 +74,7 @@ export async function refreshAccessToken(): Promise<string | null> {
   const rt = localStorage.getItem('refresh_token')
   if (!rt) return null
   try {
-    const res = await fetch(`${API_BASE}/auth/refresh`, {
+    const res = await fetch(apiUrl('/auth/refresh'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refresh_token: rt }),
@@ -112,7 +110,7 @@ export async function mypageFetch<T>(path: string, init?: RequestInit): Promise<
   const token =
     typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
 
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await fetch(apiUrl(path), {
     ...init,
     headers: {
       'Content-Type': 'application/json',
@@ -128,7 +126,7 @@ export async function mypageFetch<T>(path: string, init?: RequestInit): Promise<
       clearAuthAndRedirect()
       throw new MypageApiError(401, 'UNAUTHORIZED', '로그인이 필요합니다')
     }
-    const retryRes = await fetch(`${API_BASE}${path}`, {
+    const retryRes = await fetch(apiUrl(path), {
       ...init,
       headers: {
         'Content-Type': 'application/json',

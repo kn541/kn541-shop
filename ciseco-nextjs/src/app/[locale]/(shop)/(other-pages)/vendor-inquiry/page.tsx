@@ -9,7 +9,7 @@ import Link from 'next/link'
 import { uploadVendorFileToStorage, validateVendorUploadFile } from '@/lib/vendor-files-upload'
 
 // Railway 백엔드 API URL (Vercel 환경변수에서 가져옴)
-const BASE = process.env.NEXT_PUBLIC_API_URL
+import { apiUrl } from '@/lib/api/base'
 
 interface FormState {
   contact_name: string
@@ -88,13 +88,6 @@ export default function VendorInquiryPage() {
     setError('')
     setSubmitting(true)
 
-    // API URL 미설정 시 안내
-    if (!BASE) {
-      setError('API 서버 주소가 설정되지 않았습니다. 관리자에게 문의해 주세요.')
-      setSubmitting(false)
-      return
-    }
-
     try {
       let bizRegFileUrl: string
       let productBriefUrl: string | null = null
@@ -114,7 +107,7 @@ export default function VendorInquiryPage() {
         return
       }
 
-      const res = await fetch(`${BASE}/vendor-inquiry`, {
+      const res = await fetch(apiUrl('/vendor-inquiry'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -15,7 +15,7 @@ import {
 import { toast } from 'react-hot-toast'
 import L3Guard from '@/components/mypage/L3Guard'
 
-const BASE = process.env.NEXT_PUBLIC_API_URL || 'https://kn541-production.up.railway.app'
+import { apiUrl } from '@/lib/api/base'
 
 function getHeaders() {
   const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
@@ -110,7 +110,7 @@ function MyShopPageContent() {
 
   async function fetchShop() {
     try {
-      const r = await fetch(`${BASE}/myshop`, { headers: getHeaders() })
+      const r = await fetch(apiUrl('/myshop'), { headers: getHeaders() })
       if (r.status === 401) { router.push('/login'); return }
       const data = await r.json()
       setShop(data.data)
@@ -123,7 +123,7 @@ function MyShopPageContent() {
 
   async function fetchDashboard() {
     try {
-      const r = await fetch(`${BASE}/myshop/dashboard`, { headers: getHeaders() })
+      const r = await fetch(apiUrl('/myshop/dashboard'), { headers: getHeaders() })
       const data = await r.json()
       setDashboard(data.data)
     } catch {}
@@ -131,7 +131,7 @@ function MyShopPageContent() {
 
   async function fetchProducts() {
     try {
-      const r = await fetch(`${BASE}/myshop/products`, { headers: getHeaders() })
+      const r = await fetch(apiUrl('/myshop/products'), { headers: getHeaders() })
       const data = await r.json()
       setProducts(data.data?.items || [])
     } catch {}
@@ -144,7 +144,7 @@ function MyShopPageContent() {
         const q = new URLSearchParams({ page: '1', size: '50' })
         const k = keyword.trim()
         if (k) q.set('keyword', k)
-        const r = await fetch(`${BASE}/myshop/products/find?${q.toString()}`, { headers: getHeaders() })
+        const r = await fetch(apiUrl(`/myshop/products/find?${q.toString()}`), { headers: getHeaders() })
         if (r.status === 401) {
           router.push('/login')
           return
@@ -170,7 +170,7 @@ function MyShopPageContent() {
   async function checkUrl(code: string) {
     if (code.length < 6) { setUrlAvailable(null); return }
     try {
-      const r = await fetch(`${BASE}/myshop/check-url?code=${code}`, { headers: getHeaders() })
+      const r = await fetch(apiUrl(`/myshop/check-url?code=${code}`), { headers: getHeaders() })
       const data = await r.json()
       setUrlAvailable(data.data?.available ?? false)
     } catch {}
@@ -180,7 +180,7 @@ function MyShopPageContent() {
     if (!newShopName.trim()) { toast.error('쇼핑몰 이름을 입력해주세요'); return }
     if (urlAvailable === false) { toast.error('사용 불가능한 URL 코드입니다'); return }
     try {
-      const r = await fetch(`${BASE}/myshop`, {
+      const r = await fetch(apiUrl('/myshop'), {
         method: 'POST',
         headers: getHeaders(),
         body: JSON.stringify({
@@ -205,7 +205,7 @@ function MyShopPageContent() {
 
   async function toggleProduct(productId: string, isActive: boolean) {
     try {
-      await fetch(`${BASE}/myshop/products/${productId}`, {
+      await fetch(apiUrl(`/myshop/products/${productId}`), {
         method: 'PATCH',
         headers: getHeaders(),
         body: JSON.stringify({ is_active: !isActive }),
@@ -218,7 +218,7 @@ function MyShopPageContent() {
   }
 
   async function removeShopProduct(productId: string) {
-    const r = await fetch(`${BASE}/myshop/products/${productId}`, {
+    const r = await fetch(apiUrl(`/myshop/products/${productId}`), {
       method: 'DELETE',
       headers: getHeaders(),
     })
@@ -233,7 +233,7 @@ function MyShopPageContent() {
   async function addProductFromCatalog(productId: string) {
     setAddingProductId(productId)
     try {
-      const r = await fetch(`${BASE}/myshop/products`, {
+      const r = await fetch(apiUrl('/myshop/products'), {
         method: 'POST',
         headers: getHeaders(),
         body: JSON.stringify({ product_id: productId, sort_order: 0 }),

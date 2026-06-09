@@ -3,7 +3,7 @@
  * 백엔드: GET /public/hero-banners, /public/main-products (v_active_* 뷰)
  */
 
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
+import { apiUrl } from '@/lib/api/base'
 
 export type HeroBanner = {
   id: string
@@ -24,9 +24,8 @@ type HeroBannersResponse = {
 }
 
 export async function fetchHeroBanners(): Promise<HeroBanner[]> {
-  if (!BASE) return []
   try {
-    const res = await fetch(`${BASE}/public/hero-banners`, { next: { revalidate: 60 } })
+    const res = await fetch(apiUrl('/public/hero-banners'), { next: { revalidate: 60 } })
     if (!res.ok) return []
     const json = (await res.json()) as HeroBannersResponse
     if (json.status != null && json.status !== 'success') return []

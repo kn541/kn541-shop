@@ -1,7 +1,7 @@
 'use client'
 // KN541 Shop — 옵션 2단 조합 API (Admin useOptionGroups와 동일)
 
-const BASE = process.env.NEXT_PUBLIC_API_URL || ''
+import { apiUrl } from '@/lib/api/base'
 
 function authHeaders(): Record<string, string> {
   const token =
@@ -49,7 +49,7 @@ export interface OptionGroupsData {
 
 export async function fetchOptionGroups(productId: string): Promise<OptionGroupsData | null> {
   try {
-    const res = await fetch(`${BASE}/products/${productId}/option-groups`, {
+    const res = await fetch(apiUrl(`/products/${productId}/option-groups`), {
       headers: authHeaders(),
       cache: 'no-store',
     })

@@ -3,8 +3,7 @@
  */
 
 import type { Product } from '@/lib/api/products'
-
-const BASE = process.env.NEXT_PUBLIC_API_URL
+import { apiUrl } from '@/lib/api/base'
 
 export interface PublicMyShopData {
   shop_id: string
@@ -32,10 +31,7 @@ export async function fetchPublicMyShop(
 ): Promise<
   { ok: true; data: PublicMyShopData } | { ok: false; status: number; message: string }
 > {
-  if (!BASE) {
-    return { ok: false, status: 500, message: 'API URL이 설정되지 않았습니다.' }
-  }
-  const url = `${BASE.replace(/\/$/, '')}/myshop/public/${encodeURIComponent(shopUrlCode)}`
+  const url = apiUrl(`/myshop/public/${encodeURIComponent(shopUrlCode)}`)
   let res: Response
   try {
     res = await fetch(url, { cache: 'no-store' })
@@ -63,10 +59,8 @@ export async function fetchPublicMyShop(
 }
 
 export async function recordMyShopVisit(shopUrlCode: string, refChannel: string): Promise<void> {
-  if (!BASE) return
-  const url = `${BASE.replace(/\/$/, '')}/myshop/visit`
   try {
-    await fetch(url, {
+    await fetch(apiUrl('/myshop/visit'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
