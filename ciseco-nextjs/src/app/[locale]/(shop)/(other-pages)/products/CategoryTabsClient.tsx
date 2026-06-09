@@ -36,7 +36,7 @@ export default function CategoryTabsClient({ categories }: Props) {
       <button
         onClick={() => handleClick(null)}
         className={[
-          'rounded-full px-4 py-1.5 text-sm font-medium transition-colors',
+          'cursor-pointer rounded-full px-4 py-1.5 text-sm font-medium transition-colors',
           !activeCategory
             ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900'
             : 'border border-neutral-200 text-neutral-600 hover:border-neutral-900 hover:text-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:hover:border-white dark:hover:text-white',
@@ -53,7 +53,7 @@ export default function CategoryTabsClient({ categories }: Props) {
             key={cat.id}
             onClick={() => handleClick(cat.category_code)}
             className={[
-              'rounded-full px-4 py-1.5 text-sm font-medium transition-colors',
+              'cursor-pointer rounded-full px-4 py-1.5 text-sm font-medium transition-colors',
               isActive
                 ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900'
                 : 'border border-neutral-200 text-neutral-600 hover:border-neutral-900 hover:text-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:hover:border-white dark:hover:text-white',
