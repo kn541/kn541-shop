@@ -82,15 +82,13 @@ function IconWish() {
 
 export function MobileBottomNav() {
   const pathname = usePathname()
-  const { open: openAside } = useAside()
-  const locale = pathname.split('/')[1] || 'ko'
-  const homeHref = `/${locale}`
-  const segs = pathname.split('/').filter(Boolean)
-  const isHome = segs.length === 1 && segs[0] === locale
+  // 주의: 이 Link(@/shared/link → next-intl)는 locale을 자동으로 prefix한다.
+  // 따라서 href에는 locale을 붙이지 말고 순수 경로만 넘겨야 한다. (붙이면 /ko/ko/... 중복)
+  const isHome = pathname === '/' || /^\/[a-z]{2}\/?$/.test(pathname)
 
   return (
     <nav className="mobile-bottom" aria-label="모바일 하단 메뉴">
-      <button type="button" className="mb-btn" onClick={() => openAside('sidebar-navigation')}>
+      <button type="button" className="mb-btn" onClick={() => useAsideOpen()}>
         <span>
           <IconMenu />
         </span>
@@ -102,7 +100,7 @@ export function MobileBottomNav() {
         </span>
         사전예약
       </Link>
-      <Link href={homeHref} className={clsx('mb-btn home', isHome && 'is-active')} scroll={false}>
+      <Link href="/" className={clsx('mb-btn home', isHome && 'is-active')} scroll={false}>
         <span className="relative flex h-[58px] w-[60px] items-center justify-center">
           <IconHomeFab />
           <span className="absolute inset-0 flex items-center justify-center pb-1">
@@ -111,13 +109,13 @@ export function MobileBottomNav() {
         </span>
         홈
       </Link>
-      <Link href={`/${locale}/account`} className="mb-btn" scroll={false}>
+      <Link href="/account" className="mb-btn" scroll={false}>
         <span>
           <IconUser />
         </span>
         내 정보
       </Link>
-      <Link href={`/${locale}/account-wishlists`} className="mb-btn" scroll={false}>
+      <Link href="/account-wishlists" className="mb-btn" scroll={false}>
         <span>
           <IconWish />
         </span>
