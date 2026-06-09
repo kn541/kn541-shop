@@ -5,6 +5,7 @@
 
 import AccountProfileClient from '@/components/mypage/AccountProfileClient'
 import PaidUpgradeBanner from '@/components/mypage/PaidUpgradeBanner'
+import { Link } from '@/components/Link'
 import { useTranslations } from 'next-intl'
 
 export default function AccountPage() {
@@ -15,6 +16,14 @@ export default function AccountPage() {
       <h1 className="text-2xl font-semibold sm:text-3xl">{t('profile')}</h1>
       {/* 유료전환 CTA — 002(일반회원)에게만 노출, 006·그 외는 null */}
       <PaidUpgradeBanner />
+      <nav className="flex flex-wrap gap-4 text-sm font-medium">
+        <Link href="/account/change-password" className="text-primary-600 hover:underline dark:text-primary-400">
+          비밀번호 변경
+        </Link>
+        <Link href="/account/change-username" className="text-primary-600 hover:underline dark:text-primary-400">
+          아이디 변경
+        </Link>
+      </nav>
       <AccountProfileClient />
     </div>
   )
