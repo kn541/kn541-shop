@@ -361,7 +361,7 @@ function SignupPageContent() {
             {memberType === 'startup' ? '창업 회원 가입' : '일반 회원 가입'}
           </h1>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} autoComplete="off" className="space-y-4">
             <div>
               <label className={labelCls}>이름 <span className="text-red-400">*</span></label>
               <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="실명을 입력해주세요" className={inputCls} />
@@ -377,6 +377,7 @@ function SignupPageContent() {
                   disabled
                   readOnly
                   value=""
+                  autoComplete="off"
                   placeholder="자동 발급됩니다"
                   aria-label="회원번호는 가입 완료 시 자동 발급됩니다"
                   className="w-full cursor-not-allowed rounded-xl border border-neutral-200 bg-neutral-200/80 py-3 pl-10 pr-4 text-sm text-neutral-500 placeholder-neutral-400 focus:outline-none dark:border-neutral-600 dark:bg-neutral-800/90 dark:text-neutral-400"
@@ -389,7 +390,9 @@ function SignupPageContent() {
               <div className="flex items-center gap-2">
                 <input type="tel" value={phone}
                   onChange={e => { setPhone(e.target.value); checkDuplicate('phone', e.target.value.replace(/-/g, ''), setPhoneDup) }}
-                  placeholder="010-0000-0000" className={inputCls} />
+                  placeholder="010-0000-0000"
+                  autoComplete="tel"
+                  className={inputCls} />
                 <DupIcon state={phoneDup} />
               </div>
               <DupMsg state={phoneDup} okMsg="사용 가능한 번호입니다." dupMsg="이미 등록된 번호입니다." />
