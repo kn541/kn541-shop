@@ -5,7 +5,6 @@ import { useAside } from '@/components/aside/aside'
 import { Link } from '@/shared/link'
 import clsx from 'clsx'
 import { usePathname } from 'next/navigation'
-import toast from 'react-hot-toast'
 
 function IconMenu() {
   return (
@@ -112,18 +111,18 @@ export function MobileBottomNav() {
         </span>
         홈
       </Link>
-      <Link href={`/${locale}/myshop`} className="mb-btn" scroll={false}>
+      <Link href={`/${locale}/account`} className="mb-btn" scroll={false}>
         <span>
           <IconUser />
         </span>
         내 정보
       </Link>
-      <button type="button" className="mb-btn" onClick={() => toast('찜 목록은 준비 중입니다.')}>
+      <Link href={`/${locale}/account-wishlists`} className="mb-btn" scroll={false}>
         <span>
           <IconWish />
         </span>
         찜
-      </button>
+      </Link>
     </nav>
   )
 }
