@@ -82,13 +82,14 @@ function IconWish() {
 
 export function MobileBottomNav() {
   const pathname = usePathname()
+  const { open: openAside } = useAside()
   // 주의: 이 Link(@/shared/link → next-intl)는 locale을 자동으로 prefix한다.
   // 따라서 href에는 locale을 붙이지 말고 순수 경로만 넘겨야 한다. (붙이면 /ko/ko/... 중복)
   const isHome = pathname === '/' || /^\/[a-z]{2}\/?$/.test(pathname)
 
   return (
     <nav className="mobile-bottom" aria-label="모바일 하단 메뉴">
-      <button type="button" className="mb-btn" onClick={() => useAsideOpen()}>
+      <button type="button" className="mb-btn" onClick={() => openAside('sidebar-navigation')}>
         <span>
           <IconMenu />
         </span>
