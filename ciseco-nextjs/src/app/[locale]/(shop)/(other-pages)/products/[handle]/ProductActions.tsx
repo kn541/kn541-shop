@@ -228,6 +228,7 @@ export default function ProductActions({
   const optionHints = ['옵션을 선택해 주세요.', '색상을 선택해 주세요.', '사이즈를 선택해 주세요.']
   const hint = (stockIsReal ? stock > 0 : true) && blockReason && !optionHints.includes(blockReason) ? blockReason : null
 
+  // 데스크톱(md+) — 여유 폭. 찜·공유는 세로 묶음
   const ctaButtons = (
     <>
       <button type="button" onClick={handleAddToCart} disabled={buttonsDisabled}
@@ -243,6 +244,22 @@ export default function ProductActions({
         <ProductDetailWishlistHeart productId={productId} />
         <ProductDetailShareButton title={productName} price={unitPrice} imageUrl={productImage} />
       </div>
+    </>
+  )
+
+  // 모바일 하단 고정 바 — 한 줄 고정(줄바꿈 금지). 찜·공유는 가로 아이콘, CTA 2개가 남은 폭 차지
+  const mobileCtaButtons = (
+    <>
+      <ProductDetailWishlistHeart productId={productId} />
+      <ProductDetailShareButton title={productName} price={unitPrice} imageUrl={productImage} />
+      <button type="button" onClick={handleAddToCart} disabled={buttonsDisabled}
+        className="flex min-h-[52px] min-w-0 flex-1 items-center justify-center rounded-full bg-primary-600 px-3 text-sm font-semibold text-white transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50">
+        장바구니
+      </button>
+      <button type="button" onClick={handleBuyNow} disabled={buttonsDisabled}
+        className="flex min-h-[52px] min-w-0 flex-1 items-center justify-center rounded-full bg-neutral-900 px-3 text-sm font-semibold text-white transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200">
+        바로구매
+      </button>
     </>
   )
 
@@ -302,8 +319,8 @@ export default function ProductActions({
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-neutral-200 bg-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-[0_-2px_10px_rgba(0,0,0,0.1)] md:hidden dark:border-neutral-700 dark:bg-neutral-900">
-        <div className="flex flex-wrap items-center gap-2">
-          {ctaButtons}
+        <div className="flex flex-nowrap items-center gap-2">
+          {mobileCtaButtons}
         </div>
       </div>
 
