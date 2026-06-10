@@ -14,9 +14,16 @@
  * - Pagination 프리미티브 + getPaginationItems 활용
  * - totalPages <= 1 이면 자동 숨김
  * - 하단에 "N개 중 X–Y 표시" 텍스트 포함
+ *
+ * 주의: 페이지 이동 href는 next-intl Link(@/shared/link 기반 Pagination)로 렌더되어
+ *   현재 locale이 자동 prefix 된다. 따라서 pathname은 next/navigation(=/ko/products,
+ *   locale 포함)이 아니라 @/i18n/navigation의 usePathname(=/products, locale 미포함)을
+ *   사용해야 한다. next/navigation을 쓰면 /ko/ko/products 처럼 locale이 이중 prefix되어
+ *   2페이지 이후 404가 발생한다.
  */
 
-import { usePathname, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
+import { usePathname } from '@/i18n/navigation'
 import {
   Pagination,
   PaginationGap,
