@@ -2,6 +2,7 @@
 
 import { ReactNode, useEffect, useMemo, useState } from 'react'
 import Prices from '@/components/Prices'
+import { usePreopenHidePrice } from '@/lib/preopenPrice'
 import { calculateEventDiscount, type EventDiscountLine } from '@/lib/api/events'
 
 interface Props {
@@ -32,6 +33,8 @@ export default function ProductDetailPricing({
 }: Props) {
   const [line, setLine] = useState<EventDiscountLine | null>(null)
   const [countdown, setCountdown] = useState('')
+  // 프리오픈(폐쇄몰) 모드 + 비로그인 → 취소선 정가 등 가격 숨김
+  const hidePrice = usePreopenHidePrice()
 
   useEffect(() => {
     let cancelled = false
@@ -78,13 +81,15 @@ export default function ProductDetailPricing({
         {line.event_name}
       </span>
       <div className="flex items-end gap-3 flex-wrap">
-        {(eventRate > 0 || discountRate > 0) && (
+        {!hidePrice && (eventRate > 0 || discountRate > 0) && (
           <span className="text-2xl font-bold text-red-500">{eventRate || discountRate}%</span>
         )}
         <Prices contentClass="text-3xl font-bold text-red-600" price={finalPrice} />
-        <span className="text-base text-neutral-400 line-through mb-0.5">
-          {salePrice.toLocaleString('ko-KR')}원
-        </span>
+        {!hidePrice && (
+          <span className="text-base text-neutral-400 line-through mb-0.5">
+            {salePrice.toLocaleString('ko-KR')}원
+          </span>
+        )}
       </div>
       {line.end_at && (
         <p className="text-xs text-neutral-500">
