@@ -163,6 +163,15 @@ export interface MypageProfile {
 
 export type PointChangeType = 'EARN' | 'USE' | 'EXPIRE' | 'CANCEL'
 
+/** 포인트 타입별 잔액 (백엔드 GET /mypage/points data.balances) */
+export interface PointTypeBalance {
+  /** 포인트 타입 코드 (001 일반 / 005 락업 등) */
+  point_type: string
+  /** system_codes 라벨 (동적) */
+  point_type_name: string
+  balance: number
+}
+
 export interface PointLedgerItem {
   ledger_id: string
   occurred_at: string
@@ -170,10 +179,19 @@ export interface PointLedgerItem {
   amount: number
   reason: string
   balance_after: number
+  /** 거래 포인트 타입 코드 (백엔드 신버전에서 제공) */
+  point_type?: string
+  /** 포인트 타입 라벨 (백엔드 신버전에서 제공) */
+  point_type_name?: string
 }
 
 export interface PointsResponse {
+  /** 선택 타입 잔액 (타입 미선택 시 전체 합산) */
   current_balance: number
+  /** 전 타입 합산 (백엔드 미제공 시 current_balance로 폴백) */
+  total_balance: number
+  /** 타입별 잔액 목록 (백엔드 미제공 시 빈 배열 → 타입 탭 미표시) */
+  balances: PointTypeBalance[]
   this_month_earned: number
   items: PointLedgerItem[]
   total: number
