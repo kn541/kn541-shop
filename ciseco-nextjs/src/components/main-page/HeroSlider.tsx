@@ -3,6 +3,7 @@
 // 디자인 원본 .hero — PC 370px / 모바일 380px, 전환 450ms, 자동 5초 (작업지시 v1 §5)
 // 데이터: GET /public/hero-banners (v_active_hero_banners)
 // 2026-05-15: 좌우 화살표 네비게이션 추가 (#27)
+// 2026-06-10: 슬라이드 카운터(현재|전체) 정렬 수정 — 숫자가 붙어 "0212"로 읽히던 문제
 
 import type { HeroBanner } from '@/lib/api/designPublic'
 import Image from 'next/image'
@@ -14,9 +15,9 @@ const INTERVAL_MS = 5000
 
 function HeroDivider() {
   return (
-    <span className="hero-divider-line inline-flex items-center px-0.5" aria-hidden>
-      <svg width="1" height="8" viewBox="0 0 1 8" fill="none">
-        <line x1="0.5" y1="0" x2="0.5" y2="8" stroke="#DDDDDD" />
+    <span className="hero-divider-line inline-flex items-center px-2" aria-hidden>
+      <svg width="1" height="11" viewBox="0 0 1 11" fill="none">
+        <line x1="0.5" y1="0" x2="0.5" y2="11" stroke="#BBBBBB" />
       </svg>
     </span>
   )
@@ -162,7 +163,7 @@ export function HeroSlider({ slides }: HeroSliderProps) {
           aria-pressed={paused}
           onClick={() => setPaused((p) => !p)}
         />
-        <p className="hero-controls-text tabular-nums">
+        <p className="hero-controls-text tabular-nums inline-flex items-center leading-none">
           <span className="hero-current">{String(index + 1).padStart(2, '0')}</span>
           <HeroDivider />
           <strong className="font-inherit">{String(SLIDE_COUNT).padStart(2, '0')}</strong>
