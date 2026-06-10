@@ -1,6 +1,7 @@
 // KN541 쇼핑몰 — 모바일 사이드바 네비게이션
 // getNavigation() 정적 데이터 → KN541 카테고리 API 데이터로 교체
-// URL: /ko/products?cid=UUID 방식 사용
+// URL: next-intl Link(@/shared/link)가 현재 locale을 자동 prefix 하므로
+//      href에는 locale을 넣지 않는다 → /products?cid=UUID (결과: /ko/products?cid=UUID)
 
 import { getCategories } from '@/lib/api/categories'
 import SidebarNavigation from './Header/Navigation/SidebarNavigation'
@@ -30,13 +31,13 @@ const AsideSidebarNavigation = async ({ className }: Props) => {
           .map((sub: any) => ({
             id: String(sub.id),
             name: sub.category_name,
-            href: `/ko/products?cid=${sub.id}`,
+            href: `/products?cid=${sub.id}`,
           }))
 
       return {
         id: String(cat.id),
         name: cat.category_name,
-        href: `/ko/products?cid=${cat.id}`,
+        href: `/products?cid=${cat.id}`,
         ...(children.length > 0 ? { type: 'dropdown' as const, children } : {}),
       }
     })
