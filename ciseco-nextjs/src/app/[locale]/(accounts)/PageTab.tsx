@@ -13,7 +13,6 @@ type LinkItem = {
     | 'points'
     | 'coupons'
     | 'packages'
-    | 'commission'
     | 'dividends'
     | 'referralTree'
     | 'myshop'
@@ -31,7 +30,6 @@ const links: LinkItem[] = [
   { nameKey: 'points', link: '/points' },
   { nameKey: 'coupons', link: '/coupons' },
   { nameKey: 'packages', link: '/packages' },
-  { nameKey: 'commission', link: '/commission', paidOnly: true },
   { nameKey: 'dividends', link: '/dividends', paidOnly: true },
   { nameKey: 'referralTree', link: '/tree', paidOnly: true },
   { nameKey: 'myshop', link: '/myshop', paidOnly: true },
