@@ -341,7 +341,7 @@ function SignupPageContent() {
             </div>
             <ul className="space-y-2 text-sm text-amber-900 dark:text-amber-200">
               <li className="flex items-start gap-2"><span className="text-amber-500 mt-0.5 shrink-0">✓</span><span><strong>구매 이익금 캐시백</strong> — 모든 구매 상품 마진을 배당으로 돌려드립니다</span></li>
-              <li className="flex items-start gap-2"><span className="text-amber-500 mt-0.5 shrink-0">✓</span><span><strong>다단계 수당</strong> — 추천 네트워크를 통한 추가 수익 기회</span></li>
+              <li className="flex items-start gap-2"><span className="text-amber-500 mt-0.5 shrink-0">✓</span><span><strong>공유수당</strong> — 추천 네트워크를 통한 추가 수익 기회</span></li>
               <li className="flex items-start gap-2"><span className="text-amber-500 mt-0.5 shrink-0">✓</span><span><strong>전용 상품 혜택</strong> — 창업회원 전용 특가 및 우선 구매권</span></li>
               <li className="flex items-start gap-2"><span className="text-amber-500 mt-0.5 shrink-0">✓</span><span><strong>아지트몰 입점</strong> — 나만의 쇼핑몰 운영 지원</span></li>
             </ul>
