@@ -5,9 +5,10 @@ import { usePathname } from 'next/navigation'
 
 /** (accounts) 그룹 경로 — 하단 '마이' 탭 활성 구간
  * withdraw 제거: 현금출금 기능 폐지
+ * commission 제거: 수당 현황 메뉴/페이지 폐지
  */
 const MYPAGE_SECTION_RE =
-  /^\/(account|orders|points|coupons|commission|dividends|tree|myshop|addresses|account-wishlists|account-billing|upgrade-paid|packages)(\/|$)/
+  /^\/(account|orders|points|coupons|dividends|tree|myshop|addresses|account-wishlists|account-billing|upgrade-paid|packages)(\/|$)/
 
 const TABS = [
   { icon: '🏠', label: '홈', hrefSuffix: '' },
