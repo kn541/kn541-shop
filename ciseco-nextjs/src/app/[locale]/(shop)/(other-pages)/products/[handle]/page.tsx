@@ -4,7 +4,6 @@
 // fix: 브레드크럼 — "전체 상품" 제거, 카테고리별 링크 추가
 
 import { Divider } from '@/components/Divider'
-import Prices from '@/components/Prices'
 import SectionSliderProductCard from '@/components/SectionSliderProductCard'
 import { getProducts } from '@/data/data'
 import { getProductById } from '@/lib/api/products'
@@ -18,6 +17,7 @@ import ProductStatus from '../ProductStatus'
 import KoreanProductGallery from '../KoreanProductGallery'
 import ProductActions from './ProductActions'
 import ProductDetailPricing from '@/components/events/ProductDetailPricing'
+import ProductBasePrice from '@/components/events/ProductBasePrice'
 import Link from 'next/link'
 import { formatSalesCountDetail } from '@/lib/sales-count'
 import { getTranslations } from 'next-intl/server'
@@ -274,17 +274,11 @@ export default async function Page({
               consumerPrice={consumerPrice}
               discountRate={discountRate}
               fallback={
-                <div className="flex items-end gap-3">
-                  {discountRate > 0 && (
-                    <span className="text-2xl font-bold text-red-500">{discountRate}%</span>
-                  )}
-                  <Prices contentClass="text-3xl font-bold" price={salePrice} />
-                  {consumerPrice > 0 && consumerPrice > salePrice && (
-                    <span className="text-base text-neutral-400 line-through mb-0.5">
-                      {consumerPrice.toLocaleString('ko-KR')}원
-                    </span>
-                  )}
-                </div>
+                <ProductBasePrice
+                  salePrice={salePrice}
+                  consumerPrice={consumerPrice}
+                  discountRate={discountRate}
+                />
               }
             />
             {salesCountLabel && (
