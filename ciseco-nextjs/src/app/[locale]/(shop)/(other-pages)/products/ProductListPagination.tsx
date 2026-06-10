@@ -19,12 +19,29 @@ type Props = {
   searchParamsString: string
 }
 
+// 지원 locale (i18n/routing.ts와 동일). 페이지네이션 href는 next-intl Link로 렌더되어
+// 현재 locale이 자동 prefix 되므로, 부모가 넘긴 pathname(next/navigation 기준,
+// 예: /ko/products)에서 맨 앞 locale 세그먼트를 제거해 locale 미포함 경로(/products)로
+// 만들어야 한다. 제거하지 않으면 /ko/ko/products 처럼 이중 prefix되어 2페이지 이후 404.
+const LOCALES = ['ko', 'en', 'zh']
+
+function stripLocale(pathname: string): string {
+  const segs = pathname.split('/')
+  // segs[0]은 빈 문자열(맨 앞 '/'), segs[1]이 첫 경로 세그먼트
+  if (segs.length > 1 && LOCALES.includes(segs[1])) {
+    const rest = '/' + segs.slice(2).join('/')
+    return rest === '/' ? '/' : rest.replace(/\/$/, '')
+  }
+  return pathname
+}
+
 function hrefForPage(pathname: string, sp: string, page: number): string {
+  const base = stripLocale(pathname)
   const p = new URLSearchParams(sp)
   if (page <= 1) p.delete('page')
   else p.set('page', String(page))
   const qs = p.toString()
-  return qs ? `${pathname}?${qs}` : pathname
+  return qs ? `${base}?${qs}` : base
 }
 
 /**
