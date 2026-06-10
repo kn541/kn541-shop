@@ -80,11 +80,15 @@ export const MOCK_PROFILE: MypageProfile = {
 
 export const MOCK_POINTS: PointsResponse = {
   current_balance: 3_000, this_month_earned: 500, total: 4,
+  total_balance: 3_000,
+  balances: [
+    { point_type: '001', point_type_name: '일반', balance: 3_000 },
+  ],
   items: [
-    { ledger_id: 'pt-001', occurred_at: '2026-04-05T10:00:00+09:00', change_type: 'EARN', amount: 300, reason: '구매 적립', balance_after: 3_000 },
-    { ledger_id: 'pt-002', occurred_at: '2026-04-01T10:00:00+09:00', change_type: 'USE', amount: -1_000, reason: '쿠폰 사용', balance_after: 2_700 },
-    { ledger_id: 'pt-003', occurred_at: '2026-03-20T10:00:00+09:00', change_type: 'EARN', amount: 200, reason: '구매 적립', balance_after: 3_700 },
-    { ledger_id: 'pt-004', occurred_at: '2026-03-01T10:00:00+09:00', change_type: 'EARN', amount: 3_500, reason: '신규 가입 적립', balance_after: 3_500 },
+    { ledger_id: 'pt-001', occurred_at: '2026-04-05T10:00:00+09:00', change_type: 'EARN', amount: 300, reason: '구매 적립', balance_after: 3_000, point_type: '001', point_type_name: '일반' },
+    { ledger_id: 'pt-002', occurred_at: '2026-04-01T10:00:00+09:00', change_type: 'USE', amount: -1_000, reason: '쿠폰 사용', balance_after: 2_700, point_type: '001', point_type_name: '일반' },
+    { ledger_id: 'pt-003', occurred_at: '2026-03-20T10:00:00+09:00', change_type: 'EARN', amount: 200, reason: '구매 적립', balance_after: 3_700, point_type: '001', point_type_name: '일반' },
+    { ledger_id: 'pt-004', occurred_at: '2026-03-01T10:00:00+09:00', change_type: 'EARN', amount: 3_500, reason: '신규 가입 적립', balance_after: 3_500, point_type: '001', point_type_name: '일반' },
   ] as PointLedgerItem[],
 }
 
