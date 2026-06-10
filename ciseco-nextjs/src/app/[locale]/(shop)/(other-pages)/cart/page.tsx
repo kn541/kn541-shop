@@ -3,6 +3,7 @@
 // fix: 폐쇄몰 — 비로그인 시 로그인 페이지로 이동
 // fix: locale 동적화, NcInputNumber key 추가
 // fix: i18n — 하드코딩 문자열 전체 t() 치환 (Cart 섹션)
+// fix: next-intl locale 이중 prefix 제거 — useRouter/Link가 locale 자동 부착
 
 import { ConfirmDeleteDialog } from '@/components/common/ConfirmDeleteDialog'
 import NcInputNumber from '@/components/NcInputNumber'
@@ -12,7 +13,7 @@ import { TrashIcon, ShoppingBagIcon, ExclamationCircleIcon } from '@heroicons/re
 import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from '@/i18n/navigation'
-import { useLocale, useTranslations } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import { useCart, calcItemShipping } from '@/lib/cart-context'
 import { useCartEventDiscount } from '@/hooks/useCartEventDiscount'
 import toast from 'react-hot-toast'
@@ -23,7 +24,6 @@ type PendingCartDelete =
 
 export default function CartPage() {
   const router = useRouter()
-  const locale = useLocale()
   const t = useTranslations('Cart')
   const [pendingDelete, setPendingDelete] = useState<PendingCartDelete | null>(null)
   const pendingDeleteRef = useRef<PendingCartDelete | null>(null)
@@ -68,7 +68,8 @@ export default function CartPage() {
   const handleCheckout = () => {
     if (selectedCount === 0) { toast.error(t('checkoutNoSelection')); return }
     if (hasSelectedSoldOut) { toast.error(t('checkoutHasSoldOut')); return }
-    router.push(`/${locale}/checkout`)
+    // ★ fix: next-intl useRouter는 locale을 자동 부착 — /${locale} 제거
+    router.push('/checkout')
   }
 
   if (items.length === 0) {
@@ -77,7 +78,8 @@ export default function CartPage() {
         <ShoppingBagIcon className="mx-auto mb-6 h-20 w-20 text-neutral-300" />
         <h2 className="text-2xl font-semibold text-neutral-700 dark:text-neutral-300">{t('empty')}</h2>
         <p className="mt-3 text-neutral-500">{t('emptyHint')}</p>
-        <ButtonPrimary href={`/${locale}/products`} className="mt-8">{t('continueShopping')}</ButtonPrimary>
+        {/* ★ fix: next-intl Link는 locale 자동 부착 — /${locale} 제거 */}
+        <ButtonPrimary href="/products" className="mt-8">{t('continueShopping')}</ButtonPrimary>
       </div>
     )
   }
@@ -230,7 +232,8 @@ export default function CartPage() {
             </div>
 
             <div className="mt-6">
-              <Link href={`/${locale}/products`}
+              {/* ★ fix: next-intl Link는 locale 자동 부착 — /${locale} 제거 */}
+              <Link href="/products"
                 className="inline-flex items-center gap-2 text-sm font-medium text-primary-600 hover:text-primary-500">
                 <span>←</span><span>{t('continueShopping')}</span>
               </Link>
