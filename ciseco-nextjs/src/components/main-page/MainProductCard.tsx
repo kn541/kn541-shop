@@ -7,6 +7,7 @@ import { useMainCartPreviewOptional } from '@/components/main-page/main-cart-pre
 import type { Product } from '@/lib/api/products'
 import { getProductImageUrl } from '@/lib/api/products'
 import { formatPrice } from '@/lib/formatPrice'
+import { usePreopenHidePrice, HIDDEN_PRICE_LABEL } from '@/lib/preopenPrice'
 import { formatSalesCountBadge, readSalesCount } from '@/lib/sales-count'
 import { useCart } from '@/lib/cart-context'
 import { Link } from '@/shared/link'
@@ -45,6 +46,8 @@ export function MainProductCard(props: MainProductCardProps) {
   const compact = props.compact ?? false
   const [liked, setLiked] = useState(false)
   const [added, setAdded] = useState(false)
+  // 프리오픈(폐쇄몰) 모드 + 비로그인 시 가격 숨김
+  const hidePrice = usePreopenHidePrice()
 
   const openPreview = props.onCartPreview ?? previewCtx?.openCartPreview
 
@@ -107,11 +110,17 @@ export function MainProductCard(props: MainProductCardProps) {
           <span className="title-line block">{PLACE_L2}</span>
         </h3>
         <p className="price m-0 flex flex-wrap items-baseline gap-x-3 leading-[1.2]">
-          <span className="text-[18px] font-normal text-kn541-red">88%</span>
-          <strong className="text-[18px] font-bold">{formatPrice(88888)}</strong>
-          <del className="-order-1 mb-[3px] basis-full text-[14px] font-normal text-[#b5b5b5] decoration-1 line-through">
-            {formatPrice(88888)}
-          </del>
+          {hidePrice ? (
+            <strong className="text-[16px] font-semibold text-kn541-black">{HIDDEN_PRICE_LABEL}</strong>
+          ) : (
+            <>
+              <span className="text-[18px] font-normal text-kn541-red">88%</span>
+              <strong className="text-[18px] font-bold">{formatPrice(88888)}</strong>
+              <del className="-order-1 mb-[3px] basis-full text-[14px] font-normal text-[#b5b5b5] decoration-1 line-through">
+                {formatPrice(88888)}
+              </del>
+            </>
+          )}
         </p>
         <p className="review">999+</p>
         </article>
@@ -282,12 +291,18 @@ export function MainProductCard(props: MainProductCardProps) {
         </Link>
       </h3>
       <p className="price m-0 flex flex-wrap items-baseline gap-x-3 leading-[1.2]">
-        {rate > 0 && <span className="text-[18px] font-normal text-kn541-red">{rate}%</span>}
-        <strong className="text-[18px] font-bold">{formatPrice(sale)}</strong>
-        {retail > sale && (
-          <del className="-order-1 mb-[3px] basis-full text-[14px] font-normal text-[#b5b5b5] line-through decoration-1">
-            {formatPrice(retail)}
-          </del>
+        {hidePrice ? (
+          <strong className="text-[16px] font-semibold text-kn541-black">{HIDDEN_PRICE_LABEL}</strong>
+        ) : (
+          <>
+            {rate > 0 && <span className="text-[18px] font-normal text-kn541-red">{rate}%</span>}
+            <strong className="text-[18px] font-bold">{formatPrice(sale)}</strong>
+            {retail > sale && (
+              <del className="-order-1 mb-[3px] basis-full text-[14px] font-normal text-[#b5b5b5] line-through decoration-1">
+                {formatPrice(retail)}
+              </del>
+            )}
+          </>
         )}
       </p>
       <p className="review">999+</p>
