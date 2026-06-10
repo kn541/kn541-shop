@@ -1,4 +1,5 @@
 import { MainProductCard } from '@/components/main-page/MainProductCard'
+import { ProductRail } from '@/components/main-page/ProductRail'
 import { MAIN_PAGE_ASSETS } from '@/data/main-page-assets'
 import { mapShopListItemToProduct } from '@/lib/api/shopPublicLists'
 import type { ShopPublicListResponse } from '@/lib/api/shopPublicLists'
@@ -55,20 +56,15 @@ export async function ReserveSection() {
           <Chevron />
         </Link>
       </div>
-      <div className="slider-shell relative">
-        <div
-          className="product-rail flex w-full gap-[53px] overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          data-rail
-        >
-          {items.length > 0
-            ? items.map((p) => (
-                <MainProductCard key={p.product_id} mode="api" product={p} />
-              ))
-            : PLACEHOLDER_SRCS.map((src) => (
-                <MainProductCard key={src} mode="placeholder" imageUrl={src} />
-              ))}
-        </div>
-      </div>
+      <ProductRail>
+        {items.length > 0
+          ? items.map((p) => (
+              <MainProductCard key={p.product_id} mode="api" product={p} />
+            ))
+          : PLACEHOLDER_SRCS.map((src) => (
+              <MainProductCard key={src} mode="placeholder" imageUrl={src} />
+            ))}
+      </ProductRail>
       <Link
         href="/preorder"
         className="mt-4 flex items-center justify-center text-[20px] font-normal text-kn541-green md:hidden"
