@@ -4,10 +4,13 @@ import { Link } from '@/components/Link'
 import BigButton from '@/components/mypage/BigButton'
 import SectionHeader from '@/components/mypage/SectionHeader'
 import L3Guard from '@/components/mypage/L3Guard'
+import WithdrawModal from '@/components/mypage/WithdrawModal'
 import {
   useDividendSummary,
   type CommissionSummaryItem,
 } from '@/lib/mypage/useDividendSummary'
+import { useWithdrawSummary } from '@/lib/mypage/useWithdrawSummary'
+import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 
 /**
@@ -109,6 +112,9 @@ function RecentRow({ item }: { item: CommissionSummaryItem }) {
 function DashboardContent() {
   const t = useTranslations('Account')
   const { data, loading, error } = useDividendSummary()
+  // 출금 요약 — 출금가능잔액 + 계좌 보유여부(팝업 입력란 노출 판정)
+  const { data: withdrawSummary, loading: wLoading, reload: reloadWithdraw } = useWithdrawSummary()
+  const [withdrawOpen, setWithdrawOpen] = useState(false)
 
   // BE recent_items에서 rule_type_code → label 맵 구성
   // total_by_type 등 집계 섹션 라벨에 활용 (없으면 코드 그대로 표시)
@@ -119,7 +125,9 @@ function DashboardContent() {
     }
   }
 
-  const balance = data?.withdrawable_balance ?? 0
+  // 출금 가능 잔액 — 출금 summary 우선(동일 소스), 폴백으로 dividends summary
+  const balance =
+    withdrawSummary?.withdrawable_balance ?? data?.withdrawable_balance ?? 0
   const thisMonth = data?.this_month_by_type ?? {}
   const totalByType = data?.total_by_type ?? {}
   const totalAll = Object.values(totalByType).reduce((a, b) => a + b, 0)
@@ -139,7 +147,7 @@ function DashboardContent() {
 
       {!loading && !error && (
         <>
-          {/* 배당 포인트 잔액 (BE에서 포인트 기준 재정의 예정) */}
+          {/* 배당 포인트 잔액 + 출금 신청 */}
           <div className="rounded-2xl border border-neutral-200 bg-white py-8 text-center dark:border-neutral-700 dark:bg-neutral-900">
             <div className="mb-2 text-sm text-neutral-500 dark:text-neutral-400">
               💰 출금 가능 잔액
@@ -147,7 +155,21 @@ function DashboardContent() {
             <div className="mb-1 text-4xl font-black text-violet-600 sm:text-5xl">
               {balance.toLocaleString('ko-KR')}
             </div>
-            <div className="text-xl font-semibold text-violet-600">원</div>
+            <div className="mb-5 text-xl font-semibold text-violet-600">원</div>
+
+            <div className="px-6">
+              <button
+                type="button"
+                disabled={wLoading || balance <= 0}
+                onClick={() => setWithdrawOpen(true)}
+                className="w-full rounded-full bg-violet-600 py-3 text-sm font-bold text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {balance > 0 ? '출금 요청' : '출금 가능 잔액 없음'}
+              </button>
+              <p className="mt-2 text-xs text-neutral-400">
+                동사가치배당금을 현금으로 출금 신청합니다 (현금 최대 50%, 나머지 포인트 전환)
+              </p>
+            </div>
           </div>
 
           {/* 이번 달 배당 */}
@@ -227,6 +249,16 @@ function DashboardContent() {
               </BigButton>
             </Link>
           </div>
+
+          {/* 출금 신청 팝업 */}
+          {withdrawSummary && (
+            <WithdrawModal
+              open={withdrawOpen}
+              summary={withdrawSummary}
+              onClose={() => setWithdrawOpen(false)}
+              onApplied={reloadWithdraw}
+            />
+          )}
         </>
       )}
     </>
