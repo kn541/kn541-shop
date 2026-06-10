@@ -173,8 +173,9 @@ export function MainProductCard(props: MainProductCardProps) {
         toast.error('상품 정보를 불러올 수 없습니다.')
         return
       }
+      // 카드의 '담기'는 상품선택 팝업을 여는 트리거일 뿐, 실제 담기는 팝업에서 수행.
+      // 따라서 카드 버튼을 '눌린 상태(added)'로 두지 않는다 (QA 18: 팝업 취소해도 버튼 눌림 유지 방지).
       openPreview(buildPayload())
-      setAdded(true)
       return
     }
     if (!pid) {
