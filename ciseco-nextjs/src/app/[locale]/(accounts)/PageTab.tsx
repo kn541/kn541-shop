@@ -28,9 +28,10 @@ const links: LinkItem[] = [
   { nameKey: 'wishlists', link: '/account-wishlists' },
   { nameKey: 'ordersHistory', link: '/orders' },
   { nameKey: 'points', link: '/points' },
+  // 배당현황 — 포인트 바로 아래 배치 (창님 지시)
+  { nameKey: 'dividends', link: '/dividends', paidOnly: true },
   { nameKey: 'coupons', link: '/coupons' },
   { nameKey: 'packages', link: '/packages' },
-  { nameKey: 'dividends', link: '/dividends', paidOnly: true },
   { nameKey: 'referralTree', link: '/tree', paidOnly: true },
   { nameKey: 'myshop', link: '/myshop', paidOnly: true },
   { nameKey: 'addresses', link: '/addresses' },
