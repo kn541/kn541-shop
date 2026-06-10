@@ -10,7 +10,7 @@ import { useRouter } from '@/i18n/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { useCallback } from 'react'
 import { toast } from 'react-hot-toast'
-import { UserIcon } from '@heroicons/react/24/outline'
+import { ArrowRightOnRectangleIcon, UserIcon } from '@heroicons/react/24/outline'
 import CartBtn from './CartBtn'
 
 /** 검색바 우측: 회원명 · 장바구니 · 로그인/회원가입 또는 로그아웃/마이페이지 */
@@ -94,9 +94,19 @@ export default function HeaderUserBar() {
         </>
       ) : (
         <>
+          {/* 모바일: 마이페이지 아이콘 + 로그아웃 아이콘 */}
           <a href={`/${locale}/account`} className={iconBtnCls} aria-label={tAccount('title')}>
             <UserIcon className="h-6 w-6" aria-hidden />
           </a>
+          <button
+            type="button"
+            onClick={logout}
+            className={iconBtnCls}
+            aria-label={tCommon('logout')}
+          >
+            <ArrowRightOnRectangleIcon className="h-6 w-6" aria-hidden />
+          </button>
+          {/* 데스크톱: 로그아웃 · 마이페이지 텍스트 링크 */}
           <div className="hidden items-center text-sm md:flex">
             <button
               type="button"
