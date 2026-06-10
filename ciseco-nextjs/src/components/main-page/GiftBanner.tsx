@@ -27,9 +27,9 @@ export async function GiftBanner() {
           />
         </div>
       </section>
-      {/* PC — promo-strip-pc (디자인 1920×320 → 고정 320px, 초광폭에서 aspect 비율 확대 방지) */}
+      {/* PC — promo-strip-pc (높이 절반 축소: 320px → 160px, object-cover로 가로 꽉 채움) */}
       <section className="promo-strip-pc relative hidden w-full md:block">
-        <div className="relative mx-auto h-[320px] max-h-[320px] w-full max-w-[1920px] overflow-hidden">
+        <div className="relative mx-auto h-[160px] max-h-[160px] w-full max-w-[1920px] overflow-hidden">
           <Image
             src={MAIN_PAGE_ASSETS.banners.mobileGift}
             alt=""
