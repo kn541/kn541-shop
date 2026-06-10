@@ -1,6 +1,7 @@
 // KN541 쇼핑몰 — 헤더
 // 1행 (3열 그리드): 좌(로고) | 중(검색폼) | 우(장바구니·로그인or마이페이지·태극기)
 // 2행: 카테고리 네비 (홈 + 카테고리 DB + 사전예약/벨류업)
+// 모바일: 1행 검색폼은 숨기고, 카테고리 네비 위에 전용 검색바 한 줄을 노출
 
 import Logo from '@/components/Logo'
 import HamburgerBtnMenu from './HamburgerBtnMenu'
@@ -40,6 +41,13 @@ export default function Header() {
           <div className="lg:hidden ml-1">
             <HamburgerBtnMenu />
           </div>
+        </div>
+      </div>
+
+      {/* 모바일 전용 검색바 — 헤더에서 바로 검색 가능 (md 미만에서만 표시) */}
+      <div className="border-t border-neutral-100 dark:border-neutral-800 md:hidden">
+        <div className="container mx-auto px-4 py-2">
+          <SearchBox />
         </div>
       </div>
 
