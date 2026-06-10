@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import toast from 'react-hot-toast'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { Share08Icon } from '@hugeicons/core-free-icons'
 
 declare global {
   interface Window {
@@ -141,7 +143,7 @@ export function ProductDetailShareButton({ title, price, imageUrl }: Props) {
         aria-label="상품 공유하기"
         className="flex h-[52px] w-[52px] items-center justify-center rounded-full border border-neutral-300 bg-white text-neutral-700 shadow-sm transition hover:bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:bg-neutral-800"
       >
-        <span className="text-lg">&lt;</span>
+        <HugeiconsIcon icon={Share08Icon} size={22} color="currentColor" strokeWidth={1.5} />
       </button>
 
       {open && (
@@ -198,4 +200,3 @@ export function ProductDetailShareButton({ title, price, imageUrl }: Props) {
     </div>
   )
 }
-
