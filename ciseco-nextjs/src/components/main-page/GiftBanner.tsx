@@ -2,6 +2,10 @@ import { MAIN_PAGE_ASSETS } from '@/data/main-page-assets'
 import Image from 'next/image'
 import { getTranslations } from 'next-intl/server'
 
+// 메인 프로모 배너(PC) — Supabase Storage 호스팅 이미지(1350×180, 7.5:1)
+const PC_PROMO_BANNER_URL =
+  'https://ghtkropmnrelkxivzpim.supabase.co/storage/v1/object/public/site-design/main_promo_banner.png'
+
 export async function GiftBanner() {
   const t = await getTranslations('MainPage')
 
@@ -27,20 +31,18 @@ export async function GiftBanner() {
           />
         </div>
       </section>
-      {/* PC — promo-strip-pc (높이 160px, object-contain으로 잘림 없이 비율 유지.
-          좌우 여백은 배너 끝색과 어울리는 연두 배경으로 채움) */}
+      {/* PC — promo-strip-pc (Supabase 배너, 가로 꽉 채움(object-cover). 양끝 그라데이션이라 잘려도 자연스러움) */}
       <section className="promo-strip-pc relative hidden w-full md:block">
         <div
-          className="relative mx-auto h-[160px] max-h-[160px] w-full max-w-[1920px] overflow-hidden"
-          style={{ backgroundColor: '#c0ff91' }}
+          className="relative mx-auto h-[170px] w-full overflow-hidden"
+          style={{ backgroundColor: '#7ef06a' }}
         >
-          <Image
-            src={MAIN_PAGE_ASSETS.banners.mobileGift}
-            alt=""
-            fill
-            className="object-contain object-center"
-            sizes="(max-width: 1920px) 100vw, 1920px"
-            priority={false}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={PC_PROMO_BANNER_URL}
+            alt="가치 소비의 지름길, 월 사전예약 상품 OPEN!"
+            className="h-full w-full object-cover object-center"
+            loading="lazy"
           />
         </div>
       </section>
