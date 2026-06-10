@@ -16,6 +16,7 @@ type LinkItem = {
     | 'dividends'
     | 'referralTree'
     | 'myshop'
+    | 'proxyOrder'
     | 'addresses'
     | 'upgradePaid'
   link: string
@@ -34,6 +35,7 @@ const links: LinkItem[] = [
   { nameKey: 'packages', link: '/packages' },
   { nameKey: 'referralTree', link: '/tree', paidOnly: true },
   { nameKey: 'myshop', link: '/myshop', paidOnly: true },
+  { nameKey: 'proxyOrder', link: '/myshop/proxy-order', paidOnly: true },
   { nameKey: 'addresses', link: '/addresses' },
   // generalOnly: 002(일반회원)에게만 노출. 목적지: /packages (유료전환 구매 페이지)
   { nameKey: 'upgradePaid', link: '/packages', generalOnly: true },
@@ -59,7 +61,8 @@ const PageTab = ({ variant = 'tabs' }: PageTabProps) => {
   const linkIsActive = (item: LinkItem) => {
     let isActive = pathname === item.link
     if (item.link === '/orders' && pathname.includes('/orders/')) isActive = true
-    if (item.link === '/myshop' && pathname.startsWith('/myshop')) isActive = true
+    if (item.link === '/myshop' && (pathname === '/myshop' || (pathname.startsWith('/myshop') && !pathname.startsWith('/myshop/proxy-order')))) isActive = true
+    if (item.link === '/myshop/proxy-order' && pathname.startsWith('/myshop/proxy-order')) isActive = true
     if (item.link === '/dividends' && pathname.startsWith('/dividends')) isActive = true
     if (item.link === '/packages' && pathname.startsWith('/packages')) isActive = true
     return isActive
