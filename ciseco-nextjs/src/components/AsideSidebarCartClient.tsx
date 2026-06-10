@@ -103,6 +103,7 @@ function CartLine({
         <div className="flex flex-1 items-end justify-between gap-2 text-sm">
           <div className="max-w-[11rem] shrink-0 rounded-full bg-neutral-100 py-1 pe-1 ps-1 dark:bg-neutral-800">
             <NcInputNumber
+              key={product.id}
               className="!gap-0"
               defaultValue={Math.min(Number(product.quantity) || 1, maxQty)}
               min={1}
