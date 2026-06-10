@@ -1,4 +1,5 @@
 import { MainProductCard } from '@/components/main-page/MainProductCard'
+import { ProductRail } from '@/components/main-page/ProductRail'
 import { getMainDisplayProducts } from '@/lib/api/products'
 import { getTranslations } from 'next-intl/server'
 
@@ -20,16 +21,11 @@ export async function NewProductsSection() {
           <h2 className="m-0 text-[16px] font-normal leading-tight text-[#999]">{t('newTitle')}</h2>
         </div>
       </div>
-      <div className="slider-shell relative">
-        <div
-          className="product-rail flex gap-[53px] overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          data-rail
-        >
-          {[...items].map((p) => (
-            <MainProductCard key={p.product_id} mode="api" product={p} />
-          ))}
-        </div>
-      </div>
+      <ProductRail>
+        {[...items].map((p) => (
+          <MainProductCard key={p.product_id} mode="api" product={p} />
+        ))}
+      </ProductRail>
     </section>
   )
 }
