@@ -27,14 +27,18 @@ export async function GiftBanner() {
           />
         </div>
       </section>
-      {/* PC — promo-strip-pc (높이 절반 축소: 320px → 160px, object-cover로 가로 꽉 채움) */}
+      {/* PC — promo-strip-pc (높이 160px, object-contain으로 잘림 없이 비율 유지.
+          좌우 여백은 배너 끝색과 어울리는 연두 배경으로 채움) */}
       <section className="promo-strip-pc relative hidden w-full md:block">
-        <div className="relative mx-auto h-[160px] max-h-[160px] w-full max-w-[1920px] overflow-hidden">
+        <div
+          className="relative mx-auto h-[160px] max-h-[160px] w-full max-w-[1920px] overflow-hidden"
+          style={{ backgroundColor: '#c0ff91' }}
+        >
           <Image
             src={MAIN_PAGE_ASSETS.banners.mobileGift}
             alt=""
             fill
-            className="object-cover object-center"
+            className="object-contain object-center"
             sizes="(max-width: 1920px) 100vw, 1920px"
             priority={false}
           />
