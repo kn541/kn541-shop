@@ -1,18 +1,28 @@
 'use client'
 // KN541 쇼핑몰 — 헤더 중앙 검색폼 (항상 표시)
 // 폼 제출 시 /search?q=... 로 이동
+// fix(2026-06-11): 검색 결과 페이지에서 헤더 검색바가 빈 칸으로 보이던 문제 —
+//                  URL의 ?q= 값을 입력값에 동기화
 
-import { useRouter } from '@/i18n/navigation'
+import { usePathname, useRouter } from '@/i18n/navigation'
 import { Search01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { useTranslations } from 'next-intl'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 export default function SearchBox() {
   const router = useRouter()
+  const pathname = usePathname()
   const tCommon = useTranslations('Common')
   const tSearch = useTranslations('Search')
   const [q, setQ] = useState('')
+
+  // 페이지 이동 시 URL의 q 파라미터를 검색바에 반영
+  // (/search?q=커피 진입 시 "커피" 표시, 다른 페이지로 가면 비움)
+  useEffect(() => {
+    const urlQ = new URLSearchParams(window.location.search).get('q') ?? ''
+    setQ(urlQ)
+  }, [pathname])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
