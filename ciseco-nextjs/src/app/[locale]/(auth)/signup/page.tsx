@@ -19,7 +19,6 @@ const USER_TYPE_MEMBER = '002'
 const USER_TYPE_PAID_MEMBER = '006'
 
 type MemberType = 'normal' | 'startup'
-type DupState = 'idle' | 'checking' | 'ok' | 'dup' | 'error'
 
 const AGIT_LIST = [
   { value: '001', label: '본사' },
@@ -126,10 +125,9 @@ function SignupPageContent() {
   const [passwordHangulErr, setPasswordHangulErr] = useState('')
   const [confirmHangulErr, setConfirmHangulErr] = useState('')
 
-  const [phoneDup, setPhoneDup] = useState<DupState>('idle')
   /** 가입 완료 후 회원번호 안내 (토큰은 저장하지 않음 — 로그인 페이지에서 회원번호로 로그인) */
   const [doneMemberNo, setDoneMemberNo] = useState<string | null>(null)
-  const dupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const recommenderTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -139,25 +137,6 @@ function SignupPageContent() {
     return () => {
       cancelled = true
     }
-  }, [])
-
-  const checkDuplicate = useCallback(async (field: string, value: string, setter: (s: DupState) => void) => {
-    if (!value.trim()) { setter('idle'); return }
-    setter('checking')
-    if (dupTimerRef.current) clearTimeout(dupTimerRef.current)
-    dupTimerRef.current = setTimeout(async () => {
-      try {
-        const res = await fetch(apiUrl('/auth/check-duplicate'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ field, value }),
-        })
-        const json = await res.json()
-        setter(json?.data?.is_duplicate ? 'dup' : 'ok')
-      } catch {
-        setter('error')
-      }
-    }, 500)
   }, [])
 
   const passwordMatch = password && passwordConfirm && password === passwordConfirm
@@ -203,11 +182,13 @@ function SignupPageContent() {
   const validate = () => {
     if (!name.trim()) return '이름을 입력해주세요.'
     if (!phone.trim()) return '휴대폰 번호를 입력해주세요.'
-    if (phoneDup === 'dup') return '이미 사용 중인 휴대폰 번호입니다.'
     if (!password) return '비밀번호를 입력해주세요.'
     if (!isPasswordValid(password)) return '비밀번호 요건을 확인해 주세요. (8자 이상, 숫자 또는 특수문자 포함, 한글 불가)'
     if (password !== passwordConfirm) return '비밀번호가 일치하지 않습니다.'
-    if (memberType === 'startup' && !agitCode) return '소속 아지트를 선택해주세요.'
+    if (!recommenderCode.trim()) return '추천인 코드를 입력해주세요.'
+    if (recommenderValid === 'invalid') return '유효한 추천인 코드를 입력해주세요.'
+    if (recommenderValid === 'checking') return '추천인 확인 중입니다. 잠시 후 다시 시도해주세요.'
+    if (!agitCode) return '소속 아지트를 선택해주세요.'
     if (!agreeTerms || !agreePrivacy) return '필수 약관에 동의해주세요.'
     return ''
   }
@@ -224,14 +205,12 @@ function SignupPageContent() {
           name,
           password,
           user_type: memberType === 'startup' ? USER_TYPE_PAID_MEMBER : USER_TYPE_MEMBER,
+          recommender_code: recommenderCode.trim(),
+          agit_code: agitCode,
         }
         if (phone.trim()) body.phone = phone.trim().replace(/-/g, '')
-        if (recommenderCode.trim()) body.recommender_code = recommenderCode.trim()
-        if (memberType === 'startup') {
-          body.agit_code = agitCode
-          if (bankCode && accountNo && accountHolder) {
-            body.bank_account = { bank_code: bankCode, bank_name: bankName, account_no: accountNo, account_holder: accountHolder }
-          }
+        if (memberType === 'startup' && bankCode && accountNo && accountHolder) {
+          body.bank_account = { bank_code: bankCode, bank_name: bankName, account_no: accountNo, account_holder: accountHolder }
         }
 
         const res = await fetch(apiUrl('/auth/register'), {
@@ -256,19 +235,6 @@ function SignupPageContent() {
         setGlobalError('서버 연결에 실패했습니다.')
       }
     })
-  }
-
-  const DupIcon = ({ state }: { state: DupState }) => {
-    if (state === 'ok') return <CheckIcon />
-    if (state === 'dup') return <XIcon />
-    if (state === 'checking') return <span className="text-xs text-neutral-400">확인 중...</span>
-    return null
-  }
-
-  const DupMsg = ({ state, okMsg, dupMsg }: { state: DupState; okMsg: string; dupMsg: string }) => {
-    if (state === 'ok') return <p className="text-xs text-green-500 mt-1">{okMsg}</p>
-    if (state === 'dup') return <p className="text-xs text-red-500 mt-1">{dupMsg}</p>
-    return null
   }
 
   if (doneMemberNo) {
@@ -399,15 +365,14 @@ function SignupPageContent() {
 
             <div>
               <label className={labelCls}>휴대폰 <span className="text-red-400">*</span></label>
-              <div className="flex items-center gap-2">
-                <input type="tel" value={phone}
-                  onChange={e => { setPhone(e.target.value); checkDuplicate('phone', e.target.value.replace(/-/g, ''), setPhoneDup) }}
-                  placeholder="010-0000-0000"
-                  autoComplete="tel"
-                  className={inputCls} />
-                <DupIcon state={phoneDup} />
-              </div>
-              <DupMsg state={phoneDup} okMsg="사용 가능한 번호입니다." dupMsg="이미 등록된 번호입니다." />
+              <input
+                type="tel"
+                value={phone}
+                onChange={e => setPhone(e.target.value)}
+                placeholder="010-0000-0000"
+                autoComplete="tel"
+                className={inputCls}
+              />
             </div>
 
             <div>
@@ -453,7 +418,7 @@ function SignupPageContent() {
             </div>
 
             <div>
-              <label className={labelCls}>추천인 코드 <span className="text-neutral-400 font-normal">(선택)</span></label>
+              <label className={labelCls}>추천인 코드 <span className="text-red-400">*</span></label>
               <input
                 type="text"
                 value={recommenderCode}
@@ -461,6 +426,8 @@ function SignupPageContent() {
                   setRecommenderCode(e.target.value)
                   setRecommenderValid('idle')
                   setRecommenderHint(null)
+                  if (recommenderTimerRef.current) clearTimeout(recommenderTimerRef.current)
+                  recommenderTimerRef.current = setTimeout(() => void validateRecommender(e.target.value), 600)
                 }}
                 onBlur={e => void validateRecommender(e.target.value)}
                 placeholder="추천인 회원번호 (8자리) 또는 아이디"
@@ -475,26 +442,33 @@ function SignupPageContent() {
               {recommenderHint && recommenderValid === 'invalid' && (
                 <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">{recommenderHint}</p>
               )}
+              {!recommenderCode && (
+                <p className="text-xs text-neutral-400 mt-1">추천인 회원번호를 입력해주세요.</p>
+              )}
+            </div>
+
+            <div>
+              <label className={labelCls}>소속 아지트 <span className="text-red-400">*</span></label>
+              <select
+                value={agitCode}
+                onChange={e => setAgitCode(e.target.value)}
+                className={`${inputCls} ${!agitCode ? 'text-neutral-400' : ''}`}
+              >
+                <option value="">아지트를 선택해주세요</option>
+                {AGIT_LIST.map(agit => (
+                  <option key={agit.value} value={agit.value}>{agit.label}</option>
+                ))}
+              </select>
+              {!agitCode && (
+                <p className="text-xs text-neutral-400 mt-1.5">소속 아지트를 선택해주세요.</p>
+              )}
+              {agitCode && (
+                <p className="text-xs text-green-500 mt-1.5">✓ {AGIT_LIST.find(a => a.value === agitCode)?.label} 아지트를 선택했습니다.</p>
+              )}
             </div>
 
             {memberType === 'startup' && (
               <>
-                <div className="border-t border-amber-100 dark:border-amber-900/40 pt-4">
-                  <p className="text-xs font-bold text-amber-600 dark:text-amber-400 mb-3 uppercase tracking-wide">⭐ 창업회원 추가 정보</p>
-                  <div>
-                    <label className={labelCls}>소속 아지트 <span className="text-red-400">*</span></label>
-                    <select value={agitCode} onChange={e => setAgitCode(e.target.value)}
-                      className={`${inputCls} ${!agitCode ? 'text-neutral-400' : ''}`}>
-                      <option value="">아지트를 선택해주세요</option>
-                      {AGIT_LIST.map(agit => (
-                        <option key={agit.value} value={agit.value}>{agit.label}</option>
-                      ))}
-                    </select>
-                    {!agitCode && <p className="text-xs text-amber-500 dark:text-amber-400 mt-1.5">📍 창업회원은 소속 아지트 선택이 필수입니다.</p>}
-                    {agitCode && <p className="text-xs text-green-500 mt-1.5">✓ {AGIT_LIST.find(a => a.value === agitCode)?.label} 아지트를 선택했습니다.</p>}
-                  </div>
-                </div>
-
                 <div className="border-t border-neutral-100 dark:border-neutral-800 pt-4">
                   <p className="text-xs font-bold text-neutral-500 dark:text-neutral-400 mb-3 uppercase tracking-wide">정산 계좌 정보 <span className="text-neutral-400 font-normal normal-case">(선택)</span></p>
                   <div className="space-y-3">
