@@ -1,5 +1,7 @@
 'use client'
 // feat: 푸터 무통장 입금계좌 정보 추가
+// fix(2026-06-11): 모바일에서 푸터 끝 "입금하실 곳" 박스가 하단 탭바(80px)에
+//                  가려지던 문제 — 모바일 전용 하단 패딩(pb-28) 추가
 
 import Logo from '@/components/Logo'
 import { COMPANY_INFO } from '@/data/company-info'
@@ -53,7 +55,7 @@ export default function Footer() {
 
   return (
     <footer className="mt-16 border-t border-kn541-gray-300 bg-kn541-gray-100 dark:border-neutral-600 dark:bg-neutral-900/40">
-      <div className="mx-auto max-w-[1280px] px-4 py-8 sm:px-5 lg:py-12 lg:pb-16">
+      <div className="mx-auto max-w-[1280px] px-4 pt-8 pb-28 sm:px-5 md:pb-8 lg:py-12 lg:pb-16">
         <FooterNavLinks
           className="mb-8 hidden gap-6 text-sm font-medium text-kn541-gray-700 dark:text-neutral-400 lg:flex"
           withVendorAccent
