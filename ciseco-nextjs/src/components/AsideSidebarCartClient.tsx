@@ -74,49 +74,49 @@ function CartLine({
   const [removeOpen, setRemoveOpen] = useState(false)
 
   return (
-    <div className="flex py-5 last:pb-0">
-      <div className="relative h-24 w-20 shrink-0 overflow-hidden rounded-xl bg-neutral-100">
-        {product.image ? (
-          <Image fill src={product.image} alt="" className="object-contain" sizes="200px" />
-        ) : null}
-        <Link className="absolute inset-0" href={`/products/${product.productId}`} onClick={() => close()} />
-      </div>
-
-      <div className="ml-4 flex flex-1 flex-col">
-        <div>
-          <div className="flex justify-between">
-            <div>
-              <h3 className="text-base font-medium">
-                <Link href={`/products/${product.productId}`} onClick={() => close()}>
-                  {product.name}
-                </Link>
-              </h3>
-              {product.option ? (
-                <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">{product.option}</p>
-              ) : null}
-            </div>
-            <p className="mt-0.5 text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-              {formatPrice(product.price * product.quantity)}
-            </p>
-          </div>
+    <>
+      <div className="flex py-5 last:pb-0">
+        <div className="relative h-24 w-20 shrink-0 overflow-hidden rounded-xl bg-neutral-100">
+          {product.image ? (
+            <Image fill src={product.image} alt="" className="object-contain" sizes="200px" />
+          ) : null}
+          <Link className="absolute inset-0" href={`/products/${product.productId}`} onClick={() => close()} />
         </div>
-        <div className="flex flex-1 items-end justify-between gap-2 text-sm">
-          <div className="max-w-[11rem] shrink-0 rounded-full bg-neutral-100 py-1 pe-1 ps-1 dark:bg-neutral-800">
-            <NcInputNumber
-              key={product.id}
-              className="!gap-0"
-              defaultValue={Math.min(Number(product.quantity) || 1, maxQty)}
-              min={1}
-              max={maxQty}
-              aria-label={`${qtyLabel}, ${product.name}`}
-              onChange={(q) => updateQty(product.id, q)}
-            />
-          </div>
 
-          <div className="flex">
+        <div className="ml-4 flex flex-1 flex-col">
+          <div>
+            <div className="flex justify-between">
+              <div>
+                <h3 className="text-base font-medium">
+                  <Link href={`/products/${product.productId}`} onClick={() => close()}>
+                    {product.name}
+                  </Link>
+                </h3>
+                {product.option ? (
+                  <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">{product.option}</p>
+                ) : null}
+              </div>
+              <p className="mt-0.5 text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                {formatPrice(product.price * product.quantity)}
+              </p>
+            </div>
+          </div>
+          {/* 수량 조절 + 삭제 버튼 — 모바일에서 세로 스택으로 분리해 삭제 버튼 클릭 영역 확보 */}
+          <div className="mt-3 flex flex-col gap-2 text-sm">
+            <div className="w-fit shrink-0 rounded-full bg-neutral-100 py-1 pe-1 ps-1 dark:bg-neutral-800">
+              <NcInputNumber
+                key={product.id}
+                className="!gap-0"
+                defaultValue={Math.min(Number(product.quantity) || 1, maxQty)}
+                min={1}
+                max={maxQty}
+                aria-label={`${qtyLabel}, ${product.name}`}
+                onChange={(q) => updateQty(product.id, q)}
+              />
+            </div>
             <button
               type="button"
-              className="font-medium text-primary-600 dark:text-primary-500"
+              className="w-fit font-medium text-primary-600 dark:text-primary-500 py-1 min-h-[36px] min-w-[44px]"
               onClick={() => setRemoveOpen(true)}
             >
               {removeLabel}
@@ -125,6 +125,7 @@ function CartLine({
         </div>
       </div>
 
+      {/* Dialog를 overflow 컨테이너 밖(형제)으로 렌더링해 잘림 방지 */}
       <ConfirmDeleteDialog
         open={removeOpen}
         onClose={() => setRemoveOpen(false)}
@@ -132,6 +133,6 @@ function CartLine({
           removeItem(product.id)
         }}
       />
-    </div>
+    </>
   )
 }
