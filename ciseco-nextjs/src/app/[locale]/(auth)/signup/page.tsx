@@ -10,6 +10,7 @@ import { LockClosedIcon } from '@heroicons/react/24/solid'
 import { checkPasswordPolicy, isPasswordValid, passwordContainsHangul, stripHangulFromPassword } from '@/lib/passwordPolicy'
 
 import { apiUrl } from '@/lib/api/base'
+import { fetchBankCodeList, type BankCodeItem } from '@/lib/bankCodes'
 const LOGO_URL = 'https://ghtkropmnrelkxivzpim.supabase.co/storage/v1/object/public/brands/white_logo.png'
 
 /** system_codes user_type — 일반회원 */
@@ -118,6 +119,7 @@ function SignupPageContent() {
   const [agitCode, setAgitCode] = useState('')
   const [bankCode, setBankCode] = useState('')
   const [bankName, setBankName] = useState('')
+  const [bankList, setBankList] = useState<BankCodeItem[]>([])
   const [accountNo, setAccountNo] = useState('')
   const [accountHolder, setAccountHolder] = useState('')
 
@@ -128,6 +130,16 @@ function SignupPageContent() {
   /** 가입 완료 후 회원번호 안내 (토큰은 저장하지 않음 — 로그인 페이지에서 회원번호로 로그인) */
   const [doneMemberNo, setDoneMemberNo] = useState<string | null>(null)
   const dupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    fetchBankCodeList().then(list => {
+      if (!cancelled) setBankList(list)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const checkDuplicate = useCallback(async (field: string, value: string, setter: (s: DupState) => void) => {
     if (!value.trim()) { setter('idle'); return }
@@ -488,17 +500,19 @@ function SignupPageContent() {
                   <div className="space-y-3">
                     <div>
                       <label className={labelCls}>은행명</label>
-                      <select value={bankCode} onChange={e => { setBankCode(e.target.value); setBankName(e.target.options[e.target.selectedIndex].text) }} className={inputCls}>
+                      <select
+                        value={bankCode}
+                        onChange={e => {
+                          const selected = bankList.find(b => b.code === e.target.value)
+                          setBankCode(e.target.value)
+                          setBankName(selected?.name || '')
+                        }}
+                        className={inputCls}
+                      >
                         <option value="">은행 선택</option>
-                        <option value="004">국민은행</option><option value="088">신한은행</option>
-                        <option value="020">우리은행</option><option value="081">하나은행</option>
-                        <option value="003">기업은행</option><option value="011">농협은행</option>
-                        <option value="023">SC제일은행</option><option value="090">카카오뱅크</option>
-                        <option value="089">케이뱅크</option><option value="092">토스뱅크</option>
-                        <option value="032">부산은행</option><option value="034">광주은행</option>
-                        <option value="031">대구은행</option><option value="039">경남은행</option>
-                        <option value="037">전북은행</option><option value="035">제주은행</option>
-                        <option value="007">수협은행</option><option value="071">우체국</option>
+                        {bankList.map(b => (
+                          <option key={b.code} value={b.code}>{b.name}</option>
+                        ))}
                       </select>
                     </div>
                     <div>

@@ -7,9 +7,10 @@
 //  - 회원정보에 은행계좌·은행명·예금주가 있으면 입력란 비노출, 없으면 입력
 //  - (현금비율 + 은행 3종) 모두 입력해야 신청 (계좌 기보유 시 현금비율만)
 //  - 기입 % 외 나머지는 포인트(GWCP)로 전환, 신청 시 출금가능잔액 0원
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
-import { MypageApiError } from '@/lib/mypage/api'
+import { mapMypageBankList, type BankCodeItem } from '@/lib/bankCodes'
+import { MypageApiError, mypageFetch } from '@/lib/mypage/api'
 import { applyWithdraw } from '@/lib/mypage/useWithdrawals'
 import type { WithdrawSummaryData } from '@/lib/mypage/useWithdrawSummary'
 import { calcWithdrawSplit, clampCashRatio, formatWon, MAX_CASH_RATIO } from '@/lib/mypage/withdrawUtils'
@@ -27,10 +28,29 @@ export default function WithdrawModal({ open, summary, onClose, onApplied }: Pro
   const hasBank = !!summary.has_bank_account
 
   const [cashRatioStr, setCashRatioStr] = useState('')
+  const [bankCode, setBankCode] = useState('')
   const [bankName, setBankName] = useState('')
+  const [bankList, setBankList] = useState<BankCodeItem[]>([])
   const [bankAccount, setBankAccount] = useState('')
   const [accountHolder, setAccountHolder] = useState('')
   const [submitting, setSubmitting] = useState(false)
+
+  useEffect(() => {
+    if (!open || hasBank) return
+    let cancelled = false
+    mypageFetch<{ bank_list?: Array<{ code?: string; code_value?: string; name?: string }> }>(
+      '/mypage/bank-account'
+    )
+      .then(data => {
+        if (!cancelled) setBankList(mapMypageBankList(data.bank_list))
+      })
+      .catch(() => {
+        if (!cancelled) setBankList([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [open, hasBank])
 
   const cashRatio = useMemo(() => {
     const n = parseFloat(cashRatioStr)
@@ -46,7 +66,7 @@ export default function WithdrawModal({ open, summary, onClose, onApplied }: Pro
 
   const ratioValid = Number.isFinite(cashRatio) && cashRatio >= 0 && cashRatio <= MAX_CASH_RATIO
   const ratioOver = Number.isFinite(cashRatio) && cashRatio > MAX_CASH_RATIO
-  const bankValid = hasBank || (bankName.trim() && bankAccount.trim() && accountHolder.trim())
+  const bankValid = hasBank || (bankCode && bankName.trim() && bankAccount.trim() && accountHolder.trim())
   const canSubmit = total > 0 && ratioValid && !!bankValid && !submitting
 
   const handleSubmit = async () => {
@@ -172,15 +192,22 @@ export default function WithdrawModal({ open, summary, onClose, onApplied }: Pro
               <div className="mb-4 space-y-2.5">
                 <div>
                   <label className="mb-1 block text-sm font-semibold">
-                    은행명 <span className="text-red-500">*</span>
+                    은행 <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text"
-                    value={bankName}
-                    onChange={e => setBankName(e.target.value)}
-                    placeholder="예: 국민은행"
+                  <select
+                    value={bankCode}
+                    onChange={e => {
+                      const selected = bankList.find(b => b.code === e.target.value)
+                      setBankCode(e.target.value)
+                      setBankName(selected?.name || '')
+                    }}
                     className="w-full rounded-xl border border-neutral-200 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-violet-200 dark:border-neutral-700 dark:bg-neutral-800"
-                  />
+                  >
+                    <option value="">은행 선택</option>
+                    {bankList.map(b => (
+                      <option key={b.code} value={b.code}>{b.name}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-semibold">
