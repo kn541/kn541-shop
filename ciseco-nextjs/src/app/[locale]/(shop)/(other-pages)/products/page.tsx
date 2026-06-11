@@ -1,4 +1,4 @@
-// KN541 상품목록 — 페이지네이션 (?page=), 첫 페이지만 total 카운트
+// KN541 상품목록 — 페이지네이션 (?page=), 모든 페이지에서 total 카운트
 import { Suspense } from 'react'
 import ProductsPageClient from './ProductsPageClient'
 import type { Metadata } from 'next'
@@ -136,7 +136,9 @@ export default async function ProductsPage({
 }) {
   const { cid, sort, page: pageRaw } = await searchParams
   const page = Math.max(1, parseInt(String(pageRaw ?? '1'), 10) || 1)
-  const includeTotal = page === 1
+  // ★ fix: 모든 페이지에서 total 카운트 요청
+  //   기존: page===1 일 때만 → 2페이지부터 페이지 번호가 사라지는 문제
+  const includeTotal = true
 
   const [allCategories, { products, hasNext, total }] = await Promise.all([
     fetchAllCategories(),
