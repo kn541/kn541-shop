@@ -7,6 +7,7 @@
 // fix: 간편결제(EASY_PAY) → 토스페이(pay.toss.im) 연동으로 전환
 // fix: 결제수단 간편결제·카드·무통장입금 노출
 // fix: 무통장입금 결제완료 후 장바구니 리다이렉트 방지 (paymentCompleteRef)
+// fix: 모바일 무통장 계좌 안내 박스 짤림 수정 (#업무-온라인오픈 26번)
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
@@ -635,7 +636,7 @@ export default function CheckoutPage() {
               ))}
             </div>
 
-            {/* 무통장입금 계좌 안내 박스 */}
+            {/* 무통장입금 계좌 안내 박스 — 모바일 짤림 수정: flex-col + break-all */}
             {payMethod === 'BANK_TRANSFER' && (
               <div className="mt-5 rounded-2xl border-2 border-amber-300 bg-amber-50 p-5 dark:border-amber-700 dark:bg-amber-900/20">
                 <div className="mb-3 flex items-center gap-2">
@@ -643,19 +644,19 @@ export default function CheckoutPage() {
                   <p className="font-bold text-amber-800 dark:text-amber-300">무통장 입금 계좌 안내</p>
                 </div>
                 <div className="space-y-2.5 text-sm">
-                  <div className="flex justify-between">
+                  <div className="flex flex-col gap-0.5 sm:flex-row sm:justify-between">
                     <span className="text-amber-700 dark:text-amber-400">은행</span>
                     <span className="font-semibold text-amber-900 dark:text-amber-200">{BANK_ACCOUNT.bank}</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex flex-col gap-0.5 sm:flex-row sm:justify-between">
                     <span className="text-amber-700 dark:text-amber-400">계좌번호</span>
-                    <span className="font-bold tracking-widest text-amber-900 dark:text-amber-200">{BANK_ACCOUNT.number}</span>
+                    <span className="font-bold text-amber-900 dark:text-amber-200 break-all">{BANK_ACCOUNT.number}</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex flex-col gap-0.5 sm:flex-row sm:justify-between">
                     <span className="text-amber-700 dark:text-amber-400">예금주</span>
                     <span className="font-semibold text-amber-900 dark:text-amber-200">{BANK_ACCOUNT.holder}</span>
                   </div>
-                  <div className="flex justify-between border-t border-amber-200 pt-2.5 dark:border-amber-700">
+                  <div className="flex flex-col gap-0.5 sm:flex-row sm:justify-between border-t border-amber-200 pt-2.5 dark:border-amber-700">
                     <span className="text-amber-700 dark:text-amber-400">입금금액</span>
                     <span className="text-xl font-bold text-amber-900 dark:text-amber-200">
                       {summaryTotal.toLocaleString()}원
