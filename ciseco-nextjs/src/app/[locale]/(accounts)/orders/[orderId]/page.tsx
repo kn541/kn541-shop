@@ -28,6 +28,94 @@ function lineThumb(row: OrderDetailLineItem) {
   return u?.trim() ? u : PLACEHOLDER
 }
 
+// 배송조회 결과 타입
+type TrackingStep = {
+  time?: string
+  where?: string
+  kind?: string
+  telno?: string
+  remark?: string
+}
+
+type TrackingResult = {
+  trackingDetails?: TrackingStep[]
+  lastStateDetail?: string
+  completeYN?: string
+  error?: string
+  mock?: boolean
+  message?: string
+}
+
+function TrackingPanel({ orderId, itemId }: { orderId: string; itemId: string }) {
+  const [loading, setLoading] = useState(false)
+  const [result, setResult] = useState<TrackingResult | null>(null)
+  const [open, setOpen] = useState(false)
+
+  const handleTrack = async () => {
+    if (open) {
+      setOpen(false)
+      return
+    }
+    setLoading(true)
+    try {
+      const res = await mypageFetch<{ data: { tracking_info: TrackingResult } }>(
+        `/mypage/orders/${encodeURIComponent(orderId)}/items/${encodeURIComponent(itemId)}/tracking`
+      )
+      const info = res?.data?.tracking_info ?? (res as unknown as TrackingResult)
+      if (info?.error) {
+        toast.error('잠시 후 다시 시도하세요.')
+        return
+      }
+      setResult(info)
+      setOpen(true)
+    } catch (e) {
+      const msg = e instanceof MypageApiError ? e.message : null
+      toast.error(msg || '잠시 후 다시 시도하세요.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="mt-2">
+      <button
+        type="button"
+        onClick={() => void handleTrack()}
+        disabled={loading}
+        className="rounded-lg border border-primary-300 px-3 py-1.5 text-xs font-semibold text-primary-600 hover:bg-primary-50 disabled:opacity-50 dark:border-primary-700 dark:text-primary-400 dark:hover:bg-primary-950/30"
+      >
+        {loading ? '조회 중…' : open ? '닫기' : '배송조회'}
+      </button>
+
+      {open && result && (
+        <div className="mt-2 rounded-xl border border-neutral-200 bg-neutral-50 p-3 dark:border-neutral-700 dark:bg-neutral-800/60">
+          {result.mock ? (
+            <p className="text-xs text-neutral-500">{result.message || '배송 정보를 불러올 수 없습니다.'}</p>
+          ) : result.lastStateDetail ? (
+            <p className="mb-2 text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+              현재 상태: {result.lastStateDetail}
+              {result.completeYN === 'Y' && ' ✅'}
+            </p>
+          ) : null}
+          {Array.isArray(result.trackingDetails) && result.trackingDetails.length > 0 ? (
+            <ul className="space-y-1.5">
+              {result.trackingDetails.map((step, i) => (
+                <li key={i} className="flex gap-2 text-xs text-neutral-600 dark:text-neutral-400">
+                  <span className="shrink-0 text-neutral-400">{step.time ?? ''}</span>
+                  <span className="shrink-0 font-medium text-neutral-700 dark:text-neutral-300">{step.where ?? ''}</span>
+                  <span>{step.kind ?? ''}</span>
+                </li>
+              ))}
+            </ul>
+          ) : !result.mock ? (
+            <p className="text-xs text-neutral-500">배송 단계 정보가 없습니다.</p>
+          ) : null}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function OrderDetailPage({
   params,
 }: {
@@ -162,6 +250,8 @@ export default function OrderDetailPage({
             items.map((row, idx) => {
               const thumb = lineThumb(row)
               const pid = row.product_id || `line-${idx}`
+              const itemId = row.id || row.item_id || ''
+              const hasTracking = showTrack && (row.tracking_no || row.tracking_number)
               return (
                 <li
                   key={pid}
@@ -184,6 +274,15 @@ export default function OrderDetailPage({
                     <p className="text-sm text-neutral-500">
                       수량 {lineQty(row)} · {Number(linePrice(row)).toLocaleString('ko-KR')}원
                     </p>
+                    {hasTracking && (
+                      <p className="mt-1 text-xs text-neutral-500">
+                        송장번호: <span className="font-mono font-medium">{row.tracking_no || row.tracking_number}</span>
+                        {row.tracking_company && ` (${row.tracking_company})`}
+                      </p>
+                    )}
+                    {hasTracking && itemId && (
+                      <TrackingPanel orderId={orderId} itemId={itemId} />
+                    )}
                   </div>
                 </li>
               )
