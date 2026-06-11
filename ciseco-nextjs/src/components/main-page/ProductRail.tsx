@@ -11,7 +11,9 @@ import { useCallback, useEffect, useRef, useState } from 'react'
  *  - 한 번 누르면 보이는 너비의 약 90%만큼 부드럽게 이동
  *  - 왼쪽 끝이면 이전 화살표 숨김, 오른쪽 끝이면 다음 화살표 숨김
  *  - 넘길 내용이 없으면(스크롤 불필요) 화살표 둘 다 숨김
- *  - 마우스 휠/트랙패드/터치 스크롤은 기존대로 동작
+ *  - 마우스 휠/트랙패드의 "세로" 스크롤은 레일이 소비하지 않고 페이지 세로 스크롤로 전달
+ *    (모바일에서 레일이 화면 대부분을 차지할 때 페이지가 안 내려가는 문제 수정 — 2026-06-11)
+ *  - 가로 휠/터치 가로 스와이프는 기존대로 레일을 넘긴다
  */
 export function ProductRail({ children }: { children: React.ReactNode }) {
   const railRef = useRef<HTMLDivElement>(null)
@@ -37,6 +39,22 @@ export function ProductRail({ children }: { children: React.ReactNode }) {
       window.removeEventListener('resize', updateArrows)
     }
   }, [updateArrows])
+
+  // 세로 휠 → 페이지 스크롤 전달 (레일 위에서 페이지가 안 내려가는 문제 수정)
+  useEffect(() => {
+    const el = railRef.current
+    if (!el) return
+    const onWheel = (e: WheelEvent) => {
+      // 사용자의 의도가 "세로 스크롤"이면 레일이 이벤트를 소비하지 않고
+      // 페이지 세로 스크롤로 직접 전달한다.
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        e.preventDefault()
+        window.scrollBy({ top: e.deltaY })
+      }
+    }
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => el.removeEventListener('wheel', onWheel)
+  }, [])
 
   const scrollByDir = (dir: 1 | -1) => {
     const el = railRef.current
