@@ -1,8 +1,14 @@
 'use client'
+// fix: 재로그인 시 장바구니 목록 사라짐 — logout()에 clearCart 치확 호출 (#업무-온라인오픈 18번)
+//   원인: 로그아웃 시 localStorage access_token만 제거하고 cart storage는 유지
+//          → 로그아웃 후 다른 회원이 로그인하면 이전 회원 장바구니가 노이거나
+//          팀 PC에서 hydration 시 묶이는 미세한 race로 사라지는 것처럼 보임
+//   수정: logout() 시 clearCart() 명시적 호출 → kn541_cart localStorage 완전 제거
 
 import { useEffect, useState } from 'react'
 import { refreshAccessToken, clearAuthAndRedirect } from '@/lib/mypage/api'
 import { useLocale } from 'next-intl'
+import { useCart } from '@/lib/cart-context'
 
 interface AuthUser {
   user_id: string
@@ -12,7 +18,6 @@ interface AuthUser {
   name?: string
 }
 
-// JWT payload 디코딩 (검증 없이 페이로드만 읽기)
 function decodeJwt(token: string): Record<string, unknown> | null {
   try {
     const payload = token.split('.')[1]
@@ -27,6 +32,7 @@ function decodeJwt(token: string): Record<string, unknown> | null {
 export function useAuth() {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [loading, setLoading] = useState(true)
+  const { clearCart } = useCart()
   let locale = 'ko'
   try {
     // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -37,7 +43,6 @@ export function useAuth() {
 
   useEffect(() => {
     void (async () => {
-      // access_token 확보 (없으면 refresh_token으로 재발급 시도)
       let token = localStorage.getItem('access_token')
       if (!token) {
         token = await refreshAccessToken()
@@ -47,7 +52,6 @@ export function useAuth() {
       const payload = decodeJwt(token)
       if (!payload) { setLoading(false); return }
 
-      // JWT 만료 체크 — 만료 시 refresh 시도 / 실패 시 전부 제거 + 로그인 리다이렉트
       const exp = payload.exp as number | undefined
       if (exp && exp * 1000 < Date.now()) {
         const newToken = await refreshAccessToken()
@@ -80,8 +84,11 @@ export function useAuth() {
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
     localStorage.removeItem('user_type')
+    // ★ fix #18: 로그아웃 시 장바구니 명시적 제거
+    // 이전: cart storage 유지 → 다음 로그인 회원에게 이전 회원 장바구니 노임
+    // 이후: clearCart()로 kn541_cart localStorage 완전 제거
+    clearCart()
     setUser(null)
-    // 로그아웃 후 메인 페이지로 이동
     window.location.href = `/${locale}`
   }
 
