@@ -8,6 +8,7 @@ export function orderStatusLabelKo(code: string | undefined | null): string {
     SHIPPED: '배송중',
     SHIPPING: '배송중',
     DELIVERED: '배송완료',
+    COMPLETED: '구매확정',
     CANCELLED: '취소됨',
     CANCELED: '취소됨',
     RETURNED: '반품',
@@ -23,5 +24,5 @@ export function canCancelOrderStatus(code: string | undefined | null): boolean {
 
 export function showTrackingStatus(code: string | undefined | null): boolean {
   const c = (code || '').toUpperCase()
-  return c === 'SHIPPED' || c === 'SHIPPING' || c === 'DELIVERED'
+  return c === 'SHIPPED' || c === 'SHIPPING' || c === 'DELIVERED' || c === 'COMPLETED'
 }
