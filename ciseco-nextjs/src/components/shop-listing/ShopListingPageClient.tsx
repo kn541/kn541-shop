@@ -3,7 +3,7 @@
 import ProductCard from '@/components/ProductCard'
 import { FilterSortByMenuListBox } from '@/components/FilterSortByMenu'
 import {
-  fetchAllShopPublicItems,
+  fetchShopPublicList,
   mapShopListItemToProduct,
   type ShopListKind,
   type ShopPublicListItem,
@@ -22,38 +22,9 @@ import {
 } from '@/shared/Pagination/Pagination'
 import { getPaginationItems } from '@/utils/paginationRange'
 import { usePathname, useSearchParams } from 'next/navigation'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 const PAGE_SIZE = PRODUCT_LIST_PAGE_SIZE
-
-function sortShopItems(items: ShopPublicListItem[], sort: ProductSortValue): ShopPublicListItem[] {
-  const copy = [...items]
-  const sales = (r: ShopPublicListItem) => Number(r.sort_sales_count ?? 0)
-  const reviews = (r: ShopPublicListItem) => Number(r.sort_review_count ?? 0)
-  const tie = (a: ShopPublicListItem, b: ShopPublicListItem) =>
-    String(b.created_at).localeCompare(String(a.created_at))
-
-  switch (sort) {
-    case 'newest':
-      copy.sort((a, b) => tie(a, b))
-      break
-    case 'sales_count':
-      copy.sort((a, b) => sales(b) - sales(a) || tie(a, b))
-      break
-    case 'review_count':
-      copy.sort((a, b) => reviews(b) - reviews(a) || tie(a, b))
-      break
-    case 'price_asc':
-      copy.sort((a, b) => Number(a.sale_price) - Number(b.sale_price) || tie(a, b))
-      break
-    case 'price_desc':
-      copy.sort((a, b) => Number(b.sale_price) - Number(a.sale_price) || tie(a, b))
-      break
-    default:
-      copy.sort((a, b) => tie(a, b))
-  }
-  return copy
-}
 
 function buildQuery(page: number, sort: ProductSortValue) {
   const q = new URLSearchParams()
@@ -80,7 +51,7 @@ export default function ShopListingPageClient({
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [sortedAll, setSortedAll] = useState<ShopPublicListItem[]>([])
+  const [items, setItems] = useState<ShopPublicListItem[]>([])
   const [total, setTotal] = useState(0)
 
   useEffect(() => {
@@ -88,16 +59,16 @@ export default function ShopListingPageClient({
     const run = async () => {
       setLoading(true)
       setError(null)
-      setSortedAll([])
       try {
-        const res = await fetchAllShopPublicItems(kind)
+        // 서버 사이드 페이지네이션 — 한 페이지만 요청 (60건)
+        const res = await fetchShopPublicList(kind, urlPage, PAGE_SIZE)
         if (cancelled) return
-        setSortedAll(sortShopItems(res.items, urlSort))
+        setItems(res.items)
         setTotal(res.total)
       } catch (e) {
         if (cancelled) return
         setError(e instanceof Error ? e.message : '목록을 불러오지 못했습니다.')
-        setSortedAll([])
+        setItems([])
         setTotal(0)
       } finally {
         if (!cancelled) setLoading(false)
@@ -107,12 +78,7 @@ export default function ShopListingPageClient({
     return () => {
       cancelled = true
     }
-  }, [kind, urlSort])
-
-  const displayItems = useMemo(() => {
-    const start = (urlPage - 1) * PAGE_SIZE
-    return sortedAll.slice(start, start + PAGE_SIZE)
-  }, [sortedAll, urlPage])
+  }, [kind, urlPage, urlSort])
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
   const pageItemsRange = getPaginationItems(urlPage, totalPages)
@@ -147,14 +113,14 @@ export default function ShopListingPageClient({
         <div className="py-20 text-center text-neutral-500">불러오는 중…</div>
       )}
 
-      {!isValueUpEmpty && !loading && displayItems.length === 0 && !error && (
+      {!isValueUpEmpty && !loading && items.length === 0 && !error && (
         <div className="py-20 text-center text-neutral-500">등록된 상품이 없습니다.</div>
       )}
 
-      {!isValueUpEmpty && !loading && displayItems.length > 0 && (
+      {!isValueUpEmpty && !loading && items.length > 0 && (
         <>
           <div className="grid grid-cols-2 gap-x-3 gap-y-8 sm:grid-cols-2 md:grid-cols-3 md:gap-x-5 xl:grid-cols-5 xl:gap-x-8 [&>*]:min-w-0">
-            {displayItems.map((row) => (
+            {items.map((row) => (
               <ProductCard key={row.product_id} data={adaptProduct(mapShopListItemToProduct(row)) as any} />
             ))}
           </div>
