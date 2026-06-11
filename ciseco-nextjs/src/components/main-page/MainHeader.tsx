@@ -1,6 +1,8 @@
 'use client'
 
 // 메인 페이지 전용 헤더 — 디자인 원본 site-header (전역 Header.tsx 미변경)
+// fix(2026-06-11): 헤더 검색바가 URL ?q= 와 동기화되지 않아 검색 후
+//                  검색바가 빈 상태로 보이던 문제 — pathname 변경 시 q 동기화
 
 import { Link } from '@/components/Link'
 import { useAside } from '@/components/aside/aside'
@@ -58,6 +60,15 @@ export default function MainHeader({ categoryTabs }: MainHeaderProps) {
   const [underline, setUnderline] = useState({ left: 0, width: 0 })
   const innerRef = useRef<HTMLDivElement>(null)
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
+
+  // URL ?q= 와 헤더 검색바 동기화 — 검색 결과 페이지(/search?q=...)에서
+  // 헤더 검색바에도 현재 검색어가 표시되도록 한다.
+  // (useSearchParams 대신 window.location.search를 사용해 Suspense 요구 회피)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    setQ(params.get('q') ?? '')
+  }, [pathname])
 
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
