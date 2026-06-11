@@ -220,10 +220,10 @@ function DashboardContent() {
             )}
           </div>
 
-          {/* 최근 배당 */}
+          {/* 전체 배당 */}
           <div className="mx-1">
             <div className="flex items-center justify-between py-4">
-              <span className="text-base font-bold">최근 배당</span>
+              <span className="text-base font-bold">전체 배당</span>
               <Link
                 href="/dividends/history"
                 className="text-sm font-semibold text-primary-600"
@@ -233,7 +233,7 @@ function DashboardContent() {
             </div>
             {recentItems.length === 0 ? (
               <div className="py-4 text-center text-sm text-neutral-400">
-                최근 배당 내역이 없어요.
+                전체 배당 내역이 없어요.
               </div>
             ) : (
               recentItems.map(item => (
