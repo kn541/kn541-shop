@@ -298,7 +298,7 @@ export default function AccountProfileClient() {
           </div>
           <div>
             <label className="mb-1.5 block text-sm font-medium text-neutral-800 dark:text-neutral-200">
-              생년월일
+              생년월일 <span className="font-normal text-neutral-400">(선택)</span>
             </label>
             <input
               type="date"
@@ -309,7 +309,7 @@ export default function AccountProfileClient() {
           </div>
           <div>
             <label className="mb-1.5 block text-sm font-medium text-neutral-800 dark:text-neutral-200">
-              성별
+              성별 <span className="font-normal text-neutral-400">(선택)</span>
             </label>
             <select
               className={inputClass}
@@ -333,7 +333,7 @@ export default function AccountProfileClient() {
         <div className="space-y-5">
           <div>
             <label className="mb-1.5 block text-sm font-medium text-neutral-800 dark:text-neutral-200">
-              이메일
+              이메일 <span className="font-normal text-neutral-400">(선택)</span>
             </label>
             <input
               type="email"
