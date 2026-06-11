@@ -6,6 +6,7 @@
 //   수정: pendingOrderRef로 기존 PENDING 주문 캐시, 재시도 시 재사용
 // fix: 간편결제(EASY_PAY) → 토스페이(pay.toss.im) 연동으로 전환
 // fix: 결제수단 간편결제·카드·무통장입금 노출
+// fix: 무통장입금 결제완료 후 장바구니 리다이렉트 방지 (paymentCompleteRef)
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
@@ -115,13 +116,11 @@ export default function CheckoutPage() {
   const [memberInfo, setMemberInfo]     = useState<{ name: string; phone: string; email: string } | null>(null)
   const [digitalOrdererLoading, setDigitalOrdererLoading] = useState(false)
 
-  // ── 중복 주문 방지: 팝업 취소 후 재시도 시 기존 pending 주문 재사용 ──────────
-  // CARD/VIRTUAL_ACCOUNT/TRANSFER 경로에서 결제 팝업을 닫으면
-  // pendingOrderRef에 생성된 주문이 캐시됨. 다음 결제하기 클릭 시 재사용.
-  // 배송지 변경 시 무효화하여 새 주문 생성.
   const pendingOrderRef = useRef<PendingOrder | null>(null)
 
-  // 배송지·상품이 바뀌면 pending 주문 무효화
+  // ── 결제 완료 후 cart 빈 체크 방지 ──────────────────────────────────────
+  const paymentCompleteRef = useRef(false)
+
   useEffect(() => {
     pendingOrderRef.current = null
   }, [
@@ -161,6 +160,7 @@ export default function CheckoutPage() {
   useEffect(() => {
     if (!mounted) return
     if (!getToken()) return
+    if (paymentCompleteRef.current) return
     if (orderableItems.length === 0) router.replace(`/${locale}/cart`)
   }, [mounted, orderableItems.length, locale, router])
 
@@ -254,7 +254,6 @@ export default function CheckoutPage() {
       if (!address.address1)   { toast.error('배송지 주소를 입력해 주세요.'); return }
     }
 
-    // 토스페이·무통장입금은 토스페이먼츠 SDK 미사용 → 초기화 체크 제외
     if (payMethod !== 'EASY_PAY' && payMethod !== 'BANK_TRANSFER' && !paymentRef.current) {
       toast.error('결제 로드 중입니다. 잠시 후 다시 시도해 주세요.'); return
     }
@@ -284,7 +283,6 @@ export default function CheckoutPage() {
       }
 
       // ── 무통장입금 ─────────────────────────────────────────────────────────
-      // 항상 새 주문 생성 (pendingOrderRef 사용 안 함)
       if (payMethod === 'BANK_TRANSFER') {
         pendingOrderRef.current = null
         const orderBody = isDigitalOnly
@@ -293,15 +291,13 @@ export default function CheckoutPage() {
         const orderRes  = await fetch(apiUrl('/orders'), { method: 'POST', headers, body: JSON.stringify(orderBody) })
         const orderData = await orderRes.json()
         if (!orderRes.ok) throw new Error(orderData.detail ?? '주문 생성에 실패했습니다')
+        paymentCompleteRef.current = true
         clearCart()
         router.push(`/${locale}/order-successful?order_id=${orderData.data.order_id}`)
         return
       }
 
       // ── 토스 결제 공통: 주문 생성 (중복 방지) ─────────────────────────────
-      // [FIX] pendingOrderRef에 캐시된 주문이 있으면 새 주문 생성 스킵.
-      // 결제 팝업 취소 후 재시도 시에도 동일 주문번호·금액을 재사용함.
-      // 배송지가 변경되면 useEffect에서 pendingOrderRef를 null로 초기화.
       let currentOrder = pendingOrderRef.current
 
       if (!currentOrder) {
@@ -317,7 +313,7 @@ export default function CheckoutPage() {
           toast(`판매 불가·종료된 상품 ${skippedProducts.length}건은 주문에서 제외되었습니다.`, { icon: 'ℹ️' })
         }
         currentOrder = { order_id, order_no, total_amount }
-        pendingOrderRef.current = currentOrder  // 캐시
+        pendingOrderRef.current = currentOrder
       }
 
       const { order_id, order_no, total_amount } = currentOrder
@@ -330,7 +326,6 @@ export default function CheckoutPage() {
 
       // ── 토스페이 (간편결제) ──────────────────────────────────────────────
       if (payMethod === 'EASY_PAY') {
-        // 간편결제는 외부 페이지로 리다이렉트 → pendingOrderRef 필요 없음
         pendingOrderRef.current = null
         const tosspayRes = await fetch(apiUrl('/payments/tosspay/create'), {
           method: 'POST', headers,
@@ -349,7 +344,6 @@ export default function CheckoutPage() {
       }
 
       // ── 토스페이먼츠 (카드 등) ───────────────────────────────────────────
-      // prepare는 매 시도마다 새로 호출해도 무방 (토스 측에서 orderId로 멱등 처리)
       const prepareRes  = await fetch(apiUrl('/payments/prepare'), {
         method: 'POST', headers,
         body: JSON.stringify({ order_id, amount: Math.round(total_amount), order_name: orderName }),
@@ -380,7 +374,6 @@ export default function CheckoutPage() {
         await paymentRef.current.requestPayment({ method: 'TRANSFER', ...baseParams })
       }
 
-      // 성공 시 (success URL로 리다이렉트 전에 도달하지 않음 — SDK가 자동 리다이렉트)
       pendingOrderRef.current = null
 
     } catch (err: any) {
@@ -388,11 +381,9 @@ export default function CheckoutPage() {
       const isCancellation = msg.includes('취소') || msg.toLowerCase().includes('cancel')
 
       if (!isCancellation) {
-        // 실제 오류 — pending 주문 무효화 (재시도 시 새 주문 필요할 수 있음)
         pendingOrderRef.current = null
         toast.error(msg)
       }
-      // 팝업 취소 — pendingOrderRef 유지 → 재시도 시 기존 주문 재사용
 
       setIsSubmitting(false)
     }
@@ -402,7 +393,7 @@ export default function CheckoutPage() {
   const labelCls = 'mb-1.5 block text-sm font-medium text-neutral-700 dark:text-neutral-300'
 
   if (!mounted || !getToken()) return null
-  if (orderableItems.length === 0) return null
+  if (orderableItems.length === 0 && !paymentCompleteRef.current) return null
 
   const PAY_METHODS: { key: PayMethod; label: string; desc: string; icon: React.ReactNode }[] = [
     { key: 'EASY_PAY',      label: '간편결제',   desc: '카카오페이·토스페이·네이버페이 등', icon: <DevicePhoneMobileIcon className="h-5 w-5" /> },
