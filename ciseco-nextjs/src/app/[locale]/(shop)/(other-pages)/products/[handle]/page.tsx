@@ -2,6 +2,7 @@
 // fix: 갤러리 = THUMBNAIL 타입만, 하단 = DETAIL 타입만
 //   (이전: THUMBNAIL+DETAIL 혼합 → 클릭 시 상세이미지가 메인으로 표시되는 버그)
 // fix: 브레드크럼 — "전체 상품" 제거, 카테고리별 링크 추가
+// fix: ProductReviews — API 연동 (productId prop)
 
 import { Divider } from '@/components/Divider'
 import SectionSliderProductCard from '@/components/SectionSliderProductCard'
@@ -70,8 +71,6 @@ export default async function Page({
   const { products: allRelated } = await getProducts({ size: 9 })
   const relatedProducts = allRelated.filter((r: any) => r.id !== p.id && r.handle !== handle).slice(0, 8)
 
-  const reviews: any[] = []
-
   const { id: productId, title, status, featuredImage, rating, reviewNumber, price, images, description } = p
 
   const deliveryInfo = p.delivery || {}
@@ -92,7 +91,6 @@ export default async function Page({
   // ★ THUMBNAIL 타입 이미지 — 갤러리 사이드바 전용
   const thumbnailSrcs: string[] = (() => {
     const srcs: string[] = p.thumbnailImageSrcs ?? []
-    // 어댑터에서 키가 없으면 thumbnail_url로 폴백
     if (srcs.length > 0) return srcs
     const thumb = featuredImage?.src
     return thumb ? [thumb] : []
@@ -114,7 +112,6 @@ export default async function Page({
 
   const returnText = returnFee > 0 ? `반품 ${returnFee.toLocaleString('ko-KR')}원` : '반품 무료'
 
-  // ★ 브레드크럼: 홈 + 카테고리 계층 (각 카테고리 클릭 시 해당 카테고리 상품리스트로 이동)
   const breadcrumbs: { name: string; href?: string }[] = [
     { name: '홈', href: `/${locale}` },
   ]
@@ -450,9 +447,9 @@ export default async function Page({
           </div>
         </div>
 
-        {/* 리뷰 */}
+        {/* ★ fix: ProductReviews — productId 전달 (API 연동) */}
         <div id="reviews" className="mb-12">
-          <ProductReviews reviewNumber={reviewNumber || 0} rating={rating || 0} reviews={reviews} />
+          <ProductReviews productId={String(productId || handle)} />
         </div>
 
         <Divider />
