@@ -8,6 +8,10 @@
 // fix: 결제수단 간편결제·카드·무통장입금 노출
 // fix: 무통장입금 결제완료 후 장바구니 리다이렉트 방지 (paymentCompleteRef)
 // fix: 모바일 무통장 계좌 안내 박스 짤림 수정 (#업무-온라인오픈 26번)
+// fix: 배송메모 직접입력 커서 사라짐 — MemoInput 외부 컴포넌트로 분리 (#업무-온라인오픈 6번)
+//   원인: MemoInput이 CheckoutPage 내부 return 직전 const로 선언
+//          → 매 렌더마다 새 컴포넌트 타입 생성 → React unmount/remount → 커서 유실
+//   수정: 파일 최상단 named 컴포넌트로 분리, props로 상태 주입
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
@@ -52,7 +56,6 @@ function getToken(): string | null {
 
 type PayMethod = 'CARD' | 'EASY_PAY' | 'VIRTUAL_ACCOUNT' | 'TRANSFER' | 'BANK_TRANSFER'
 
-/** 결제 팝업 취소 후 재시도에서 재사용되는 pending 주문 정보 */
 interface PendingOrder {
   order_id:     string
   order_no:     string
@@ -69,6 +72,40 @@ interface SavedAddress {
   address2?: string
   delivery_memo?: string
   is_default: boolean
+}
+
+// ★ fix #6: MemoInput을 CheckoutPage 외부 named 컴포넌트로 분리
+// 내부 const 선언 시 매 렌더마다 새 컴포넌트 타입 생성 → input unmount/remount → 커서 유실
+// 외부 선언 시 컴포넌트 참조 안정 → re-render만 발생, 커서 유지
+interface MemoInputProps {
+  inputCls: string
+  labelCls: string
+  memoSelect: string
+  memo: string
+  onSelectChange: (val: string) => void
+  onDirectChange: (val: string) => void
+}
+
+function MemoInput({ inputCls, labelCls, memoSelect, memo, onSelectChange, onDirectChange }: MemoInputProps) {
+  return (
+    <div className="sm:col-span-2">
+      <label className={labelCls}>배송 메모 (선택)</label>
+      <select className={inputCls} value={memoSelect} onChange={e => onSelectChange(e.target.value)}>
+        {MEMO_OPTIONS.map(o => (
+          <option key={o.value} value={o.value}>{o.label}</option>
+        ))}
+      </select>
+      {memoSelect === '__DIRECT__' && (
+        <input
+          className={`${inputCls} mt-2`}
+          placeholder="배송 메모를 직접 입력해 주세요"
+          type="text" maxLength={100}
+          value={memo}
+          onChange={e => onDirectChange(e.target.value)}
+        />
+      )}
+    </div>
+  )
 }
 
 export default function CheckoutPage() {
@@ -118,8 +155,6 @@ export default function CheckoutPage() {
   const [digitalOrdererLoading, setDigitalOrdererLoading] = useState(false)
 
   const pendingOrderRef = useRef<PendingOrder | null>(null)
-
-  // ── 결제 완료 후 cart 빈 체크 방지 ──────────────────────────────────────
   const paymentCompleteRef = useRef(false)
 
   useEffect(() => {
@@ -402,25 +437,15 @@ export default function CheckoutPage() {
     { key: 'BANK_TRANSFER', label: '무통장입금', desc: '신한은행 입금 후 주문 확정',          icon: <BuildingLibraryIcon className="h-5 w-5" /> },
   ]
 
-  const MemoInput = () => (
-    <div className="sm:col-span-2">
-      <label className={labelCls}>배송 메모 (선택)</label>
-      <select className={inputCls} value={memoSelect} onChange={e => handleMemoSelect(e.target.value)}>
-        {MEMO_OPTIONS.map(o => (
-          <option key={o.value} value={o.value}>{o.label}</option>
-        ))}
-      </select>
-      {memoSelect === '__DIRECT__' && (
-        <input
-          className={`${inputCls} mt-2`}
-          placeholder="배송 메모를 직접 입력해 주세요"
-          type="text" maxLength={100}
-          value={form.memo}
-          onChange={e => setForm({ ...form, memo: e.target.value })}
-        />
-      )}
-    </div>
-  )
+  // MemoInput props — 외부 컴포넌트에 주입
+  const memoInputProps: MemoInputProps = {
+    inputCls,
+    labelCls,
+    memoSelect,
+    memo: form.memo,
+    onSelectChange: handleMemoSelect,
+    onDirectChange: (val) => setForm(f => ({ ...f, memo: val })),
+  }
 
   return (
     <main className="container py-16 lg:pt-20 lg:pb-28">
@@ -583,7 +608,7 @@ export default function CheckoutPage() {
                     <KakaoAddressInput value={address} onChange={setAddress} label="주소 *"
                       inputClassName={inputCls} labelClassName={labelCls} />
                   </div>
-                  <MemoInput />
+                  <MemoInput {...memoInputProps} />
                 </div>
                 {getToken() && (
                   <label className="flex cursor-pointer items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
@@ -602,7 +627,7 @@ export default function CheckoutPage() {
                   <input className={inputCls} placeholder="example@email.com" type="email"
                     value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
                 </div>
-                <MemoInput />
+                <MemoInput {...memoInputProps} />
               </div>
             )}
           </section>
