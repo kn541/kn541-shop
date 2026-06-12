@@ -73,6 +73,106 @@ export async function fetchDownlineRows(userId: string): Promise<Record<string, 
   >[]
 }
 
+/** GET /mypage/referral-tree 응답 항목 */
+export interface ReferralTreeItem {
+  user_id: string
+  member_no?: string | null
+  username?: string | null
+  name?: string | null
+  user_type?: string | null
+  depth: number
+  parent_user_id?: string | null
+  joined_at?: string | null
+}
+
+export interface ReferralTreeResponse {
+  items?: ReferralTreeItem[]
+  by_depth?: Record<string, ReferralTreeItem[]>
+  total?: number
+  max_depth?: number
+  direct_count?: number
+}
+
+/** 마이페이지 전용 추천 트리 API — 단일 호출 */
+export async function fetchReferralTree(maxDepth: number): Promise<ReferralTreeResponse> {
+  const depth = Math.min(5, Math.max(1, Math.floor(maxDepth)))
+  return mypageFetch<ReferralTreeResponse>(`/mypage/referral-tree?max_depth=${depth}`)
+}
+
+export function mapReferralItemToNode(raw: ReferralTreeItem | Record<string, unknown>): ShopMlmNode {
+  const depth = Number(raw.depth ?? 1)
+  const nameVal = String(raw.name ?? '')
+  const ut = String(raw.user_type ?? '')
+  const joined = raw.joined_at ?? ''
+  return {
+    user_id: String(raw.user_id ?? ''),
+    member_no: String(raw.member_no ?? ''),
+    name_masked: maskKoreanName(nameVal),
+    user_type: ut,
+    user_type_label: labelForUserType(ut),
+    joined_at: typeof joined === 'string' ? joined : joined != null ? String(joined) : '',
+    depth,
+    downline_count: 0,
+    children: [],
+    loaded: true,
+  }
+}
+
+/** parent_user_id 기반 flat → 트리 (재귀 fetch 없음) */
+export function buildReferralTreeFromItems(
+  me: Record<string, unknown>,
+  items: Array<ReferralTreeItem | Record<string, unknown>>
+): ShopMlmNode {
+  const meId = String(me.user_id ?? me.id ?? '')
+  const root = mapRowToShopNode(me, 0)
+  root.loaded = true
+
+  const nodesById = new Map<string, ShopMlmNode>()
+
+  for (const raw of items) {
+    const node = mapReferralItemToNode(raw)
+    if (!node.user_id) continue
+    nodesById.set(node.user_id, node)
+  }
+
+  for (const raw of items) {
+    const node = nodesById.get(String(raw.user_id ?? ''))
+    if (!node) continue
+    const parentId = String(raw.parent_user_id ?? '')
+    if (parentId === meId) {
+      root.children.push(node)
+    } else {
+      const parent = nodesById.get(parentId)
+      if (parent) parent.children.push(node)
+      else root.children.push(node)
+    }
+  }
+
+  const sortChildren = (n: ShopMlmNode) => {
+    n.children.sort((a, b) => a.member_no.localeCompare(b.member_no))
+    n.downline_count = n.children.length
+    for (const c of n.children) sortChildren(c)
+  }
+  sortChildren(root)
+
+  return root
+}
+
+/** 마이페이지 조직도 — GET /mypage/referral-tree 단일 호출 */
+export async function buildShopReferralTree(
+  me: Record<string, unknown>,
+  maxDepth: number
+): Promise<{ root: ShopMlmNode; total: number; directCount: number }> {
+  const data = await fetchReferralTree(maxDepth)
+  const items = Array.isArray(data.items) ? data.items : []
+  const root = buildReferralTreeFromItems(me, items)
+  return {
+    root,
+    total: data.total ?? items.length,
+    directCount: data.direct_count ?? root.children.length,
+  }
+}
+
 /** 어드민 MLM과 동일: 각 노드의 직접 하선만 조회해 단계별로 트리 구성 */
 export async function buildShopDownlineTree(
   me: Record<string, unknown>,

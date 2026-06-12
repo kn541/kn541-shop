@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from '@/i18n/navigation'
 import L3Guard from '@/components/mypage/L3Guard'
 import {
-  buildShopDownlineTree,
+  buildShopReferralTree,
   flattenDownline,
   formatJoined,
   statsFromFlat,
@@ -15,14 +15,60 @@ import { useTranslations } from 'next-intl'
 
 const DEPTH_COLORS = ['#7C3AED', '#1D4ED8', '#C2410C', '#047857', '#B45309']
 
-const MAX_WAVE_DEPTH = 14
-const MAX_NODES = 2000
 const MIN_DISPLAY_DEPTH = 1
-const MAX_DISPLAY_DEPTH = 14
+const MAX_DISPLAY_DEPTH = 5
+const DEFAULT_DISPLAY_DEPTH = 3
 
 function clampDisplayDepth(n: number): number {
-  if (!Number.isFinite(n)) return MIN_DISPLAY_DEPTH
+  if (!Number.isFinite(n)) return DEFAULT_DISPLAY_DEPTH
   return Math.min(MAX_DISPLAY_DEPTH, Math.max(MIN_DISPLAY_DEPTH, Math.floor(n)))
+}
+
+function DepthSelector({
+  value,
+  onChange,
+  countsByDepth,
+  disabled,
+}: {
+  value: number
+  onChange: (d: number) => void
+  countsByDepth: Record<number, number>
+  disabled?: boolean
+}) {
+  return (
+    <aside className="shrink-0 lg:w-36">
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+        표시 단계
+      </p>
+      <div className="flex gap-1.5 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0">
+        {Array.from({ length: MAX_DISPLAY_DEPTH }, (_, i) => i + 1).map(d => {
+          const active = value === d
+          const c = DEPTH_COLORS[(d - 1) % DEPTH_COLORS.length]
+          return (
+            <button
+              key={d}
+              type="button"
+              disabled={disabled}
+              onClick={() => onChange(d)}
+              className={`flex shrink-0 items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 lg:w-full ${
+                active
+                  ? 'border-transparent text-white shadow-sm'
+                  : 'border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:bg-neutral-800'
+              }`}
+              style={active ? { background: c } : undefined}
+            >
+              <span>{d}단계</span>
+              {countsByDepth[d] != null && (
+                <span className={`text-xs tabular-nums ${active ? 'text-white/90' : 'text-neutral-400'}`}>
+                  {countsByDepth[d]}명
+                </span>
+              )}
+            </button>
+          )
+        })}
+      </div>
+    </aside>
+  )
 }
 
 function initialExpandedIds(root: ShopMlmNode): Set<string> {
@@ -140,18 +186,16 @@ function TreeContent() {
   const [view, setView] = useState<'list' | 'tree'>('list')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [truncated, setTruncated] = useState(false)
   const [root, setRoot] = useState<ShopMlmNode | null>(null)
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set())
-  /** 표시 단계 (1 = 직접 추천만 … 14) */
-  const [displayMaxDepth, setDisplayMaxDepth] = useState(MIN_DISPLAY_DEPTH)
+  /** 표시 단계 (1~5, 기본 3) */
+  const [displayMaxDepth, setDisplayMaxDepth] = useState(DEFAULT_DISPLAY_DEPTH)
   const [referralUrl, setReferralUrl] = useState<string | null>(null)
   const [myMemberNo, setMyMemberNo] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
-    setTruncated(false)
     try {
       const me = await mypageFetch<Record<string, unknown>>('/auth/me')
       const uid = String(me.user_id ?? me.id ?? '')
@@ -171,12 +215,8 @@ function TreeContent() {
         setReferralUrl(null)
         setMyMemberNo(null)
       }
-      const { root: tree, truncated: t2 } = await buildShopDownlineTree(me, {
-        maxDepth: MAX_WAVE_DEPTH,
-        maxNodes: MAX_NODES,
-      })
+      const { root: tree } = await buildShopReferralTree(me, displayMaxDepth)
       setRoot(tree)
-      setTruncated(t2)
       setExpandedIds(initialExpandedIds(tree))
     } catch (e) {
       if (e instanceof MypageApiError && e.status === 401) {
@@ -188,27 +228,31 @@ function TreeContent() {
     } finally {
       setLoading(false)
     }
-  }, [router])
+  }, [router, displayMaxDepth])
 
   useEffect(() => {
     void load()
   }, [load])
 
   const flat = useMemo(() => (root ? flattenDownline(root) : []), [root])
-  const flatFiltered = useMemo(
-    () => flat.filter(m => m.depth <= displayMaxDepth),
-    [flat, displayMaxDepth]
-  )
-  const stats = useMemo(() => statsFromFlat(flatFiltered), [flatFiltered])
+  const stats = useMemo(() => statsFromFlat(flat), [flat])
 
   const byDepth = useMemo(() => {
     const m: Record<number, ShopMlmNode[]> = {}
-    for (const x of flatFiltered) {
+    for (const x of flat) {
       m[x.depth] = m[x.depth] ?? []
       m[x.depth].push(x)
     }
     return m
-  }, [flatFiltered])
+  }, [flat])
+
+  const countsByDepth = useMemo(() => {
+    const m: Record<number, number> = {}
+    for (const [d, rows] of Object.entries(byDepth)) {
+      m[Number(d)] = rows.length
+    }
+    return m
+  }, [byDepth])
 
   const depthKeys = useMemo(
     () =>
@@ -291,120 +335,92 @@ function TreeContent() {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-3 dark:border-neutral-700 dark:bg-neutral-900">
-        <span className="text-sm font-semibold text-neutral-700 dark:text-neutral-200">단계:</span>
-        <button
-          type="button"
-          aria-label="단계 감소"
-          disabled={displayMaxDepth <= MIN_DISPLAY_DEPTH}
-          onClick={() => setDisplayMaxDepth(d => clampDisplayDepth(d - 1))}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-neutral-200 bg-neutral-50 text-lg font-bold text-neutral-700 hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
-        >
-          −
-        </button>
-        <input
-          type="number"
-          min={MIN_DISPLAY_DEPTH}
-          max={MAX_DISPLAY_DEPTH}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+        <DepthSelector
           value={displayMaxDepth}
-          onChange={e => setDisplayMaxDepth(clampDisplayDepth(Number(e.target.value)))}
-          className="h-9 w-16 rounded-lg border border-neutral-200 bg-white px-2 text-center text-sm font-semibold tabular-nums focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:border-neutral-600 dark:bg-neutral-950 dark:text-white"
+          onChange={d => setDisplayMaxDepth(clampDisplayDepth(d))}
+          countsByDepth={countsByDepth}
+          disabled={loading}
         />
-        <button
-          type="button"
-          aria-label="단계 증가"
-          disabled={displayMaxDepth >= MAX_DISPLAY_DEPTH}
-          onClick={() => setDisplayMaxDepth(d => clampDisplayDepth(d + 1))}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-neutral-200 bg-neutral-50 text-lg font-bold text-neutral-700 hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
-        >
-          +
-        </button>
-        <span className="text-xs text-neutral-500 dark:text-neutral-400">
-          {MIN_DISPLAY_DEPTH}~{MAX_DISPLAY_DEPTH}단계까지 표시 · 기본 {MIN_DISPLAY_DEPTH}단계(직접 추천)
-        </span>
-      </div>
 
-      <div className="flex flex-wrap gap-4 border-b border-neutral-200 bg-white py-3.5 text-sm text-neutral-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400">
-        <span>
-          전체 하선 <strong className="text-neutral-900 dark:text-neutral-100">{stats.total_count}명</strong>
-        </span>
-        <span>
-          최대 깊이 <strong className="text-neutral-900 dark:text-neutral-100">{stats.max_depth}단계</strong>
-        </span>
-        {depthKeys.map(d => (
-          <span key={d}>
-            {d}단계:{' '}
-            <strong className="text-neutral-900 dark:text-neutral-100">{byDepth[d]?.length ?? 0}명</strong>
-          </span>
-        ))}
-      </div>
-
-      {truncated && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
-          표시 한도({MAX_NODES.toLocaleString()}명)에 도달하여 일부 하선만 불러왔습니다. 어드민에서 전체를 확인할 수 있습니다.
-        </div>
-      )}
-
-      <div
-        className="my-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
-      >
-        🔒 성명은 마스킹 처리되며, 회원번호는 로그인·식별용으로 표시됩니다. 연락처·주소 등은 제공되지 않습니다.
-      </div>
-
-      <div className="pb-8">
-        {flat.length === 0 ? (
-          <div className="py-12 text-center">
-            <div className="mb-3 text-5xl">🌱</div>
-            <div className="text-lg text-neutral-500 dark:text-neutral-400">아직 하선 회원이 없어요.</div>
-          </div>
-        ) : stats.total_count === 0 ? (
-          <div className="py-12 text-center text-sm text-neutral-500 dark:text-neutral-400">
-            선택한 단계({displayMaxDepth}단계)에 해당하는 하선이 없습니다. 단계를 늘려 보세요.
-          </div>
-        ) : view === 'list' ? (
-          depthKeys.map(d => (
-            <div key={d}>
-              <div
-                className="mb-2 mt-4 flex items-center gap-2 text-[15px] font-bold"
-                style={{ color: DEPTH_COLORS[(d - 1) % DEPTH_COLORS.length] }}
-              >
-                <span
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-full text-xs text-white"
-                  style={{ background: DEPTH_COLORS[(d - 1) % DEPTH_COLORS.length] }}
-                >
-                  {d}
-                </span>
-                {d}단계 ({byDepth[d]?.length ?? 0}명)
-              </div>
-              {(byDepth[d] ?? []).map(m => (
-                <MemberRow key={m.user_id} m={m} />
-              ))}
-            </div>
-          ))
-        ) : (
-          <div className="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-900">
-            <div className="mb-3 rounded-xl border border-primary-200 bg-primary-50/40 px-3 py-2 text-[15px] font-bold text-primary-800 dark:border-primary-900 dark:bg-primary-950/30 dark:text-primary-200">
-              나 —{' '}
-              <span className="font-mono font-semibold">{root.member_no}</span>
-              <span className="ml-2 font-normal text-neutral-600 dark:text-neutral-300">
-                {root.name_masked} · {root.user_type_label}
+        <div className="min-w-0 flex-1">
+          <div className="mb-4 flex flex-wrap gap-4 rounded-xl border border-neutral-200 bg-white px-4 py-3.5 text-sm text-neutral-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400">
+            <span>
+              전체 하선{' '}
+              <strong className="text-neutral-900 dark:text-neutral-100">{stats.total_count}명</strong>
+            </span>
+            <span>
+              직접 추천{' '}
+              <strong className="text-neutral-900 dark:text-neutral-100">{root.children.length}명</strong>
+            </span>
+            <span>
+              표시 깊이{' '}
+              <strong className="text-neutral-900 dark:text-neutral-100">{displayMaxDepth}단계</strong>
+            </span>
+            {depthKeys.map(d => (
+              <span key={d}>
+                {d}단계:{' '}
+                <strong className="text-neutral-900 dark:text-neutral-100">{byDepth[d]?.length ?? 0}명</strong>
               </span>
-            </div>
-            {root.children.length === 0 ? (
-              <p className="text-sm text-neutral-500">직접 추천한 하선이 없습니다.</p>
-            ) : (
-              root.children.map(ch => (
-                <TreeBranch
-                  key={ch.user_id}
-                  node={ch}
-                  expandedIds={expandedIds}
-                  onToggle={toggleExpand}
-                  maxDisplayDepth={displayMaxDepth}
-                />
+            ))}
+          </div>
+
+          <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+            🔒 성명은 마스킹 처리되며, 회원번호는 로그인·식별용으로 표시됩니다. 연락처·주소 등은 제공되지 않습니다.
+          </div>
+
+          <div className="pb-8">
+            {flat.length === 0 ? (
+              <div className="py-12 text-center">
+                <div className="mb-3 text-5xl">🌱</div>
+                <div className="text-lg text-neutral-500 dark:text-neutral-400">아직 하선 회원이 없어요.</div>
+              </div>
+            ) : view === 'list' ? (
+              depthKeys.map(d => (
+                <div key={d}>
+                  <div
+                    className="mb-2 mt-4 flex items-center gap-2 text-[15px] font-bold"
+                    style={{ color: DEPTH_COLORS[(d - 1) % DEPTH_COLORS.length] }}
+                  >
+                    <span
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-full text-xs text-white"
+                      style={{ background: DEPTH_COLORS[(d - 1) % DEPTH_COLORS.length] }}
+                    >
+                      {d}
+                    </span>
+                    {d}단계 ({byDepth[d]?.length ?? 0}명)
+                  </div>
+                  {(byDepth[d] ?? []).map(m => (
+                    <MemberRow key={m.user_id} m={m} />
+                  ))}
+                </div>
               ))
+            ) : (
+              <div className="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-900">
+                <div className="mb-3 rounded-xl border border-primary-200 bg-primary-50/40 px-3 py-2 text-[15px] font-bold text-primary-800 dark:border-primary-900 dark:bg-primary-950/30 dark:text-primary-200">
+                  나 —{' '}
+                  <span className="font-mono font-semibold">{root.member_no}</span>
+                  <span className="ml-2 font-normal text-neutral-600 dark:text-neutral-300">
+                    {root.name_masked} · {root.user_type_label}
+                  </span>
+                </div>
+                {root.children.length === 0 ? (
+                  <p className="text-sm text-neutral-500">직접 추천한 하선이 없습니다.</p>
+                ) : (
+                  root.children.map(ch => (
+                    <TreeBranch
+                      key={ch.user_id}
+                      node={ch}
+                      expandedIds={expandedIds}
+                      onToggle={toggleExpand}
+                      maxDisplayDepth={displayMaxDepth}
+                    />
+                  ))
+                )}
+              </div>
             )}
           </div>
-        )}
+        </div>
       </div>
     </>
   )
