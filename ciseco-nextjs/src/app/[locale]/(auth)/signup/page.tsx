@@ -20,21 +20,8 @@ const USER_TYPE_PAID_MEMBER = '006'
 
 type MemberType = 'normal' | 'startup'
 
-const AGIT_LIST = [
-  { value: '001', label: '본사' },
-  { value: '002', label: '알레카서울' },
-  { value: '003', label: '아산청아' },
-  { value: '004', label: '울산태화강' },
-  { value: '005', label: '부산대박' },
-  { value: '006', label: '서초그린케어' },
-  { value: '007', label: '인천주안' },
-  { value: '008', label: '창원미라클' },
-  { value: '009', label: '대구' },
-  { value: '010', label: '서울진엔정' },
-  { value: '011', label: '광주이레' },
-  { value: '012', label: '부산아이비' },
-  { value: '013', label: '통영초이스' },
-]
+// 아지트 목록 — 어드민 아지트 관리(system_codes agit) 동적 로드 (하드코딩 금지)
+const AGIT_LIST_EMPTY: { value: string; label: string }[] = []
 
 function CheckIcon() {
   return (
@@ -92,6 +79,24 @@ function SignupPageContent() {
   const searchParams = useSearchParams()
 
   const [memberType, setMemberType] = useState<MemberType>('normal')
+  const [agitList, setAgitList] = useState(AGIT_LIST_EMPTY)
+
+  // 아지트 목록 동적 로드 — 어드민 아지트 관리(system_codes agit) 운영중만
+  useEffect(() => {
+    const base = process.env.NEXT_PUBLIC_API_URL
+    if (!base) return
+    fetch(`${base}/system-codes?category=agit`)
+      .then(r => r.json())
+      .then(json => {
+        const items = json?.data?.items ?? json?.data ?? []
+        const list = items
+          .filter((c: any) => c.is_active !== false)
+          .map((c: any) => ({ value: c.code || '', label: c.code_name || c.code_value || '' }))
+          .sort((a: any, b: any) => a.value.localeCompare(b.value))
+        if (list.length > 0) setAgitList(list)
+      })
+      .catch(() => {})
+  }, [])
 
   /** /signup?type=paid · /signup?user_type=006 등으로 창업회원 가입 진입 */
   useEffect(() => {
@@ -455,7 +460,7 @@ function SignupPageContent() {
                 className={`${inputCls} ${!agitCode ? 'text-neutral-400' : ''}`}
               >
                 <option value="">아지트를 선택해주세요</option>
-                {AGIT_LIST.map(agit => (
+                {agitList.map(agit => (
                   <option key={agit.value} value={agit.value}>{agit.label}</option>
                 ))}
               </select>
