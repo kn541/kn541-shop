@@ -3,6 +3,9 @@
 // fix: 로그아웃 후 재로그인 시 장바구니 사라지는 버그 수정
 //   원인: save useEffect에서 items=[]이면 localStorage 삭제 → hydration 중 race condition으로 삭제됨
 //   수정: localStorage 삭제를 clearCart() 에서만 명시적으로 수행
+// fix(QA 김용해): removeItem으로 마지막 항목 삭제 시 localStorage 미정리 → 새로고침하면 재등장
+//   원인: 빈 장바구니에서 saveCartToStorage가 early-return(삭제 안 함)인데 removeItem엔 empty→clear 처리 없음
+//   수정: removeItem도 결과가 빈 배열이면 clearCartFromStorage() 호출 (removeSelected와 동일 패턴)
 // feat: 장바구니 보관 만료 15일 추가 — 마지막 수정일 기준 15일 이내만 유지
 // localStorage('kn541_cart')에 {items, selectedIds, expiresAt} 형태로 저장
 
@@ -143,7 +146,7 @@ function loadCartFromStorage(): { items: CartItem[]; selectedIds: string[] } | n
 function saveCartToStorage(items: CartItem[], selectedIds: Set<string>): void {
   try {
     if (items.length === 0) {
-      // 빈 장바구니는 저장하지 않음 — clearCart가 명시적으로 삭제 담당
+      // 빈 장바구니는 저장하지 않음 — clearCart/removeItem/removeSelected가 명시적으로 삭제 담당
       return
     }
     const stored: StoredCart = {
@@ -186,7 +189,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   // ── save: state → localStorage 동기화 ────────────────────────────
   // ★ fix: items=[]인 상태에서 localStorage를 삭제하지 않음
-  //   localStorage 삭제는 clearCart()에서만 명시적으로 수행
+  //   localStorage 삭제는 clearCart()/removeItem/removeSelected에서만 명시적으로 수행
   //   → hydration race condition 원천 차단
   useEffect(() => {
     if (!hydrated) return
@@ -218,8 +221,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setSelectedIds(prev => new Set([...prev, id]))
   }, [])
 
+  // ★ fix(QA 김용해): 마지막 항목을 개별 삭제하면 items=[]이 되는데
+  //   save useEffect는 빈 배열일 때 localStorage를 지우지 않아(early-return) 옛 항목이 잔존,
+  //   새로고침 hydration 시 재등장하던 버그. removeSelected와 동일하게 empty→clear 처리.
   const removeItem = useCallback((id: string) => {
-    setItems(prev => prev.filter(i => i.id !== id))
+    setItems(prev => {
+      const next = prev.filter(i => i.id !== id)
+      if (next.length === 0) clearCartFromStorage()
+      return next
+    })
     setSelectedIds(prev => { const s = new Set(prev); s.delete(id); return s })
   }, [])
 
