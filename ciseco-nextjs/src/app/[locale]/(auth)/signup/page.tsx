@@ -468,7 +468,7 @@ function SignupPageContent() {
                 <p className="text-xs text-neutral-400 mt-1.5">소속 아지트를 선택해주세요.</p>
               )}
               {agitCode && (
-                <p className="text-xs text-green-500 mt-1.5">✓ {AGIT_LIST.find(a => a.value === agitCode)?.label} 아지트를 선택했습니다.</p>
+                <p className="text-xs text-green-500 mt-1.5">✓ {agitList.find(a => a.value === agitCode)?.label} 아지트를 선택했습니다.</p>
               )}
             </div>
 
