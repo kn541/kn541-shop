@@ -21,6 +21,8 @@ interface SidebarNavigationProps {
 const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ data }) => {
   const router = useRouter()
   const handleClose = useClose()
+  // KN541 fix: 모바일 사이드바 검색 — 입력값을 읽어 /search?q= 로 전달 (이전엔 쿼리 없이 /search 로만 이동해 빈 검색 페이지로 넘어감)
+  const searchInputRef = React.useRef<HTMLInputElement>(null)
 
   const _renderMenuChild = (
     item: TNavigationItem,
@@ -85,12 +87,14 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ data }) => {
         onSubmit={(e) => {
           e.preventDefault()
           handleClose()
-          router.push('/search')
+          const q = searchInputRef.current?.value.trim() ?? ''
+          router.push(q ? `/search?q=${encodeURIComponent(q)}` : '/search')
         }}
       >
         <div className="flex h-full items-center gap-x-2.5 rounded-xl bg-neutral-50 px-3 py-3 dark:bg-neutral-800">
           <HugeiconsIcon icon={Search01Icon} size={24} color="currentColor" strokeWidth={1.5} />
           <input
+            ref={searchInputRef}
             type="search"
             placeholder="검색어를 입력해 주세요"
             className="w-full border-none bg-transparent text-sm focus:ring-0 focus:outline-hidden"
