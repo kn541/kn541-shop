@@ -4,6 +4,7 @@
 // 카테고리 네비 하단에 그룹별 접기/펼치기(Disclosure)로 노출.
 // 로그인 상태(useHeaderUser) + 회원등급(useEffectiveUserType) 연동.
 // 링크 클릭 시 useClose()로 사이드바 자동 닫힘.
+// 구분: 그룹 사이에 옅은 가로 헤어라인(보일듯 말듯).
 
 import { Disclosure, DisclosureButton, DisclosurePanel, useClose } from '@headlessui/react'
 import { ChevronDownIcon } from '@heroicons/react/24/solid'
@@ -62,9 +63,13 @@ export default function SitemapMobileSection() {
       <p className="px-3 pb-2 text-xs font-semibold tracking-wide text-neutral-500 uppercase dark:text-neutral-400">
         {sm.title}
       </p>
-      <ul className="flex flex-col gap-y-1">
+      <ul className="flex flex-col">
         {sm.groups.map((group) => (
-          <Disclosure key={group.heading} as="li">
+          <Disclosure
+            key={group.heading}
+            as="li"
+            className="border-t border-neutral-100 first:border-t-0 dark:border-neutral-800/70"
+          >
             <DisclosureButton className="group flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium text-neutral-900 hover:bg-neutral-100 dark:text-white dark:hover:bg-neutral-800">
               <span>{group.heading}</span>
               <ChevronDownIcon
