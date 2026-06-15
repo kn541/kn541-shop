@@ -2,9 +2,11 @@
 // getNavigation() 정적 데이터 → KN541 카테고리 API 데이터로 교체
 // URL: next-intl Link(@/shared/link)가 현재 locale을 자동 prefix 하므로
 //      href에는 locale을 넣지 않는다 → /products?cid=UUID (결과: /ko/products?cid=UUID)
+// 카테고리 네비 하단에 사이트맵(바로가기) 섹션 추가 → 로그인 후 페이지까지 한 곳에서 이동
 
 import { getCategories } from '@/lib/api/categories'
 import SidebarNavigation from './Header/Navigation/SidebarNavigation'
+import SitemapMobileSection from './Header/SitemapMobileSection'
 import Aside from './aside'
 import type { TNavigationItem } from '@/data/navigation'
 
@@ -51,6 +53,8 @@ const AsideSidebarNavigation = async ({ className }: Props) => {
       <div className="flex h-full flex-col">
         <div className="hidden-scrollbar flex-1 overflow-x-hidden overflow-y-auto py-6">
           <SidebarNavigation data={navigationMenu} />
+          {/* 사이트맵(바로가기) — 로그인 후 페이지 포함 */}
+          <SitemapMobileSection />
         </div>
       </div>
     </Aside>
