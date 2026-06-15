@@ -48,6 +48,8 @@ export function ConfirmDeleteDialog({
   return (
     <Dialog
       size="sm"
+      // 사이드 드로어(z-200) 안에서 열릴 때도 위에 떠야 하므로 z-250
+      zClassName="z-[250]"
       open={open}
       onClose={() => {
         if (!busy) onClose()

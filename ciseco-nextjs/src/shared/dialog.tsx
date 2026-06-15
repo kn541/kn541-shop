@@ -18,14 +18,16 @@ const sizes = {
 export function Dialog({
   size = 'lg',
   className,
+  // 루트 stacking z-index. 기본 z-50. (드로어/오버레이 위에 떠야 하는 경우 override)
+  zClassName = 'z-50',
   children,
   ...props
-}: { size?: keyof typeof sizes; className?: string; children: React.ReactNode } & Omit<
+}: { size?: keyof typeof sizes; className?: string; zClassName?: string; children: React.ReactNode } & Omit<
   Headless.DialogProps,
   'as' | 'className'
 >) {
   return (
-    <Headless.Dialog {...props} className="relative z-50" as="div">
+    <Headless.Dialog {...props} className={clsx('relative', zClassName)} as="div">
       <Headless.DialogBackdrop
         transition
         className="fixed inset-0 flex w-screen justify-center overflow-y-auto bg-zinc-950/25 px-2 py-2 transition duration-100 focus:outline-0 data-closed:opacity-0 data-enter:ease-out data-leave:ease-in sm:px-6 sm:py-8 lg:px-8 lg:py-16 dark:bg-zinc-950/50"
