@@ -1,6 +1,6 @@
 'use client'
 // KN541 쇼핑몰 — 카테고리 네비 클라이언트 컴포넌트
-// 메뉴 구조: 홈(정적) → 카테고리 DB(동적) → 구분선 → 사전예약/벨류업(정적)
+// 메뉴 구조: 홈(정적) → 카테고리 DB(동적) → 구분선 → 사전예약/벨류업(정적) → 바로가기(사이트맵 메가메뉴)
 // 카테고리는 hover 시 2단 드롭다운, 정적 항목은 단순 링크
 //
 // fix: overflow-x-auto → 제거 (overflow-x 설정 시 overflow-y도 auto로 강제되어 드롭다운 잘림)
@@ -8,6 +8,7 @@
 import { useRef, useState } from 'react'
 import Link from 'next/link'
 import { useLocale, useTranslations } from 'next-intl'
+import SitemapMegaMenu from './SitemapMegaMenu'
 
 interface Category {
   id: string
@@ -111,6 +112,12 @@ export default function CategoryNavClient({ categories }: { categories: Category
       >
         {tNav('valueUp')}
       </Link>
+
+      {/* 구분선 */}
+      <span className="mx-2 h-3 w-px flex-shrink-0 bg-neutral-200 dark:bg-neutral-700" />
+
+      {/* 바로가기 (사이트맵 메가메뉴) */}
+      <SitemapMegaMenu />
     </nav>
   )
 }
