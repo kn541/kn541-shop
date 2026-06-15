@@ -95,7 +95,7 @@ export function MobileBottomNav() {
         </span>
         전체메뉴
       </button>
-      <Link href="/products?product_type=002" className="mb-btn" scroll={false}>
+      <Link href="/preorder" className="mb-btn" scroll={false}>
         <span>
           <IconReserve />
         </span>
