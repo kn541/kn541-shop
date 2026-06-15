@@ -4,6 +4,7 @@
 // 클릭 시 헤더 하단 전체폭 패널로 사이트맵 노출.
 // 로그인 상태(useHeaderUser) + 회원등급(useEffectiveUserType)에 따라 마이페이지 항목을 동적으로 노출.
 // 패널 위치: 부모(헤더, sticky)를 기준으로 absolute inset-x-0 top-full → 헤더 하단 전체폭.
+// 구분: 그룹 제목 하단 옅은 헤어라인 + md 이상 열 사이 옅은 세로 구분선(보일듯 말듯).
 
 import { Popover, PopoverButton, PopoverPanel, Transition } from '@headlessui/react'
 import { ChevronDownIcon } from '@heroicons/react/24/solid'
@@ -80,10 +81,13 @@ export default function SitemapMegaMenu() {
           {({ close }) => (
             <div className="border-t border-neutral-100 bg-white shadow-lg dark:border-neutral-800 dark:bg-neutral-900">
               <div className="container mx-auto px-4 py-8">
-                <div className="grid grid-cols-2 gap-x-8 gap-y-6 md:grid-cols-3 lg:grid-cols-4">
+                <div className="grid grid-cols-2 gap-x-6 gap-y-6 md:grid-cols-3 lg:grid-cols-4">
                   {sm.groups.map((group) => (
-                    <div key={group.heading}>
-                      <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                    <div
+                      key={group.heading}
+                      className="md:border-l md:border-neutral-100 md:pl-6 md:first:border-l-0 md:first:pl-0 dark:md:border-neutral-800/70"
+                    >
+                      <p className="border-b border-neutral-100 pb-2 text-sm font-semibold text-neutral-900 dark:border-neutral-800/70 dark:text-neutral-100">
                         {group.heading}
                       </p>
                       {renderGroupBody(group, close)}
