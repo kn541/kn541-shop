@@ -7,7 +7,7 @@ import { toast } from 'react-hot-toast'
 import { useOrderDetail } from '@/lib/mypage/useOrderDetail'
 import type { OrderDetailLineItem } from '@/lib/mypage/types'
 import { mypageFetch, MypageApiError } from '@/lib/mypage/api'
-import { canCancelOrderStatus, orderStatusLabelKo, showTrackingStatus } from '@/lib/mypage/orderStatusKo'
+import { canCancelOrderStatus, orderStatusLabelKo, showTrackingStatus, deliveryStatusLabelKo, showItemTrackingButton } from '@/lib/mypage/orderStatusKo'
 
 const PLACEHOLDER = '/placeholder-product.jpg'
 
@@ -46,7 +46,7 @@ type TrackingResult = {
   message?: string
 }
 
-function TrackingPanel({ orderId, itemId }: { orderId: string; itemId: string }) {
+function TrackingPanel({ orderId, itemId, hasTrackingNo }: { orderId: string; itemId: string; hasTrackingNo: boolean }) {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<TrackingResult | null>(null)
   const [open, setOpen] = useState(false)
@@ -54,6 +54,10 @@ function TrackingPanel({ orderId, itemId }: { orderId: string; itemId: string })
   const handleTrack = async () => {
     if (open) {
       setOpen(false)
+      return
+    }
+    if (!hasTrackingNo) {
+      toast('송장번호가 아직 등록되지 않았습니다.', { icon: 'ℹ️' })
       return
     }
     setLoading(true)
@@ -84,7 +88,7 @@ function TrackingPanel({ orderId, itemId }: { orderId: string; itemId: string })
         disabled={loading}
         className="rounded-lg border border-primary-300 px-3 py-1.5 text-xs font-semibold text-primary-600 hover:bg-primary-50 disabled:opacity-50 dark:border-primary-700 dark:text-primary-400 dark:hover:bg-primary-950/30"
       >
-        {loading ? '조회 중…' : open ? '닫기' : '배송조회'}
+        {loading ? '조회 중…' : open ? '닫기' : hasTrackingNo ? '배송조회' : '배송조회 (송장 미등록)'}
       </button>
 
       {open && result && (
@@ -251,7 +255,11 @@ export default function OrderDetailPage({
               const thumb = lineThumb(row)
               const pid = row.product_id || `line-${idx}`
               const itemId = row.id || row.item_id || ''
-              const hasTracking = showTrack && (row.tracking_no || row.tracking_number)
+              const itemTrackingNo = row.tracking_no || row.tracking_number || ''
+              const itemDeliveryStatus = row.delivery_status || ''
+              // 배송조회 표시: 주문 상태 OR 아이템 배송상태 기준
+              const canShowTracking = showTrack || showItemTrackingButton(itemDeliveryStatus)
+              const deliveryLabel = deliveryStatusLabelKo(itemDeliveryStatus)
               return (
                 <li
                   key={pid}
@@ -274,14 +282,21 @@ export default function OrderDetailPage({
                     <p className="text-sm text-neutral-500">
                       수량 {lineQty(row)} · {Number(linePrice(row)).toLocaleString('ko-KR')}원
                     </p>
-                    {hasTracking && (
-                      <p className="mt-1 text-xs text-neutral-500">
-                        송장번호: <span className="font-mono font-medium">{row.tracking_no || row.tracking_number}</span>
-                        {row.tracking_company && ` (${row.tracking_company})`}
+                    {/* 배송 상태 표시 */}
+                    {itemDeliveryStatus && (
+                      <p className="mt-1 text-xs font-medium text-blue-600 dark:text-blue-400">
+                        📦 {deliveryLabel}
+                        {itemTrackingNo && (
+                          <span className="ml-2 font-mono text-neutral-500">
+                            {itemTrackingNo}
+                            {row.tracking_company && ` (${row.tracking_company})`}
+                          </span>
+                        )}
                       </p>
                     )}
-                    {hasTracking && itemId && (
-                      <TrackingPanel orderId={orderId} itemId={itemId} />
+                    {/* 배송조회 버튼: 주문/아이템 상태가 배송 관련이면 표시 */}
+                    {canShowTracking && itemId && (
+                      <TrackingPanel orderId={orderId} itemId={itemId} hasTrackingNo={!!itemTrackingNo} />
                     )}
                   </div>
                 </li>
