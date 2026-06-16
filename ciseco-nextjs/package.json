@@ -24,6 +24,7 @@
     "next-intl": "^4.4.0",
     "rc-slider": "^11.1.9",
     "react": "^19.2.3",
+    "react-d3-tree": "^3.6.3",
     "react-dom": "^19.2.3",
     "react-hot-toast": "^2.5.2",
     "react-swipeable": "^7.0.2",
