@@ -66,3 +66,37 @@ export function showItemTrackingButton(deliveryStatus: string | undefined | null
   const c = (deliveryStatus || '').trim().toUpperCase()
   return ['002', '003', 'SHIPPED', 'SHIPPING', 'DELIVERED'].includes(c)
 }
+
+/** 결제수단 → 한국어 (숫자코드 + 텍스트 모두 지원) */
+export function paymentMethodLabelKo(code: string | undefined | null): string {
+  const c = (code || '').trim().toUpperCase()
+  const map: Record<string, string> = {
+    '001': '신용카드',
+    '002': '가상계좌',
+    '003': '간편결제',
+    '004': '현금',
+    '005': '복합결제',
+    CARD: '신용카드',
+    VIRTUAL_ACCOUNT: '가상계좌',
+    EASY_PAY: '간편결제',
+    CASH: '현금',
+    MIXED: '복합결제',
+    TOSS: '간편결제',
+    BANK_TRANSFER: '계좌이체',
+  }
+  return map[c] || code || '—'
+}
+
+/**
+ * UTC 타임스탬프 → KST 한국어 날짜 문자열.
+ * 백엔드가 UTC 타임스탬프를 Z 없이 보낼 수 있으므로 보정 후 변환.
+ */
+export function formatKST(ts: string | undefined | null): string {
+  if (!ts) return '—'
+  const normalized = ts.endsWith('Z') || ts.includes('+') ? ts : ts + 'Z'
+  try {
+    return new Date(normalized).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })
+  } catch {
+    return ts
+  }
+}
