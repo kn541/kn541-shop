@@ -7,7 +7,7 @@ import { toast } from 'react-hot-toast'
 import { useOrderDetail } from '@/lib/mypage/useOrderDetail'
 import type { OrderDetailLineItem } from '@/lib/mypage/types'
 import { mypageFetch, MypageApiError } from '@/lib/mypage/api'
-import { canCancelOrderStatus, orderStatusLabelKo, showTrackingStatus, deliveryStatusLabelKo, showItemTrackingButton } from '@/lib/mypage/orderStatusKo'
+import { canCancelOrderStatus, orderStatusLabelKo, showTrackingStatus, deliveryStatusLabelKo, showItemTrackingButton, paymentMethodLabelKo, formatKST } from '@/lib/mypage/orderStatusKo'
 
 const PLACEHOLDER = '/placeholder-product.jpg'
 
@@ -155,13 +155,13 @@ export default function OrderDetailPage({ params }: { params: Promise<{ orderId:
 
       <div className="grid gap-4 rounded-2xl border border-neutral-200 p-5 dark:border-neutral-700 sm:grid-cols-2">
         <div><p className="text-xs text-neutral-500">주문일시</p>
-          <p className="font-medium">{new Date(data.created_at || data.ordered_at || '').toLocaleString('ko-KR') || '—'}</p></div>
+          <p className="font-medium">{formatKST(data.created_at || data.ordered_at)}</p></div>
         <div><p className="text-xs text-neutral-500">상태</p><p className="font-medium">{statusKo}</p></div>
         {showTrack && tracking && (
           <div className="sm:col-span-2"><p className="text-xs text-neutral-500">송장번호</p><p className="font-medium">{tracking}</p></div>
         )}
         {data.payment_method && (
-          <div><p className="text-xs text-neutral-500">결제수단</p><p className="font-medium">{data.payment_method}</p></div>
+          <div><p className="text-xs text-neutral-500">결제수단</p><p className="font-medium">{paymentMethodLabelKo(data.payment_method)}</p></div>
         )}
         <div><p className="text-xs text-neutral-500">결제금액</p>
           <p className="text-lg font-bold text-primary-600">{(data.total_amount ?? 0).toLocaleString('ko-KR')}원</p></div>
