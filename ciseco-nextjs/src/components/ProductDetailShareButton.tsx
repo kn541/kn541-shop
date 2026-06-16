@@ -1,13 +1,9 @@
 'use client'
-// fix: PC 카카오톡 공유하기 오류 (#업무-온라인오픈 9번)
-//   원인 1: regularPrice=0 시 카카오 SDK 에러 (commerce.regularPrice 최소값 0 허용 불가)
-//   원인 2: imageUrl 상대경로("/uploads/...") 시 카카오 서버가 이미지 관류실패 → 공유 팝업 안롯 맨들어짐
-//   수정: regularPrice = Math.max(1, ...) / imageUrl = 절대경로 변환
-// fix: 모바일 공유하기 버튼 클릭 시 하단 짤림 (#업무-온라인오픈 10번)
-//   원인: 드롭박스 top-[60px] → 화면 아래로 열려 모바일 뒤에서 짤림
-//   수정: bottom-full mb-2 로 드롭박스를 버튼 위로 열기
+// fix(A-3): 모바일 공유 드롭다운 잘림 재수정
+//   기존: bottom-full mb-2 + right-0 → 모바일에서 우측 넘침 + 부모 overflow에 잘림
+//   수정: fixed 포지셔닝으로 변경하여 부모 overflow 영향 제거
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { HugeiconsIcon } from '@hugeicons/react'
@@ -51,6 +47,8 @@ interface Props {
 export function ProductDetailShareButton({ title, price, imageUrl }: Props) {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
+  const btnRef = useRef<HTMLButtonElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
 
   const currentUrl = useMemo(() => {
     if (typeof window !== 'undefined' && window.location?.href) return window.location.href
@@ -60,7 +58,6 @@ export function ProductDetailShareButton({ title, price, imageUrl }: Props) {
     return `${origin || ''}${pathname || ''}`
   }, [pathname])
 
-  // ★ fix #9: 상대경로 → 절대경로 변환 (카카오 서버가 외부 URL로 이미지 요청하미로 절대경로 필수)
   const absoluteImageUrl = useMemo(() => {
     if (!imageUrl) return ''
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) return imageUrl
@@ -75,6 +72,36 @@ export function ProductDetailShareButton({ title, price, imageUrl }: Props) {
   useEffect(() => {
     if (!open) return
     void ensureKakaoSdkLoaded().catch(() => {})
+  }, [open])
+
+  // 외부 클릭 시 닫기
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: MouseEvent) => {
+      if (btnRef.current?.contains(e.target as Node)) return
+      if (panelRef.current?.contains(e.target as Node)) return
+      setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  // 드롭다운 위치 계산 (fixed 포지셔닝)
+  const [panelStyle, setPanelStyle] = useState<React.CSSProperties>({})
+  useEffect(() => {
+    if (!open || !btnRef.current) return
+    const rect = btnRef.current.getBoundingClientRect()
+    const panelW = Math.min(288, window.innerWidth - 16)
+    let left = rect.right - panelW
+    if (left < 8) left = 8
+    const top = rect.top - 8
+    setPanelStyle({
+      position: 'fixed',
+      zIndex: 9999,
+      width: panelW,
+      left,
+      bottom: window.innerHeight - top,
+    })
   }, [open])
 
   const handleFacebookShare = () => {
@@ -95,11 +122,11 @@ export function ProductDetailShareButton({ title, price, imageUrl }: Props) {
         content: {
           title: plainTitle,
           description: plainTitle,
-          imageUrl: absoluteImageUrl || currentUrl,  // ★ fix #9: 절대경로 사용
+          imageUrl: absoluteImageUrl || currentUrl,
           link: { mobileWebUrl: currentUrl, webUrl: currentUrl },
         },
         commerce: {
-          regularPrice: Math.max(1, Math.round(price || 0)),  // ★ fix #9: 최소값 1 (0 불가)
+          regularPrice: Math.max(1, Math.round(price || 0)),
         },
       })
     } catch (e) {
@@ -129,8 +156,9 @@ export function ProductDetailShareButton({ title, price, imageUrl }: Props) {
   }
 
   return (
-    <div className="relative">
+    <>
       <button
+        ref={btnRef}
         type="button"
         onClick={() => setOpen(v => !v)}
         aria-label="상품 공유하기"
@@ -140,9 +168,11 @@ export function ProductDetailShareButton({ title, price, imageUrl }: Props) {
       </button>
 
       {open && (
-        // ★ fix #10: top-[60px] → bottom-full mb-2 (드롭박스를 버튼 위로 열기)
-        // 모바일에서 화면 아래로 팝업이 나가 짤리던 문제 해결
-        <div className="absolute right-0 bottom-full mb-2 z-20 w-72 rounded-2xl border border-neutral-200 bg-white p-4 text-sm shadow-xl dark:border-neutral-700 dark:bg-neutral-900">
+        <div
+          ref={panelRef}
+          style={panelStyle}
+          className="rounded-2xl border border-neutral-200 bg-white p-4 text-sm shadow-xl dark:border-neutral-700 dark:bg-neutral-900"
+        >
           <div className="mb-3 flex items-center justify-between">
             <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">공유하기</span>
             <button type="button" onClick={() => setOpen(false)} className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200">✕</button>
@@ -167,6 +197,6 @@ export function ProductDetailShareButton({ title, price, imageUrl }: Props) {
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 }
