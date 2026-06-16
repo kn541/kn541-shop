@@ -1,9 +1,11 @@
 // 사전예약 상품 목록 — 카테고리 페이지와 동일한 디자인/기능
+// 2026-06-16: #13 정렬 파라미터 연동 — ?sort= URL → API sort_by/sort_order
 import { Suspense } from 'react'
 import ProductsPageClient from '../products/ProductsPageClient'
 import type { Metadata } from 'next'
 import { PRODUCT_LIST_PAGE_SIZE } from '@/lib/product-list-constants'
 import { readSalesCount } from '@/lib/sales-count'
+import { normalizeProductSortParam, applyProductSortToSearchParams } from '@/lib/product-list-sort'
 
 export const metadata: Metadata = {
   title: '사전예약 | KN541',
@@ -42,9 +44,12 @@ function mapProduct(p: any) {
   }
 }
 
-async function fetchPreorder(page: number) {
+async function fetchPreorder(page: number, sortParam?: string) {
   try {
     const qs = new URLSearchParams({ page: String(page), size: String(PRODUCT_LIST_PAGE_SIZE) })
+    // 정렬 파라미터 적용
+    const sort = normalizeProductSortParam(sortParam)
+    applyProductSortToSearchParams(qs, sort)
     const res = await fetch(apiUrl(`/public/products/preorder?${qs}`), { cache: 'no-store' })
     if (!res.ok) return { products: [], total: 0 }
     const json = await res.json()
@@ -59,11 +64,11 @@ async function fetchPreorder(page: number) {
 export default async function PreorderProductsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>
+  searchParams: Promise<{ page?: string; sort?: string }>
 }) {
-  const { page: pageParam } = await searchParams
+  const { page: pageParam, sort: sortParam } = await searchParams
   const currentPage = Math.max(1, Number(pageParam) || 1)
-  const { products, total } = await fetchPreorder(currentPage)
+  const { products, total } = await fetchPreorder(currentPage, sortParam)
   const hasNext = currentPage * PRODUCT_LIST_PAGE_SIZE < total
 
   return (
