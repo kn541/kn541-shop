@@ -37,7 +37,10 @@ export function useHeaderUser() {
 
     setIsLoggedIn(true)
     const cached = readCachedHeaderGreeting()
-    if (cached) setGreeting(cached)
+    if (cached) {
+      setGreeting(cached)
+      setLoading(false)
+    }
 
     let cancelled = false
     fetch(apiUrl('/auth/me'), { headers: { Authorization: `Bearer ${token}` } })
@@ -47,7 +50,7 @@ export function useHeaderUser() {
         if (json?.data) {
           setGreeting(greetingFromMePayload(json.data as Record<string, unknown>))
           setIsLoggedIn(true)
-        } else {
+        } else if (!cached) {
           clearUser()
         }
       })
