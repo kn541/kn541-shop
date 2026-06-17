@@ -160,10 +160,11 @@ function DashboardContent() {
             <div className="px-6">
               <button
                 type="button"
-                onClick={() => { alert('현재 출금 시스템 점검 중입니다. 잠시 후 다시 시도해주세요.'); }}
-                className="w-full rounded-full bg-neutral-400 py-3 text-sm font-bold text-white cursor-not-allowed"
+                disabled={wLoading || balance <= 0}
+                onClick={() => setWithdrawOpen(true)}
+                className="w-full rounded-full bg-violet-600 py-3 text-sm font-bold text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                출금 요청 (점검중)
+                {balance > 0 ? '출금 요청' : '출금 가능 잔액 없음'}
               </button>
               <p className="mt-2 text-xs text-neutral-400">
                 동사가치배당금을 현금으로 출금 신청합니다 (현금 최대 50%, 나머지 포인트 전환)
@@ -249,15 +250,14 @@ function DashboardContent() {
             </Link>
           </div>
 
-          {/* 출금 신청 팝업 — 점검중 비활성화 */}
-          {/* withdrawSummary && (
+          {withdrawSummary && (
             <WithdrawModal
               open={withdrawOpen}
               summary={withdrawSummary}
               onClose={() => setWithdrawOpen(false)}
               onApplied={reloadWithdraw}
             />
-          ) */}
+          )}
         </>
       )}
     </>
