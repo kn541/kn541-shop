@@ -26,7 +26,6 @@ import { ShoppingBag03Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import Image from 'next/image'
 import { sanitizeLooseHtml } from '@/lib/sanitizeLooseHtml'
-import { usePathname } from 'next/navigation'
 import { FC, useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useTranslations } from 'next-intl'
@@ -67,7 +66,6 @@ const ProductQuickView: FC<ProductQuickViewProps> = ({ className }) => {
   // ★ close()는 인수 없이 호출 (aside API 스펙)
   const { productQuickViewHandle: handle, close } = useAside()
   const { addItem } = useCart()
-  const pathname = usePathname()
   const tCart = useTranslations('Cart')
   const tProduct = useTranslations('Product')
 
@@ -139,9 +137,8 @@ const ProductQuickView: FC<ProductQuickViewProps> = ({ className }) => {
   const mainImageSrc = allImageSrcs[0] || '/placeholder-product.jpg'
   const subImages = allImageSrcs.slice(1, 3)
 
-  // 상세 페이지 URL
-  const locale = pathname.split('/')[1] || 'ko'
-  const detailUrl = `/${locale}/products/${handle}`
+  // next-intl Link는 locale 자동 추가 — href에 locale 포함 금지 (ProductCard와 동일)
+  const detailUrl = `/products/${productId || handle}`
 
   // 구매 가능 여부
   const rawPs = String(product.productStatus ?? '').toUpperCase()
