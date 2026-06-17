@@ -83,13 +83,45 @@ const WITHDRAW_REASONS = [
   { code: 'OTHER' as const, label: '기타 (직접 입력)' },
 ]
 
+type ResidentNoData = {
+  has_resident_no: boolean
+  resident_no_masked: string
+}
+
+type BankListItem = {
+  code: string
+  code_value: string
+  name: string
+}
+
+type BankAccountData = {
+  has_account: boolean
+  bank_name: string | null
+  bank_code: string | null
+  account_no: string | null
+  account_holder: string | null
+  bank_list: BankListItem[]
+}
+
 export default function AccountProfileClient() {
   const router = useRouter()
   const { data, loading, reload } = useProfile()
 
   const [name, setName] = useState('')
-  const [birthDate, setBirthDate] = useState('')
-  const [gender, setGender] = useState<'M' | 'F' | ''>('')
+
+  const [residentNo, setResidentNo] = useState<ResidentNoData | null>(null)
+  const [residentNoInput, setResidentNoInput] = useState('')
+  const [residentNoLoading, setResidentNoLoading] = useState(true)
+  const [residentNoSubmitting, setResidentNoSubmitting] = useState(false)
+
+  const [bankAccount, setBankAccount] = useState<BankAccountData | null>(null)
+  const [bankLoading, setBankLoading] = useState(true)
+  const [bankEditing, setBankEditing] = useState(false)
+  const [bankCode, setBankCode] = useState('')
+  const [bankName, setBankName] = useState('')
+  const [accountNo, setAccountNo] = useState('')
+  const [accountHolder, setAccountHolder] = useState('')
+  const [bankSaving, setBankSaving] = useState(false)
 
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
@@ -113,11 +145,43 @@ export default function AccountProfileClient() {
   const [withdrawReasonDetail, setWithdrawReasonDetail] = useState('')
   const [withdrawSubmitting, setWithdrawSubmitting] = useState(false)
 
+  const loadResidentNo = useCallback(async () => {
+    setResidentNoLoading(true)
+    try {
+      const rn = await mypageFetch<ResidentNoData>('/mypage/resident-no')
+      setResidentNo(rn)
+    } catch {
+      toast.error('주민번호 정보를 불러올 수 없습니다.')
+    } finally {
+      setResidentNoLoading(false)
+    }
+  }, [])
+
+  const loadBankAccount = useCallback(async () => {
+    setBankLoading(true)
+    try {
+      const ba = await mypageFetch<BankAccountData>('/mypage/bank-account')
+      setBankAccount(ba)
+      setBankCode(ba.bank_code ?? '')
+      setBankName(ba.bank_name ?? '')
+      setAccountNo(ba.account_no ?? '')
+      setAccountHolder(ba.account_holder ?? '')
+      setBankEditing(!ba.has_account)
+    } catch {
+      toast.error('계좌 정보를 불러올 수 없습니다.')
+    } finally {
+      setBankLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    void loadResidentNo()
+    void loadBankAccount()
+  }, [loadResidentNo, loadBankAccount])
+
   useEffect(() => {
     if (!data) return
     setName(data.name ?? '')
-    setBirthDate(data.birth_date ? String(data.birth_date).slice(0, 10) : '')
-    setGender(data.gender === 'M' || data.gender === 'F' ? data.gender : '')
     setEmail(data.email ?? '')
     setPhone(data.phone ?? '')
     setZip(data.zip_code ?? '')
@@ -153,6 +217,72 @@ export default function AccountProfileClient() {
     cfPwHangulMsg,
   ])
 
+  const registerResidentNo = async () => {
+    const digits = residentNoInput.replace(/[^0-9]/g, '')
+    if (digits.length !== 13) {
+      toast.error('주민번호는 13자리 숫자여야 합니다.')
+      return
+    }
+    setResidentNoSubmitting(true)
+    try {
+      const res = await mypageFetch<{ message: string; resident_no_masked: string }>(
+        '/mypage/resident-no',
+        {
+          method: 'POST',
+          body: JSON.stringify({ resident_no: digits }),
+        }
+      )
+      setResidentNo({ has_resident_no: true, resident_no_masked: res.resident_no_masked })
+      setResidentNoInput('')
+      toast.success(res.message || '주민번호가 등록됐습니다')
+    } catch (e) {
+      if (e instanceof MypageApiError) {
+        toast.error(e.message)
+      } else {
+        toast.error('주민번호 등록에 실패했습니다.')
+      }
+    } finally {
+      setResidentNoSubmitting(false)
+    }
+  }
+
+  const saveBankAccount = async () => {
+    if (!bankCode.trim() || !bankName.trim()) {
+      toast.error('은행을 선택해 주세요.')
+      return
+    }
+    if (!accountNo.trim()) {
+      toast.error('계좌번호를 입력해 주세요.')
+      return
+    }
+    if (!accountHolder.trim()) {
+      toast.error('예금주를 입력해 주세요.')
+      return
+    }
+    setBankSaving(true)
+    try {
+      await mypageFetch<{ message: string }>('/mypage/bank-account', {
+        method: 'PUT',
+        body: JSON.stringify({
+          bank_code: bankCode.trim(),
+          bank_name: bankName.trim(),
+          account_no: accountNo.trim(),
+          account_holder: accountHolder.trim(),
+        }),
+      })
+      toast.success('계좌 정보가 저장됐습니다')
+      await loadBankAccount()
+    } catch (e) {
+      if (e instanceof MypageApiError) {
+        toast.error(e.message)
+      } else {
+        toast.error('계좌 저장에 실패했습니다.')
+      }
+    } finally {
+      setBankSaving(false)
+    }
+  }
+
   const saveAll = async () => {
     if (!data) {
       toast.error('설정을 불러올 수 없습니다.')
@@ -178,8 +308,6 @@ export default function AccountProfileClient() {
         body: JSON.stringify({
           name: name.trim() || null,
           email: email.trim() || null,
-          birth_date: birthDate.trim() === '' ? null : birthDate.trim().slice(0, 10),
-          gender: gender === '' ? null : gender,
           phone: phone.trim() || null,
           zip_code: zip.trim() || null,
           address1: addr1.trim() || null,
@@ -296,34 +424,158 @@ export default function AccountProfileClient() {
             </label>
             <div className={readOnlyBoxClass}>{data.member_no || '-'}</div>
           </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-neutral-800 dark:text-neutral-200">
-              생년월일 <span className="font-normal text-neutral-400">(선택)</span>
-            </label>
-            <input
-              type="date"
-              className={inputClass}
-              value={birthDate}
-              onChange={e => setBirthDate(e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-neutral-800 dark:text-neutral-200">
-              성별 <span className="font-normal text-neutral-400">(선택)</span>
-            </label>
-            <select
-              className={inputClass}
-              value={gender}
-              onChange={e =>
-                setGender(e.target.value === 'M' ? 'M' : e.target.value === 'F' ? 'F' : '')
-              }
-            >
-              <option value="">선택안함</option>
-              <option value="M">남성</option>
-              <option value="F">여성</option>
-            </select>
-          </div>
         </div>
+      </section>
+
+      <section className={cardClass}>
+        <h2 className="mb-6 flex items-center gap-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+          <span aria-hidden>🪪</span> 주민번호
+        </h2>
+        {residentNoLoading ? (
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">불러오는 중…</p>
+        ) : residentNo?.has_resident_no ? (
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-neutral-800 dark:text-neutral-200">
+              등록된 주민번호
+            </label>
+            <div className={readOnlyBoxClass}>{residentNo.resident_no_masked || '-'}</div>
+            <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
+              주민번호는 1회만 등록할 수 있으며 수정이 불가합니다.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-neutral-800 dark:text-neutral-200">
+                주민번호
+              </label>
+              <input
+                className={inputClass}
+                value={residentNoInput}
+                onChange={e => setResidentNoInput(e.target.value.replace(/[^0-9-]/g, ''))}
+                placeholder="990101-1234567"
+                inputMode="numeric"
+                maxLength={14}
+                disabled={residentNoSubmitting}
+              />
+            </div>
+            <BigButton
+              fullWidth
+              onClick={() => void registerResidentNo()}
+              disabled={residentNoSubmitting}
+            >
+              {residentNoSubmitting ? '등록 중…' : '등록'}
+            </BigButton>
+          </div>
+        )}
+      </section>
+
+      <section className={cardClass}>
+        <h2 className="mb-6 flex items-center gap-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+          <span aria-hidden>🏦</span> 은행계좌
+        </h2>
+        {bankLoading ? (
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">불러오는 중…</p>
+        ) : bankAccount?.has_account && !bankEditing ? (
+          <div className="space-y-5">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-neutral-800 dark:text-neutral-200">
+                은행명
+              </label>
+              <div className={readOnlyBoxClass}>{bankAccount.bank_name || '-'}</div>
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-neutral-800 dark:text-neutral-200">
+                계좌번호
+              </label>
+              <div className={readOnlyBoxClass}>{bankAccount.account_no || '-'}</div>
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-neutral-800 dark:text-neutral-200">
+                예금주
+              </label>
+              <div className={readOnlyBoxClass}>{bankAccount.account_holder || '-'}</div>
+            </div>
+            <BigButton fullWidth onClick={() => setBankEditing(true)}>
+              수정
+            </BigButton>
+          </div>
+        ) : (
+          <div className="space-y-5">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-neutral-800 dark:text-neutral-200">
+                은행
+              </label>
+              <select
+                className={inputClass}
+                value={bankCode}
+                onChange={e => {
+                  const code = e.target.value
+                  setBankCode(code)
+                  const found = bankAccount?.bank_list.find(b => String(b.code) === code)
+                  setBankName(found?.name ?? '')
+                }}
+                disabled={bankSaving}
+              >
+                <option value="">은행 선택</option>
+                {(bankAccount?.bank_list ?? []).map(b => (
+                  <option key={b.code} value={b.code}>
+                    {b.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-neutral-800 dark:text-neutral-200">
+                계좌번호
+              </label>
+              <input
+                className={inputClass}
+                value={accountNo}
+                onChange={e => setAccountNo(e.target.value)}
+                placeholder="계좌번호 입력"
+                disabled={bankSaving}
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-neutral-800 dark:text-neutral-200">
+                예금주
+              </label>
+              <input
+                className={inputClass}
+                value={accountHolder}
+                onChange={e => setAccountHolder(e.target.value)}
+                placeholder="예금주명 입력"
+                disabled={bankSaving}
+              />
+            </div>
+            <div className="flex gap-3">
+              {bankAccount?.has_account ? (
+                <button
+                  type="button"
+                  className="flex-1 rounded-xl border border-neutral-300 py-3 text-sm font-semibold text-neutral-800 hover:bg-neutral-50 dark:border-neutral-600 dark:text-neutral-200 dark:hover:bg-neutral-800"
+                  disabled={bankSaving}
+                  onClick={() => {
+                    setBankCode(bankAccount.bank_code ?? '')
+                    setBankName(bankAccount.bank_name ?? '')
+                    setAccountNo(bankAccount.account_no ?? '')
+                    setAccountHolder(bankAccount.account_holder ?? '')
+                    setBankEditing(false)
+                  }}
+                >
+                  취소
+                </button>
+              ) : null}
+              <BigButton
+                fullWidth
+                onClick={() => void saveBankAccount()}
+                disabled={bankSaving}
+              >
+                {bankSaving ? '저장 중…' : '저장'}
+              </BigButton>
+            </div>
+          </div>
+        )}
       </section>
 
       <section className={cardClass}>
