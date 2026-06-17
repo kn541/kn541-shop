@@ -6,6 +6,7 @@ import { Link } from '@/components/Link'
 import { useAside } from '@/components/aside/aside'
 import { HOME_TABS, type HomeNavTab } from '@/data/home-tabs'
 import { MAIN_PAGE_ASSETS } from '@/data/main-page-assets'
+import { useCart } from '@/lib/cart-context'
 import { usePathname, useRouter } from '@/i18n/navigation'
 import clsx from 'clsx'
 import { useLocale, useTranslations } from 'next-intl'
@@ -47,6 +48,7 @@ export default function MainHeader({ categoryTabs }: MainHeaderProps) {
   const pathname = usePathname()
   const router = useRouter()
   const { open: openAside } = useAside()
+  const { totalCount } = useCart()
 
   const navTabs = useMemo(() => [...HOME_TABS, ...categoryTabs], [categoryTabs])
 
@@ -166,12 +168,17 @@ export default function MainHeader({ categoryTabs }: MainHeaderProps) {
             </Link>
             <button
               type="button"
-              className="block h-[21px] w-[22px] border-0 bg-transparent p-0"
+              className="relative block h-[21px] w-[22px] border-0 bg-transparent p-0"
               aria-label={tCommon('cart')}
               onClick={openCartOrLogin}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={ICON.cart} alt="" width={22} height={21} className="size-full object-contain" />
+              {totalCount > 0 && (
+                <span className="absolute -right-1.5 -top-1.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-kn541-green px-1 text-[10px] font-semibold leading-none text-white">
+                  {totalCount > 99 ? '99+' : totalCount}
+                </span>
+              )}
             </button>
             <Link href="/account" className="block h-[21px] w-[24px] p-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -264,12 +271,17 @@ export default function MainHeader({ categoryTabs }: MainHeaderProps) {
         </form>
         <button
           type="button"
-          className="btn-cart ml-[15px] border-0 bg-transparent p-0"
+          className="btn-cart relative ml-[15px] border-0 bg-transparent p-0"
           aria-label={tCommon('cart')}
           onClick={openCartOrLogin}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={ICON.cart} alt="" width={23} height={22} className="h-[22px] w-[23px]" />
+          {totalCount > 0 && (
+            <span className="absolute -right-1.5 -top-1.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-kn541-green px-1 text-[10px] font-semibold leading-none text-white">
+              {totalCount > 99 ? '99+' : totalCount}
+            </span>
+          )}
         </button>
       </div>
 
