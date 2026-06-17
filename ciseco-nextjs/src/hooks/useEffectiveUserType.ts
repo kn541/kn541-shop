@@ -59,7 +59,7 @@ export function useEffectiveUserType() {
   return {
     userType,
     loading: authLoading || !resolved,
-    isPaidMember: userType === '006',
+    isPaidMember: userType === '006' || userType === '001',
     isGeneralMember: userType === '002',
   }
 }
