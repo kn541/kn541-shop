@@ -46,15 +46,19 @@
 }
 
 .kn-main-page .hero-controls-text {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  width: 58px;
+  justify-content: center;
+  gap: 4px;
+  min-width: 72px;
+  width: auto;
   margin: 0;
   height: 29px;
-  padding: 0 11px;
+  padding: 0 10px;
   color: #ddd;
   font-size: 12px;
   font-weight: 600;
+  letter-spacing: 0.02em;
   border-radius: 15px;
   background: rgba(18, 18, 18, 0.5);
 }
@@ -64,8 +68,11 @@
 }
 
 .kn-main-page .hero-divider-line {
-  display: inline-block;
-  margin: 0 5px;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  padding: 0;
+  margin: 0 1px;
   color: #ddd;
   font-size: 14px;
   font-weight: 200;

@@ -163,10 +163,10 @@ export function HeroSlider({ slides }: HeroSliderProps) {
           aria-pressed={paused}
           onClick={() => setPaused((p) => !p)}
         />
-        <p className="hero-controls-text tabular-nums inline-flex items-center leading-none">
-          <span className="hero-current">{String(index + 1).padStart(2, '0')}</span>
+        <p className="hero-controls-text tabular-nums leading-none">
+          <span className="hero-current shrink-0">{String(index + 1).padStart(2, '0')}</span>
           <HeroDivider />
-          <strong className="font-inherit">{String(SLIDE_COUNT).padStart(2, '0')}</strong>
+          <strong className="shrink-0 font-inherit">{String(SLIDE_COUNT).padStart(2, '0')}</strong>
         </p>
       </div>
     </section>
