@@ -452,7 +452,7 @@ export default async function Page({
 
         {/* 리뷰 */}
         <div id="reviews" className="mb-12">
-          <ProductReviews reviewNumber={reviewNumber || 0} rating={rating || 0} reviews={reviews} />
+          <ProductReviews productId={String(productId)} reviewNumber={reviewNumber || 0} rating={rating || 0} reviews={reviews} />
         </div>
 
         <Divider />

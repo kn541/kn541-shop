@@ -1,9 +1,9 @@
 'use client'
-// ★ 전체 한국어화
 
 import ReviewItem from '@/components/ReviewItem'
 import StarReview from '@/components/StarReview'
 import { TReview } from '@/data/data'
+import { apiUrl } from '@/lib/api/base'
 import { Button } from '@/shared/Button/Button'
 import { Dialog, DialogActions, DialogBody, DialogDescription, DialogTitle } from '@/shared/dialog'
 import { Field, Fieldset, Label } from '@/shared/fieldset'
@@ -14,35 +14,127 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import clsx from 'clsx'
 import Form from 'next/form'
 import React from 'react'
+import toast from 'react-hot-toast'
+
+type ApiReviewItem = {
+  review_id: string
+  author?: string
+  rating?: number
+  content?: string
+  created_at?: string
+}
+
+function mapApiReview(row: ApiReviewItem): TReview {
+  const created = row.created_at ? new Date(row.created_at) : null
+  const dateLabel =
+    created && !Number.isNaN(created.getTime())
+      ? created.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })
+      : ''
+  return {
+    id: row.review_id,
+    rating: Number(row.rating) || 0,
+    content: row.content ? `<p>${row.content.replace(/</g, '&lt;')}</p>` : '',
+    author: row.author || '익명',
+    date: dateLabel,
+    datetime: row.created_at || '',
+  }
+}
 
 const ProductReviews = ({
-  rating,
-  reviewNumber,
-  reviews,
+  productId,
+  rating: initialRating,
+  reviewNumber: initialReviewNumber,
+  reviews: initialReviews,
   className,
 }: {
-  reviews: TReview[]
+  productId: string
+  reviews?: TReview[]
   className?: string
   rating: number
   reviewNumber: number
 }) => {
   const [isOpen, setIsOpen] = React.useState(false)
+  const [submitting, setSubmitting] = React.useState(false)
+  const [reviews, setReviews] = React.useState<TReview[]>(initialReviews ?? [])
+  const [rating, setRating] = React.useState(initialRating)
+  const [reviewNumber, setReviewNumber] = React.useState(initialReviewNumber)
+
+  React.useEffect(() => {
+    if (!productId) return
+    let cancelled = false
+    fetch(apiUrl(`/reviews/product/${encodeURIComponent(productId)}?page=1&size=20`))
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => {
+        if (cancelled || !json?.data) return
+        const items = (json.data.items ?? []) as ApiReviewItem[]
+        setReviews(items.map(mapApiReview))
+        setReviewNumber(Number(json.data.total) || items.length)
+        setRating(Number(json.data.rating_avg) || initialRating)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [productId, initialRating])
 
   const handleSubmit = async (formData: FormData) => {
-    const review = formData.get('review')?.toString() || ''
+    const content = formData.get('review')?.toString().trim() || ''
     const ratingVal = formData.get('rating') ? parseInt(formData.get('rating')?.toString() || '0', 10) : 0
-    if (!review || ratingVal < 1 || ratingVal > 5) {
-      console.error('리뷰 내용 또는 별점이 올바르지 않습니다.')
+    if (!content || ratingVal < 1 || ratingVal > 5) {
+      toast.error('리뷰 내용과 별점(1~5)을 입력해 주세요.')
       return
     }
-    console.log('리뷰 등록:', { review, rating: ratingVal })
-    setIsOpen(false)
+    if (content.length < 5) {
+      toast.error('리뷰는 5자 이상 입력해 주세요.')
+      return
+    }
+
+    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
+    if (!token) {
+      toast.error('로그인 후 리뷰를 작성할 수 있습니다.')
+      return
+    }
+
+    setSubmitting(true)
+    try {
+      const res = await fetch(apiUrl('/reviews'), {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          product_id: productId,
+          rating: ratingVal,
+          content,
+        }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        toast.error(typeof json?.detail === 'string' ? json.detail : '리뷰 등록에 실패했습니다.')
+        return
+      }
+      toast.success('리뷰가 등록되었습니다.')
+      setIsOpen(false)
+
+      const listRes = await fetch(apiUrl(`/reviews/product/${encodeURIComponent(productId)}?page=1&size=20`))
+      if (listRes.ok) {
+        const listJson = await listRes.json()
+        const items = (listJson.data?.items ?? []) as ApiReviewItem[]
+        setReviews(items.map(mapApiReview))
+        setReviewNumber(Number(listJson.data?.total) || items.length)
+        setRating(Number(listJson.data?.rating_avg) || ratingVal)
+      }
+    } catch {
+      toast.error('서버 연결에 실패했습니다.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
     <div className={clsx(className)}>
       <div>
-        {/* 헤딩 — ★ 한국어 */}
         <h2 className="flex scroll-mt-8 items-center text-2xl font-semibold" id="reviews">
           <StarIcon className="mb-0.5 size-7" />
           <span className="ml-1.5">
@@ -50,7 +142,6 @@ const ProductReviews = ({
           </span>
         </h2>
 
-        {/* 리뷰 목록 */}
         {reviews.length > 0 ? (
           <div className="mt-10">
             <div className="grid grid-cols-1 gap-x-14 gap-y-11 md:grid-cols-2 lg:gap-x-28">
@@ -63,13 +154,11 @@ const ProductReviews = ({
           <p className="mt-6 text-sm text-neutral-400">아직 등록된 리뷰가 없습니다.</p>
         )}
 
-        {/* 리뷰 작성 버튼 — ★ 한국어 */}
         <Button className="mt-10" onClick={() => setIsOpen(true)}>
           <HugeiconsIcon icon={MessageAdd01Icon} size={20} />
           리뷰 작성
         </Button>
 
-        {/* 리뷰 작성 다이얼로그 — ★ 한국어 */}
         <Dialog size="2xl" open={isOpen} onClose={setIsOpen}>
           <DialogTitle>
             <div className="flex items-center">
@@ -92,11 +181,11 @@ const ProductReviews = ({
             </Form>
           </DialogBody>
           <DialogActions>
-            <Button size="smaller" plain onClick={() => setIsOpen(false)}>
+            <Button size="smaller" plain onClick={() => setIsOpen(false)} disabled={submitting}>
               취소
             </Button>
-            <Button size="smaller" onClick={() => setIsOpen(false)} type="submit" form="review-form">
-              등록하기
+            <Button size="smaller" type="submit" form="review-form" disabled={submitting}>
+              {submitting ? '등록 중…' : '등록하기'}
             </Button>
           </DialogActions>
         </Dialog>
