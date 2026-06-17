@@ -1,11 +1,6 @@
 'use client'
 
 import { useHeaderUser } from '@/hooks/useHeaderUser'
-import {
-  KN541_CART_SELECTED_STORAGE_KEY,
-  KN541_CART_STORAGE_KEY,
-  useCart,
-} from '@/lib/cart-context'
 import { useRouter } from '@/i18n/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { useCallback } from 'react'
@@ -17,7 +12,6 @@ import CartBtn from './CartBtn'
 export default function HeaderUserBar() {
   const locale = useLocale()
   const router = useRouter()
-  const { clearCart } = useCart()
   const { isMounted, loading, isLoggedIn, greeting, clearUser } = useHeaderUser()
   const tCommon  = useTranslations('Common')
   const tAccount = useTranslations('Account')
@@ -27,13 +21,10 @@ export default function HeaderUserBar() {
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
     localStorage.removeItem('user_type')
-    localStorage.removeItem(KN541_CART_STORAGE_KEY)
-    localStorage.removeItem(KN541_CART_SELECTED_STORAGE_KEY)
-    clearCart()
     clearUser()
     toast.success(tHeader('loggedOut'))
     router.push('/')
-  }, [router, clearCart, clearUser, tHeader])
+  }, [router, clearUser, tHeader])
 
   const iconBtnCls =
     'inline-flex min-h-11 min-w-11 items-center justify-center rounded-md text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800 md:hidden'

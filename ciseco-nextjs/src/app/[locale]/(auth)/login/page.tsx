@@ -12,6 +12,8 @@ import {
   setForceChangeSession,
   setPasswordReminderPending,
 } from '@/lib/auth/passwordSession'
+import { persistHeaderUserCache } from '@/lib/auth/headerUser'
+import { useCart } from '@/lib/cart-context'
 import { apiUrl } from '@/lib/api/base'
 const LOGO_URL = 'https://ghtkropmnrelkxivzpim.supabase.co/storage/v1/object/public/brands/white_logo.png'
 
@@ -26,6 +28,7 @@ function LoginForm() {
   const router = useRouter()
   const t = useTranslations('Auth')
   const searchParams = useSearchParams()
+  const { reloadFromStorage } = useCart()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -79,6 +82,8 @@ function LoginForm() {
         }
 
         persistLoginTokens({ access_token, refresh_token, user_type })
+        if (d.member_no) persistHeaderUserCache(null, String(d.member_no))
+        reloadFromStorage()
 
         if (d.password_expired === true) {
           const days = Number(d.days_since_change ?? 0)

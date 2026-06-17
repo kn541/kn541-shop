@@ -44,6 +44,7 @@ interface CartContextValue {
   removeSelected: () => void
   updateQty: (id: string, qty: number) => void
   clearCart: () => void
+  reloadFromStorage: () => void
   toggleSelect: (id: string) => void
   toggleSelectAll: () => void
   totalCount: number
@@ -259,6 +260,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     clearCartFromStorage()
   }, [])
 
+  // 로그인 후 localStorage 장바구니 복원 (로그아웃 시 storage 유지)
+  const reloadFromStorage = useCallback(() => {
+    const stored = loadCartFromStorage()
+    if (stored) {
+      setItems(stored.items)
+      setSelectedIds(new Set(stored.selectedIds))
+    }
+  }, [])
+
   const toggleSelect = useCallback((id: string) => {
     setSelectedIds(prev => {
       const s = new Set(prev)
@@ -289,7 +299,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   return (
     <CartContext.Provider value={{
       items, selectedIds,
-      addItem, removeItem, removeSelected, updateQty, clearCart,
+      addItem, removeItem, removeSelected, updateQty, clearCart, reloadFromStorage,
       toggleSelect, toggleSelectAll,
       totalCount, totalPrice, totalShipping,
       selectedPrice, selectedShipping, selectedTotal,
