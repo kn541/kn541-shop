@@ -1,26 +1,35 @@
 'use client'
 
 // KN541 동사가치배당 — 현금 출금 신청 팝업
-// 명세:
-//  - 출금가능잔액 = 동사가치배당금 잔액 (summary.withdrawable_balance)
-//  - 현금비율(%) 입력 (최대 50% 이하)
-//  - 회원정보에 은행계좌·은행명·예금주가 있으면 입력란 비노출, 없으면 입력
-//  - (현금비율 + 은행 3종) 모두 입력해야 신청 (계좌 기보유 시 현금비율만)
-//  - 기입 % 외 나머지는 포인트(GWCP)로 전환, 신청 시 출금가능잔액 0원
 import { useEffect, useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
 import { mapMypageBankList, type BankCodeItem } from '@/lib/bankCodes'
 import { MypageApiError, mypageFetch } from '@/lib/mypage/api'
 import { applyWithdraw } from '@/lib/mypage/useWithdrawals'
 import type { WithdrawSummaryData } from '@/lib/mypage/useWithdrawSummary'
-import { calcWithdrawSplit, clampCashRatio, formatWon, MAX_CASH_RATIO } from '@/lib/mypage/withdrawUtils'
+import { clampCashRatio, formatWon, MAX_CASH_RATIO } from '@/lib/mypage/withdrawUtils'
 
 interface Props {
   open: boolean
   summary: WithdrawSummaryData
   onClose: () => void
-  /** 신청 성공 후 호출 — summary/내역 새로고침용 */
   onApplied?: () => void
+}
+
+type WithdrawPreview = {
+  cash_ratio: number
+  total_amount: number
+  cash_amount: number
+  point_amount: number
+  tax_rate: number
+  cash_tax: number
+  point_tax: number
+  cash_net: number
+  point_net: number
+}
+
+function formatGwcp(n: number): string {
+  return `${Math.floor(n || 0).toLocaleString('ko-KR')} GWCP`
 }
 
 export default function WithdrawModal({ open, summary, onClose, onApplied }: Props) {
@@ -34,6 +43,8 @@ export default function WithdrawModal({ open, summary, onClose, onApplied }: Pro
   const [bankAccount, setBankAccount] = useState('')
   const [accountHolder, setAccountHolder] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [preview, setPreview] = useState<WithdrawPreview | null>(null)
+  const [previewLoading, setPreviewLoading] = useState(false)
 
   useEffect(() => {
     if (!open || hasBank) return
@@ -57,14 +68,34 @@ export default function WithdrawModal({ open, summary, onClose, onApplied }: Pro
     return Number.isFinite(n) ? n : NaN
   }, [cashRatioStr])
 
-  const split = useMemo(
-    () => calcWithdrawSplit(total, Number.isFinite(cashRatio) ? cashRatio : 0),
-    [total, cashRatio]
-  )
+  const ratioValid = Number.isFinite(cashRatio) && cashRatio >= 0 && cashRatio <= MAX_CASH_RATIO
+
+  useEffect(() => {
+    if (!open || !ratioValid || total <= 0) {
+      setPreview(null)
+      return
+    }
+    let cancelled = false
+    setPreviewLoading(true)
+    mypageFetch<{ preview?: WithdrawPreview }>(
+      `/mypage/withdraw/summary?cash_ratio=${clampCashRatio(cashRatio)}`
+    )
+      .then(data => {
+        if (!cancelled) setPreview(data.preview ?? null)
+      })
+      .catch(() => {
+        if (!cancelled) setPreview(null)
+      })
+      .finally(() => {
+        if (!cancelled) setPreviewLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [open, cashRatio, ratioValid, total])
 
   if (!open) return null
 
-  const ratioValid = Number.isFinite(cashRatio) && cashRatio >= 0 && cashRatio <= MAX_CASH_RATIO
   const ratioOver = Number.isFinite(cashRatio) && cashRatio > MAX_CASH_RATIO
   const bankValid = hasBank || (bankCode && bankName.trim() && bankAccount.trim() && accountHolder.trim())
   const canSubmit = total > 0 && ratioValid && !!bankValid && !submitting
@@ -79,7 +110,6 @@ export default function WithdrawModal({ open, summary, onClose, onApplied }: Pro
       return
     }
 
-    // 계좌: 보유 시 회원정보 평문값, 미보유 시 입력값
     const payloadBankName = hasBank ? (summary.bank_name ?? '') : bankName.trim()
     const payloadBankAccount = hasBank ? (summary.bank_account ?? '') : bankAccount.trim()
     const payloadHolder = hasBank ? (summary.account_holder ?? '') : accountHolder.trim()
@@ -97,7 +127,6 @@ export default function WithdrawModal({ open, summary, onClose, onApplied }: Pro
       onClose()
     } catch (e) {
       if (e instanceof MypageApiError) {
-        // 백엔드 detail.message (WITHDRAW_IN_PROGRESS / INSUFFICIENT_BALANCE / INVALID_CASH_RATIO 등)
         toast.error(e.message || '출금 신청에 실패했습니다.')
       } else {
         toast.error('출금 신청 중 오류가 발생했습니다.')
@@ -106,6 +135,8 @@ export default function WithdrawModal({ open, summary, onClose, onApplied }: Pro
       setSubmitting(false)
     }
   }
+
+  const taxLabel = preview ? `원천세 ${preview.tax_rate}%` : '원천세'
 
   return (
     <div
@@ -128,17 +159,15 @@ export default function WithdrawModal({ open, summary, onClose, onApplied }: Pro
           </button>
         </div>
 
-        {/* 출금 가능 잔액 */}
         <div className="mb-5 rounded-2xl bg-violet-50 p-4 text-center dark:bg-violet-900/20">
           <div className="mb-1 text-xs text-neutral-500 dark:text-neutral-400">출금 가능 잔액</div>
-          <div className="text-2xl font-black text-violet-600">{formatWon(total)}</div>
+          <div className="text-2xl font-black text-violet-600">{formatGwcp(total)}</div>
         </div>
 
         {total <= 0 ? (
           <p className="py-6 text-center text-sm text-neutral-500">출금 가능한 잔액이 없습니다.</p>
         ) : (
           <>
-            {/* 현금 비율 */}
             <div className="mb-4">
               <label className="mb-1.5 block text-sm font-semibold">
                 현금 출금 비율 (%) <span className="text-red-500">*</span>
@@ -164,22 +193,59 @@ export default function WithdrawModal({ open, summary, onClose, onApplied }: Pro
               )}
             </div>
 
-            {/* 분할 미리보기 */}
-            <div className="mb-4 space-y-1.5 rounded-xl border border-neutral-200 p-3 text-sm dark:border-neutral-700">
-              <div className="flex justify-between">
-                <span className="text-neutral-500">현금 출금</span>
-                <span className="font-bold text-violet-600">{formatWon(split.cashAmount)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-neutral-500">포인트 전환</span>
-                <span className="font-semibold">{formatWon(split.pointAmount)}</span>
-              </div>
-              <div className="mt-1 border-t border-neutral-100 pt-1.5 text-xs text-neutral-400 dark:border-neutral-700">
-                ※ 신청 시 출금가능잔액 전액이 처리되며 잔액은 0원이 됩니다. 현금 외 나머지는 포인트로 전환됩니다.
+            <div className="mb-4 space-y-3 rounded-xl border border-neutral-200 p-3 text-sm dark:border-neutral-700">
+              {previewLoading ? (
+                <p className="py-2 text-center text-xs text-neutral-400">세금 계산 중…</p>
+              ) : preview ? (
+                <>
+                  <div className="flex justify-between text-xs text-neutral-500">
+                    <span>현금 비율</span>
+                    <span>{preview.cash_ratio}%</span>
+                  </div>
+
+                  <div className="space-y-1.5 border-t border-neutral-100 pt-2 dark:border-neutral-700">
+                    <div className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">■ 현금 출금</div>
+                    <div className="flex justify-between pl-2">
+                      <span className="text-neutral-500">배당금</span>
+                      <span>{formatWon(preview.cash_amount)}</span>
+                    </div>
+                    <div className="flex justify-between pl-2 text-red-600">
+                      <span>{taxLabel}</span>
+                      <span>-{preview.cash_tax.toLocaleString('ko-KR')}원</span>
+                    </div>
+                    <div className="flex justify-between pl-2 font-bold">
+                      <span>실수령</span>
+                      <span className="text-violet-600">{formatWon(preview.cash_net)}</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5 border-t border-neutral-100 pt-2 dark:border-neutral-700">
+                    <div className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">■ GWCP 전환</div>
+                    <div className="flex justify-between pl-2">
+                      <span className="text-neutral-500">배당금</span>
+                      <span>{formatGwcp(preview.point_amount)}</span>
+                    </div>
+                    <div className="flex justify-between pl-2 text-red-600">
+                      <span>{taxLabel}</span>
+                      <span>-{formatGwcp(preview.point_tax)}</span>
+                    </div>
+                    <div className="flex justify-between pl-2 font-bold">
+                      <span>실수령</span>
+                      <span>{formatGwcp(preview.point_net)}</span>
+                    </div>
+                  </div>
+                </>
+              ) : ratioValid ? (
+                <p className="py-2 text-center text-xs text-neutral-400">미리보기를 불러오지 못했습니다.</p>
+              ) : (
+                <p className="py-2 text-center text-xs text-neutral-400">현금 비율을 입력하면 세금 차감 내역이 표시됩니다.</p>
+              )}
+
+              <div className="border-t border-neutral-100 pt-2 text-xs text-neutral-400 dark:border-neutral-700">
+                ※ 신청 시 출금가능잔액 전액이 처리되며 잔액은 0원이 됩니다.
               </div>
             </div>
 
-            {/* 은행 정보 — 회원정보에 계좌 있으면 비노출 */}
             {hasBank ? (
               <div className="mb-4 rounded-xl bg-neutral-50 p-3 text-sm dark:bg-neutral-800">
                 <div className="mb-1 text-xs font-semibold text-neutral-500">출금 계좌</div>
