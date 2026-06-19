@@ -20,10 +20,17 @@ const nextConfig = {
   },
   staticPageGenerationTimeout: 180,
 
-  // 수동 redirects 제거 — middleware.ts가 next-intl locale 라우팅을 자동 처리
-  // 기존: /mypage → /ko/mypage 등 20개 수동 리다이렉트
-  // 문제: myshop, commission 등 누락 + middleware와 충돌 가능
-  // 해결: middleware.ts의 createMiddleware(routing)이 전체 처리
+  // /auto-login → /ko/auto-login 리다이렉트 (어드민 대리접속용)
+  // locale prefix 없이 들어오는 요청을 자동으로 /ko/ 붙여서 보냄
+  async redirects() {
+    return [
+      {
+        source: '/auto-login',
+        destination: '/ko/auto-login',
+        permanent: false,
+      },
+    ]
+  },
 
   images: {
     minimumCacheTTL: 2678400 * 12,
