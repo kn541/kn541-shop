@@ -1,15 +1,10 @@
 'use client'
-// fix: 재로그인 시 장바구니 목록 사라짐 — logout() 시 clearCart 호출 (#업무-온라인오픈 18번)
-//   원인: 로그아웃 시 access_token·refresh_token·user_type만 제거하고
-//          kn541_cart localStorage는 그대로 남김 → 재로그인 시 이전 회원 장바구니가
-//          hydration되었다가 인증 체크 후 초기화되는 타이밍에 사라지는 것처럼 보임
-//   수정: logout() 내부에서 useCart()의 clearCart() 호출 → kn541_cart 완전 제거
-//   (useAuth는 [locale]/layout의 CartProvider 내부에서만 사용되므로 useCart() 호출 안전)
+// fix(#19): 로그아웃 시 clearCart 제거 — localStorage 유지하여 재로그인 시 장바구니 복원
+// CartBtn이 비로그인 시 배지 숨김 처리하므로 로그아웃 후 UI에서는 0건 표시
 
 import { useEffect, useState } from 'react'
 import { refreshAccessToken, clearAuthAndRedirect } from '@/lib/mypage/api'
 import { useLocale } from 'next-intl'
-import { useCart } from '@/lib/cart-context'
 
 interface AuthUser {
   user_id: string
@@ -19,7 +14,6 @@ interface AuthUser {
   name?: string
 }
 
-// JWT payload 디코딩 (검증 없이 페이로드만 읽기)
 function decodeJwt(token: string): Record<string, unknown> | null {
   try {
     const payload = token.split('.')[1]
@@ -34,18 +28,16 @@ function decodeJwt(token: string): Record<string, unknown> | null {
 export function useAuth() {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [loading, setLoading] = useState(true)
-  const { clearCart } = useCart()
   let locale = 'ko'
   try {
     // eslint-disable-next-line react-hooks/rules-of-hooks
     locale = useLocale()
   } catch {
-    // useLocale 실패 시 기본값 ko
+    // useLocale fail -> default ko
   }
 
   useEffect(() => {
     void (async () => {
-      // access_token 확보 (없으면 refresh_token으로 재발급 시도)
       let token = localStorage.getItem('access_token')
       if (!token) {
         token = await refreshAccessToken()
@@ -55,7 +47,6 @@ export function useAuth() {
       const payload = decodeJwt(token)
       if (!payload) { setLoading(false); return }
 
-      // JWT 만료 체크 — 만료 시 refresh 시도 / 실패 시 전부 제거 + 로그인 리다이렉트
       const exp = payload.exp as number | undefined
       if (exp && exp * 1000 < Date.now()) {
         const newToken = await refreshAccessToken()
@@ -88,12 +79,10 @@ export function useAuth() {
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
     localStorage.removeItem('user_type')
-    // ★ fix #18: 로그아웃 시 장바구니 명시적 제거
-    // 이전: cart storage 유지 → 다음 로그인 회원에게 이전 회원 장바구니 노출
-    // 이후: clearCart()로 kn541_cart localStorage 완전 제거
-    clearCart()
+    // fix(#19): clearCart 제거 — localStorage(kn541_cart) 유지
+    // CartBtn이 access_token 유무로 배지 표시 결정 → 로그아웃 시 자동 숨김
+    // 재로그인 시 localStorage에서 장바구니 자동 복원
     setUser(null)
-    // 로그아웃 후 메인 페이지로 이동
     window.location.href = `/${locale}`
   }
 
