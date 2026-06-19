@@ -7,14 +7,12 @@ import { useCallback } from 'react'
 import { toast } from 'react-hot-toast'
 import { ArrowRightOnRectangleIcon, UserIcon } from '@heroicons/react/24/outline'
 import CartBtn from './CartBtn'
-import { useCart } from '@/lib/cart-context'
 
 /** 검색바 우측: 회원명 · 장바구니 · 로그인/회원가입 또는 로그아웃/마이페이지 */
 export default function HeaderUserBar() {
   const locale = useLocale()
   const router = useRouter()
   const { isMounted, loading, isLoggedIn, greeting, clearUser } = useHeaderUser()
-  const { clearCart } = useCart()
   const tCommon  = useTranslations('Common')
   const tAccount = useTranslations('Account')
   const tHeader  = useTranslations('Header')
@@ -23,12 +21,12 @@ export default function HeaderUserBar() {
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
     localStorage.removeItem('user_type')
-    // fix(#19): 헤더 로그아웃 시 장바구니 명시적 제거
-    clearCart()
+    // fix(#19): clearCart 제거 — localStorage 유지하여 재로그인 시 장바구니 복원
+    // CartBtn이 비로그인 시 배지 숨김 처리하므로 UI에서는 0건 표시
     clearUser()
     toast.success(tHeader('loggedOut'))
     router.push('/')
-  }, [router, clearUser, clearCart, tHeader])
+  }, [router, clearUser, tHeader])
 
   const iconBtnCls =
     'inline-flex min-h-11 min-w-11 items-center justify-center rounded-md text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800 md:hidden'
@@ -89,7 +87,6 @@ export default function HeaderUserBar() {
         </>
       ) : (
         <>
-          {/* 모바일: 마이페이지 아이콘 + 로그아웃 아이콘 */}
           <a href={`/${locale}/account`} className={iconBtnCls} aria-label={tAccount('title')}>
             <UserIcon className="h-6 w-6" aria-hidden />
           </a>
@@ -101,7 +98,6 @@ export default function HeaderUserBar() {
           >
             <ArrowRightOnRectangleIcon className="h-6 w-6" aria-hidden />
           </button>
-          {/* 데스크톱: 로그아웃 · 마이페이지 텍스트 링크 */}
           <div className="hidden items-center text-sm md:flex">
             <button
               type="button"
