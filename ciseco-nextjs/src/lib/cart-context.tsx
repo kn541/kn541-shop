@@ -59,6 +59,7 @@ interface CartContextValue {
 const CartContext = createContext<CartContextValue | null>(null)
 
 export const KN541_CART_STORAGE_KEY          = 'kn541_cart'
+const SELECTED_KEY = 'kn541_cart_selected'
 export const KN541_CART_SELECTED_STORAGE_KEY = 'kn541_cart_selected'
 
 /** 장바구니 보관 기간: 마지막 수정일 기준 15일 */
@@ -182,8 +183,20 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const stored = loadCartFromStorage()
     if (stored) {
-      setItems(stored.items)
-      setSelectedIds(new Set(stored.selectedIds))
+      const valid = stored.items
+      setItems(valid)
+      const selectedRaw = localStorage.getItem(SELECTED_KEY)
+      if (selectedRaw) {
+        try {
+          const savedIds: string[] = JSON.parse(selectedRaw)
+          const validIds = new Set(valid.map((i) => i.id))
+          setSelectedIds(new Set(savedIds.filter(id => validIds.has(id))))
+        } catch {
+          setSelectedIds(new Set(valid.map((i) => i.id)))
+        }
+      } else {
+        setSelectedIds(new Set(valid.map((i) => i.id)))
+      }
     }
     setHydrated(true)
   }, [])
@@ -202,6 +215,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
 
     saveCartToStorage(items, selectedIds)
+    localStorage.setItem(SELECTED_KEY, JSON.stringify([...selectedIds]))
   }, [items, selectedIds, hydrated])
 
   const addItem = useCallback((newItem: Omit<CartItem, 'id'>) => {
