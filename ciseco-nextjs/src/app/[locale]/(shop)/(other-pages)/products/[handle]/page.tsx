@@ -467,7 +467,7 @@ export default async function Page({
           />
         )}
 
-        <div className="pb-20" />
+        <div className="pb-40 md:pb-20" />
       </div>
     </main>
   )
