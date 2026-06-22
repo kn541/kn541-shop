@@ -21,6 +21,7 @@ export default function HeaderUserBar() {
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
     localStorage.removeItem('user_type')
+    window.dispatchEvent(new Event('storage'))
     // fix(#19): clearCart 제거 — localStorage 유지하여 재로그인 시 장바구니 복원
     // CartBtn이 비로그인 시 배지 숨김 처리하므로 UI에서는 0건 표시
     clearUser()
