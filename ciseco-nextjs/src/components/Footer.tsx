@@ -2,6 +2,7 @@
 // feat: 푸터 무통장 입금계좌 정보 추가
 // fix(2026-06-11): 모바일에서 푸터 끝 "입금하실 곳" 박스가 하단 탭바(80px)에
 //                  가려지던 문제 — 모바일 전용 하단 패딩(pb-28) 추가
+// feat(2026-06-22): KN541에 바란다 버튼 — 입점문의 옆 동일 스타일
 
 import { useState } from 'react'
 import Logo from '@/components/Logo'
@@ -51,6 +52,9 @@ function FooterNavLinks({
 const inquiryBtnCls =
   'inline-flex h-10 w-[140px] shrink-0 items-center justify-center rounded-[5px] border border-kn541-gray-300 bg-white text-sm font-medium text-kn541-black hover:bg-kn541-gray-100 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-700'
 
+const footerActionBtnCls =
+  'inline-flex w-fit items-center gap-2 rounded-xl border-2 border-kn541-gray-700 px-4 py-2 text-sm font-semibold text-kn541-gray-900 transition-colors hover:bg-kn541-gray-900 hover:text-white dark:border-neutral-300 dark:text-neutral-100 dark:hover:bg-neutral-100 dark:hover:text-neutral-900'
+
 export default function Footer() {
   const t = useTranslations('Footer')
   const [wishOpen, setWishOpen] = useState(false)
@@ -63,9 +67,6 @@ export default function Footer() {
           className="mb-8 hidden gap-6 text-sm font-medium text-kn541-gray-700 dark:text-neutral-400 lg:flex"
           withVendorAccent
         />
-        <button type="button" onClick={() => setWishOpen(true)} className="mb-4 text-sm font-medium text-kn541-gray-700 transition-colors hover:text-kn541-black dark:text-neutral-400 dark:hover:text-white">
-          KN541에 바란다
-        </button>
 
         <div className="flex flex-col gap-10 lg:flex-row lg:justify-between lg:gap-20">
           <div className="max-w-xl text-kn541-black dark:text-neutral-100">
@@ -105,15 +106,20 @@ export default function Footer() {
 
             <div className="mt-6 flex flex-col gap-6 lg:mt-8">
               <SocialsList1 className="!flex-row flex-wrap gap-x-4 gap-y-3" />
-              <Link
-                href="/vendor-inquiry"
-                className="inline-flex w-fit items-center gap-2 rounded-xl border-2 border-kn541-gray-700 px-4 py-2 text-sm font-semibold text-kn541-gray-900 transition-colors hover:bg-kn541-gray-900 hover:text-white dark:border-neutral-300 dark:text-neutral-100 dark:hover:bg-neutral-100 dark:hover:text-neutral-900"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-                {t('vendorBanner')}
-              </Link>
+              <div className="flex flex-wrap items-center gap-3">
+                <Link href="/vendor-inquiry" className={footerActionBtnCls}>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                  {t('vendorBanner')}
+                </Link>
+                <button type="button" onClick={() => setWishOpen(true)} className={footerActionBtnCls}>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                  KN541에 바란다
+                </button>
+              </div>
             </div>
 
             <div className="mt-10 hidden lg:block">
