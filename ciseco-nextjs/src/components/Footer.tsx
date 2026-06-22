@@ -3,7 +3,9 @@
 // fix(2026-06-11): 모바일에서 푸터 끝 "입금하실 곳" 박스가 하단 탭바(80px)에
 //                  가려지던 문제 — 모바일 전용 하단 패딩(pb-28) 추가
 
+import { useState } from 'react'
 import Logo from '@/components/Logo'
+import WishModal from './common/WishModal'
 import { COMPANY_INFO } from '@/data/company-info'
 import { Link } from '@/shared/link'
 import SocialsList1 from '@/shared/SocialsList1/SocialsList1'
@@ -51,6 +53,7 @@ const inquiryBtnCls =
 
 export default function Footer() {
   const t = useTranslations('Footer')
+  const [wishOpen, setWishOpen] = useState(false)
   const telHref = `tel:${COMPANY_INFO.cs.phone.replace(/\D/g, '')}`
 
   return (
@@ -60,6 +63,9 @@ export default function Footer() {
           className="mb-8 hidden gap-6 text-sm font-medium text-kn541-gray-700 dark:text-neutral-400 lg:flex"
           withVendorAccent
         />
+        <button type="button" onClick={() => setWishOpen(true)} className="mb-4 text-sm font-medium text-kn541-gray-700 transition-colors hover:text-kn541-black dark:text-neutral-400 dark:hover:text-white">
+          KN541에 바란다
+        </button>
 
         <div className="flex flex-col gap-10 lg:flex-row lg:justify-between lg:gap-20">
           <div className="max-w-xl text-kn541-black dark:text-neutral-100">
@@ -167,6 +173,7 @@ export default function Footer() {
           </div>
         </div>
       </div>
+      <WishModal open={wishOpen} onClose={() => setWishOpen(false)} />
     </footer>
   )
 }
