@@ -21,7 +21,8 @@ import {
   PaginationPrevious,
 } from '@/shared/Pagination/Pagination'
 import { getPaginationItems } from '@/utils/paginationRange'
-import { usePathname, useSearchParams } from 'next/navigation'
+import { usePathname } from '@/i18n/navigation'
+import { useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
 const PAGE_SIZE = PRODUCT_LIST_PAGE_SIZE
