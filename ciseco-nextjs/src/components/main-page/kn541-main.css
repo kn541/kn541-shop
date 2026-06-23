@@ -264,20 +264,12 @@
     display: none;
   }
 
+  /* fix(2026-06-23): 벨류업 상품 잘림 수정 — 가로스크롤(grid-auto-flow:column)을
+     제거하고 Tailwind grid-cols-2 2열 그리드가 동작하도록 변경.
+     기존: grid-auto-flow:column + margin-inline:-20px → 첫 번째 카드 잘림 */
   .kn-main-page .best-grid.small {
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: min(280px, calc(100vw - 48px));
-    grid-template-columns: none;
-    gap: 14px;
-    overflow-x: auto;
-    padding: 0 20px;
-    margin-inline: -20px;
-    scrollbar-width: none;
-  }
-
-  .kn-main-page .best-grid.small::-webkit-scrollbar {
-    display: none;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 10px;
   }
 }
 
