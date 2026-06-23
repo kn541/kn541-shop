@@ -72,12 +72,8 @@ const SITEMAP: Record<Locale, SitemapContent> = {
       {
         heading: '고객센터·정보',
         items: [
-          { label: '고객센터', href: '/cs' },
           { label: '자주 묻는 질문', href: '/faq' },
-          { label: '문의하기', href: '/contact' },
-          { label: '회사 소개', href: '/about' },
           { label: '입점 문의', href: '/vendor-inquiry' },
-          { label: '블로그', href: '/blog' },
           { label: '이용약관', href: '/terms' },
           { label: '개인정보처리방침', href: '/privacy' },
         ],
@@ -126,12 +122,8 @@ const SITEMAP: Record<Locale, SitemapContent> = {
       {
         heading: 'Support & info',
         items: [
-          { label: 'Customer service', href: '/cs' },
           { label: 'FAQ', href: '/faq' },
-          { label: 'Contact', href: '/contact' },
-          { label: 'About', href: '/about' },
           { label: 'Vendor application', href: '/vendor-inquiry' },
-          { label: 'Blog', href: '/blog' },
           { label: 'Terms of service', href: '/terms' },
           { label: 'Privacy policy', href: '/privacy' },
         ],
@@ -180,12 +172,8 @@ const SITEMAP: Record<Locale, SitemapContent> = {
       {
         heading: '客服与信息',
         items: [
-          { label: '客服中心', href: '/cs' },
           { label: '常见问题', href: '/faq' },
-          { label: '联系我们', href: '/contact' },
-          { label: '关于我们', href: '/about' },
           { label: '入驻咨询', href: '/vendor-inquiry' },
-          { label: '博客', href: '/blog' },
           { label: '服务条款', href: '/terms' },
           { label: '隐私政策', href: '/privacy' },
         ],
