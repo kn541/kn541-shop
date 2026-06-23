@@ -102,8 +102,13 @@ export async function searchProxyOrderProducts(keyword: string): Promise<ProxyOr
   const q = new URLSearchParams({ page: '1', size: '10' })
   const k = keyword.trim()
   if (k) q.set('keyword', k)
-  const data = await mypageFetch<{ items?: ProxyOrderProductRow[] }>(`/products?${q.toString()}`)
-  return data?.items ?? []
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data = await mypageFetch<{ items?: any[] }>(`/products?${q.toString()}`)
+  // 백엔드 v_product_list_ext는 product_id를 반환하므로 id로 매핑
+  return (data?.items ?? []).map(item => ({
+    ...item,
+    id: item.id || item.product_id,
+  }))
 }
 
 /** 대상 회원 저장 배송지 */
