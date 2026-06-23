@@ -19,6 +19,7 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { ShoppingBag03Icon } from '@hugeicons/core-free-icons'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import toast from 'react-hot-toast'
 import { useTranslations } from 'next-intl'
 
@@ -102,6 +103,11 @@ export default function ProductActions({
   const [comboValue1, setComboValue1] = useState('')
   const [comboValue2, setComboValue2] = useState('')
   const [optionData, setOptionData] = useState<OptionGroupsData | null>(null)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     if (!isOption || !productId) {
@@ -263,6 +269,14 @@ export default function ProductActions({
     </>
   )
 
+  const mobileFixedBar = (
+    <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-neutral-200 bg-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-[0_-2px_10px_rgba(0,0,0,0.1)] md:hidden dark:border-neutral-700 dark:bg-neutral-900">
+      <div className="flex flex-nowrap items-center gap-2">
+        {mobileCtaButtons}
+      </div>
+    </div>
+  )
+
   return (
     <div className="flex flex-col gap-6">
       {hasComboMode ? (
@@ -318,11 +332,7 @@ export default function ProductActions({
         {ctaButtons}
       </div>
 
-      <div className="fixed bottom-14 left-0 right-0 z-50 border-t border-neutral-200 bg-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-[0_-2px_10px_rgba(0,0,0,0.1)] md:hidden dark:border-neutral-700 dark:bg-neutral-900">
-        <div className="flex flex-nowrap items-center gap-2">
-          {mobileCtaButtons}
-        </div>
-      </div>
+      {mounted && createPortal(mobileFixedBar, document.body)}
 
       <div className="h-24 shrink-0 md:hidden" aria-hidden />
     </div>
