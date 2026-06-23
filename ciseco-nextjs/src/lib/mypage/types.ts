@@ -68,6 +68,8 @@ export interface OrderDetailLineItem {
   image_url?: string | null
   quantity?: number
   qty?: number
+  sale_price?: number
+  subtotal?: number
   unit_price?: number
   price?: number
   line_amount?: number

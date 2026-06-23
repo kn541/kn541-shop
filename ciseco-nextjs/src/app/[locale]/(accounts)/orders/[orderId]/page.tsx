@@ -20,7 +20,12 @@ function lineQty(row: OrderDetailLineItem) {
 }
 
 function linePrice(row: OrderDetailLineItem) {
-  return row.unit_price ?? row.price ?? row.line_amount ?? row.amount ?? 0
+  return row.sale_price ?? row.unit_price ?? row.price ?? row.line_amount ?? row.amount ?? 0
+}
+
+function lineSubtotal(row: OrderDetailLineItem) {
+  if (row.subtotal != null) return row.subtotal
+  return Number(linePrice(row)) * lineQty(row)
 }
 
 function lineThumb(row: OrderDetailLineItem) {
@@ -193,10 +198,12 @@ export default function OrderDetailPage({ params }: { params: Promise<{ orderId:
                 <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-neutral-100">
                   <Image src={thumb} alt={lineName(row)} fill className="object-cover" unoptimized={thumb.startsWith('http')} />
                 </div>
-                <div className="min-w-0 flex-1">
+                <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
                   <p className="font-medium">{lineName(row)}</p>
                   {row.product_code && <p className="text-xs text-neutral-400 font-mono">상품코드 {row.product_code}</p>}
-                  <p className="text-sm text-neutral-500">수량 {lineQty(row)} · {Number(linePrice(row)).toLocaleString('ko-KR')}원</p>
+                  <p className="text-sm text-neutral-500">
+                    {Number(linePrice(row)).toLocaleString('ko-KR')}원 × {lineQty(row)}
+                  </p>
                   {itemDeliveryStatus && (
                     <p className="mt-1 text-xs font-medium text-blue-600 dark:text-blue-400">
                       📦 {deliveryLabel}
@@ -205,6 +212,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ orderId:
                   )}
                   {canShowTracking && itemId && <TrackingPanel orderId={orderId} itemId={itemId} hasTrackingNo={!!itemTrackingNo} />}
                 </div>
+                <p className="shrink-0 text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                  {lineSubtotal(row).toLocaleString('ko-KR')}원
+                </p>
               </li>
             )
           })}

@@ -76,6 +76,7 @@ export function paymentMethodLabelKo(code: string | undefined | null): string {
     '003': '간편결제',
     '004': '현금',
     '005': '복합결제',
+    '006': '계좌이체',
     CARD: '신용카드',
     VIRTUAL_ACCOUNT: '가상계좌',
     EASY_PAY: '간편결제',
