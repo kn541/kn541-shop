@@ -175,6 +175,13 @@ export default function AccountProfileClient() {
   }, [])
 
   useEffect(() => {
+    // 비로그인 상태에서는 API 호출 안 함 (에러 토스트 방지)
+    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
+    if (!token) {
+      setResidentNoLoading(false)
+      setBankLoading(false)
+      return
+    }
     void loadResidentNo()
     void loadBankAccount()
   }, [loadResidentNo, loadBankAccount])
