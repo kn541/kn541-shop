@@ -28,7 +28,7 @@ const LEVEL_COLORS: Record<string, { bg: string; border: string; headerBg: strin
   '007': { bg: '#ede7f6', border: '#7e57c2', headerBg: '#5e35b1' },
 }
 const DEFAULT_COLOR = { bg: '#fafafa', border: '#e0e0e0', headerBg: '#9e9e9e' }
-const DEPTH_OPTIONS = [2, 3, 4, 5] as const
+const DEPTH_OPTIONS = [2, 3, 4, 5, 10, 50] as const
 const DEFAULT_DEPTH = 3
 const NODE_W = 200
 const NODE_H = 160
@@ -153,11 +153,9 @@ function TreeContent() {
   const [translate, setTranslate] = useState({ x: 0, y: 80 })
   const [referralUrl, setReferralUrl] = useState<string | null>(null)
   const [myMemberNo, setMyMemberNo] = useState<string | null>(null)
+  const [isFullscreen, setIsFullscreen] = useState(false)
   const userIdRef = useRef<string>('')
-
-  const containerRef = useCallback((el: HTMLDivElement | null) => {
-    if (el) { const { width } = el.getBoundingClientRect(); setTranslate({ x: width / 2, y: 80 }) }
-  }, [])
+  const treeContainerRef = useRef<HTMLDivElement>(null)
 
   const loadTree = useCallback(async (uid: string, d: number) => {
     setLoading(true); setError(null)
@@ -197,6 +195,26 @@ function TreeContent() {
     setDepth(d)
     if (userIdRef.current) void loadTree(userIdRef.current, d)
   }, [loadTree])
+
+  const toggleFullscreen = useCallback(async () => {
+    try {
+      if (!document.fullscreenElement) {
+        await treeContainerRef.current?.requestFullscreen()
+        setIsFullscreen(true)
+        try { await (screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> }).lock?.('landscape') } catch { /* ignore */ }
+      } else {
+        await document.exitFullscreen()
+        setIsFullscreen(false)
+        try { (screen.orientation as ScreenOrientation & { unlock?: () => void }).unlock?.() } catch { /* ignore */ }
+      }
+    } catch { /* ignore */ }
+  }, [])
+
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement)
+    document.addEventListener('fullscreenchange', handler)
+    return () => document.removeEventListener('fullscreenchange', handler)
+  }, [])
 
   const treeData = useMemo(() => root ? toTreeDatum(root, depth + 5) : null, [root, depth])
   const dataKey = useMemo(() => root ? `${root.user_id}-${depth}-${countNodes(root)}` : '', [root, depth])
@@ -247,10 +265,19 @@ function TreeContent() {
 
       {/* 트리 영역 */}
       {!loading && !error && treeData && (
-        <div ref={containerRef} style={{
-          width: '100%', height: 'calc(100vh - 250px)', minHeight: 600,
-          background: '#f8f9fa', borderRadius: 12, overflow: 'hidden',
-          position: 'relative', border: '1px solid #e0e0e0',
+        <div ref={(el) => {
+          treeContainerRef.current = el
+          if (el) {
+            const { width } = el.getBoundingClientRect()
+            setTranslate({ x: width / 2, y: 80 })
+          }
+        }} style={{
+          width: '100%',
+          height: isFullscreen ? '100vh' : 'calc(100vh - 250px)',
+          minHeight: isFullscreen ? '100vh' : 600,
+          background: '#f8f9fa', borderRadius: isFullscreen ? 0 : 12,
+          overflow: 'hidden', position: 'relative',
+          border: isFullscreen ? 'none' : '1px solid #e0e0e0',
         }}>
           {/* 줌 */}
           <div style={{
@@ -262,6 +289,13 @@ function TreeContent() {
             <div style={{ textAlign: 'center', fontSize: 11, color: '#333', fontWeight: 600 }}>{Math.round(zoom * 100)}%</div>
             <button onClick={() => setZoom(z => Math.max(0.1, z - 0.1))} style={zoomBtnStyle}>{'\u2212'}</button>
             <button onClick={() => setZoom(0.55)} style={{ ...zoomBtnStyle, height: 28, fontSize: 10, fontWeight: 600 }}>리셋</button>
+            <button
+              onClick={() => void toggleFullscreen()}
+              style={{ ...zoomBtnStyle, height: 28, fontSize: 14, fontWeight: 600 }}
+              title={isFullscreen ? '전체화면 종료' : '전체화면'}
+            >
+              {isFullscreen ? '✕' : '⛶'}
+            </button>
           </div>
 
           {/* 범례 + 단계 버튼 */}
@@ -295,7 +329,7 @@ function TreeContent() {
                   color: depth === d ? '#fff' : '#333',
                   cursor: loading ? 'wait' : 'pointer', fontWeight: 700, fontSize: 13,
                   opacity: loading ? 0.6 : 1,
-                }}>{d}단</button>
+                }}>{d === 50 ? '전체' : `${d}단`}</button>
               ))}
             </div>
           </div>
