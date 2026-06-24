@@ -11,7 +11,7 @@ import ButtonSecondary from '@/shared/Button/ButtonSecondary'
 import KakaoAddressInput, { type AddressValue } from '@/components/common/KakaoAddressSearch'
 import { toast } from 'react-hot-toast'
 import { formatPriceKo } from '@/lib/formatPrice'
-import { MypageApiError } from '@/lib/mypage/api'
+import { MypageApiError, mypageFetch } from '@/lib/mypage/api'
 import { useProfile } from '@/lib/mypage/useProfile'
 import {
   calcProxyOrderTotals,
@@ -79,6 +79,29 @@ export default function ProxyOrderWizard() {
     () => calcProxyOrderTotals(selectedItems),
     [selectedItems],
   )
+
+  const fetchMemberAddress = async (userId: string) => {
+    try {
+      const addr = await mypageFetch<{
+        name?: string
+        phone?: string
+        zip_code?: string
+        address?: string
+        address_detail?: string
+      }>(`/members/${encodeURIComponent(userId)}/default-address`)
+      if (addr) {
+        setRecipientName(addr.name || '')
+        setRecipientPhone(addr.phone || '')
+        setAddress({
+          zipcode: addr.zip_code || '',
+          address1: addr.address || '',
+          address2: addr.address_detail || '',
+        })
+      }
+    } catch {
+      // 주소 조회 실패해도 수동 입력 가능하므로 무시
+    }
+  }
 
   const loadReferrals = useCallback(async (userId: string) => {
     setReferralsLoading(true)
@@ -330,7 +353,11 @@ export default function ProxyOrderWizard() {
                       <td className="px-4 py-3 text-right">
                         <button
                           type="button"
-                          onClick={() => { setSelectedMember(m); setStep(1) }}
+                          onClick={() => {
+                            setSelectedMember(m)
+                            if (m.user_id) void fetchMemberAddress(m.user_id)
+                            setStep(1)
+                          }}
                           className="rounded-lg border border-primary-500 px-3 py-1.5 text-xs font-semibold text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/30"
                         >
                           선택
