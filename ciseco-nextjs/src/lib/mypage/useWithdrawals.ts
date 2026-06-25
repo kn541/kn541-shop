@@ -9,6 +9,8 @@ export interface WithdrawApplyPayload {
   bank_name: string
   bank_account: string
   account_holder: string
+  /** 출금 금액(원). 미지정/undefined 이면 전액 출금 */
+  withdraw_amount?: number
 }
 
 export interface WithdrawApplyResult {

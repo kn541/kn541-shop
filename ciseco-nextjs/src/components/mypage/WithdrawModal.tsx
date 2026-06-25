@@ -36,6 +36,7 @@ export default function WithdrawModal({ open, summary, onClose, onApplied }: Pro
   const total = Math.max(0, Math.floor(summary.withdrawable_balance || 0))
   const hasBank = !!summary.has_bank_account
 
+  const [amountStr, setAmountStr] = useState('')
   const [cashRatioStr, setCashRatioStr] = useState('')
   const [bankCode, setBankCode] = useState('')
   const [bankName, setBankName] = useState('')
@@ -63,6 +64,11 @@ export default function WithdrawModal({ open, summary, onClose, onApplied }: Pro
     }
   }, [open, hasBank])
 
+  // 팝업이 열릴 때 출금 금액을 전액으로 초기화 (기본 동작 = 전액)
+  useEffect(() => {
+    if (open) setAmountStr(total > 0 ? total.toLocaleString('ko-KR') : '')
+  }, [open, total])
+
   const cashRatio = useMemo(() => {
     const n = parseFloat(cashRatioStr)
     return Number.isFinite(n) ? n : NaN
@@ -70,15 +76,33 @@ export default function WithdrawModal({ open, summary, onClose, onApplied }: Pro
 
   const ratioValid = Number.isFinite(cashRatio) && cashRatio >= 0 && cashRatio <= MAX_CASH_RATIO
 
+  // 출금 금액 (콤마 제거 후 정수 파싱)
+  const amount = useMemo(() => {
+    const digits = amountStr.replace(/[^0-9]/g, '')
+    return digits ? parseInt(digits, 10) : NaN
+  }, [amountStr])
+
+  const amountOver = Number.isFinite(amount) && amount > total
+  const amountValid = Number.isFinite(amount) && amount > 0 && amount <= total
+
+  const handleAmountChange = (raw: string) => {
+    const digits = raw.replace(/[^0-9]/g, '')
+    setAmountStr(digits ? parseInt(digits, 10).toLocaleString('ko-KR') : '')
+  }
+
+  const handleFillAll = () => {
+    setAmountStr(total > 0 ? total.toLocaleString('ko-KR') : '')
+  }
+
   useEffect(() => {
-    if (!open || !ratioValid || total <= 0) {
+    if (!open || !ratioValid || !amountValid || total <= 0) {
       setPreview(null)
       return
     }
     let cancelled = false
     setPreviewLoading(true)
     mypageFetch<{ preview?: WithdrawPreview }>(
-      `/mypage/withdraw/summary?cash_ratio=${clampCashRatio(cashRatio)}`
+      `/mypage/withdraw/summary?cash_ratio=${clampCashRatio(cashRatio)}&amount=${amount}`
     )
       .then(data => {
         if (!cancelled) setPreview(data.preview ?? null)
@@ -92,15 +116,19 @@ export default function WithdrawModal({ open, summary, onClose, onApplied }: Pro
     return () => {
       cancelled = true
     }
-  }, [open, cashRatio, ratioValid, total])
+  }, [open, cashRatio, ratioValid, amount, amountValid, total])
 
   if (!open) return null
 
   const ratioOver = Number.isFinite(cashRatio) && cashRatio > MAX_CASH_RATIO
   const bankValid = hasBank || (bankCode && bankName.trim() && bankAccount.trim() && accountHolder.trim())
-  const canSubmit = total > 0 && ratioValid && !!bankValid && !submitting
+  const canSubmit = total > 0 && amountValid && ratioValid && !!bankValid && !submitting
 
   const handleSubmit = async () => {
+    if (!amountValid) {
+      toast.error(amountOver ? '출금 금액이 출금 가능 잔액을 초과했습니다.' : '출금 금액을 입력해 주세요.')
+      return
+    }
     if (!ratioValid) {
       toast.error(ratioOver ? '현금 출금 비율은 50% 이하만 가능합니다.' : '현금 비율을 입력해 주세요.')
       return
@@ -121,6 +149,7 @@ export default function WithdrawModal({ open, summary, onClose, onApplied }: Pro
         bank_name: payloadBankName,
         bank_account: payloadBankAccount,
         account_holder: payloadHolder,
+        withdraw_amount: amount,
       })
       toast.success('출금 신청이 접수됐습니다.')
       onApplied?.()
@@ -168,6 +197,42 @@ export default function WithdrawModal({ open, summary, onClose, onApplied }: Pro
           <p className="py-6 text-center text-sm text-neutral-500">출금 가능한 잔액이 없습니다.</p>
         ) : (
           <>
+            <div className="mb-4">
+              <label className="mb-1.5 block text-sm font-semibold">
+                출금 금액 (원) <span className="text-red-500">*</span>
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={amountStr}
+                  onChange={e => handleAmountChange(e.target.value)}
+                  placeholder="0"
+                  className={`min-w-0 flex-1 rounded-xl border px-3 py-2.5 text-right text-sm outline-none focus:ring-2 dark:bg-neutral-800 ${
+                    amountOver
+                      ? 'border-red-400 focus:ring-red-200'
+                      : 'border-neutral-200 focus:ring-violet-200 dark:border-neutral-700'
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={handleFillAll}
+                  className="shrink-0 rounded-xl border border-violet-300 px-4 py-2.5 text-sm font-semibold text-violet-600 transition hover:bg-violet-50 dark:border-violet-700 dark:hover:bg-violet-900/20"
+                >
+                  전액
+                </button>
+              </div>
+              {amountOver ? (
+                <p className="mt-1 text-xs text-red-500">
+                  출금 가능 잔액({formatWon(total)})을 초과했습니다.
+                </p>
+              ) : (
+                <p className="mt-1 text-xs text-neutral-400">
+                  출금 가능 잔액: {formatWon(total)}
+                </p>
+              )}
+            </div>
+
             <div className="mb-4">
               <label className="mb-1.5 block text-sm font-semibold">
                 현금 출금 비율 (%) <span className="text-red-500">*</span>
@@ -235,14 +300,14 @@ export default function WithdrawModal({ open, summary, onClose, onApplied }: Pro
                     </div>
                   </div>
                 </>
-              ) : ratioValid ? (
+              ) : ratioValid && amountValid ? (
                 <p className="py-2 text-center text-xs text-neutral-400">미리보기를 불러오지 못했습니다.</p>
               ) : (
-                <p className="py-2 text-center text-xs text-neutral-400">현금 비율을 입력하면 세금 차감 내역이 표시됩니다.</p>
+                <p className="py-2 text-center text-xs text-neutral-400">출금 금액과 현금 비율을 입력하면 세금 차감 내역이 표시됩니다.</p>
               )}
 
               <div className="border-t border-neutral-100 pt-2 text-xs text-neutral-400 dark:border-neutral-700">
-                ※ 신청 시 출금가능잔액 전액이 처리되며 잔액은 0원이 됩니다.
+                ※ 입력한 출금 금액만큼 처리되며, 잔여 금액은 출금 가능 잔액으로 유지됩니다.
               </div>
             </div>
 
