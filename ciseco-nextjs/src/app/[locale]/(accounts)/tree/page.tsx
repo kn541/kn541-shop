@@ -7,8 +7,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from '@/i18n/navigation'
 import L3Guard from '@/components/mypage/L3Guard'
 import { mypageFetch, MypageApiError } from '@/lib/mypage/api'
-import Tree from 'react-d3-tree'
+import dynamic from 'next/dynamic'
 import type { CustomNodeElementProps, RawNodeDatum } from 'react-d3-tree'
+
+// SSR에서 d3/DOM 접근으로 크래시 → 클라이언트 전용 로드
+const Tree = dynamic(() => import('react-d3-tree'), { ssr: false })
 
 // ── 타입 & 상수 ──────────────────────────────────────────────────────────
 type TreeNode = {
