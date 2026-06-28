@@ -5,6 +5,7 @@ import BigTabs from '@/components/mypage/BigTabs'
 import { useCoupons } from '@/lib/mypage/useCoupons'
 import type { CouponStatus, CouponItem } from '@/lib/mypage/types'
 import { useTranslations } from 'next-intl'
+import { formatPrice } from '@/lib/formatPrice'
 
 type TabKey = CouponStatus
 
@@ -31,7 +32,7 @@ function CouponCard({ coupon }: { coupon: CouponItem }) {
         }`}
       >
         {coupon.discount_amount != null
-          ? `${coupon.discount_amount.toLocaleString('ko-KR')}원 할인`
+          ? `${formatPrice(coupon.discount_amount)} 할인`
           : coupon.discount_rate != null
             ? `${coupon.discount_rate}% 할인`
             : '할인 쿠폰'}
@@ -40,7 +41,7 @@ function CouponCard({ coupon }: { coupon: CouponItem }) {
       <div className="mb-2 text-sm text-neutral-500 dark:text-neutral-400">
         {coupon.target_label}
         {coupon.min_order_amount != null &&
-          ` · 최소 주문 ${coupon.min_order_amount.toLocaleString('ko-KR')}원`}
+          ` · 최소 주문 ${formatPrice(coupon.min_order_amount)}`}
       </div>
       <div
         className={`text-sm ${soon ? 'font-bold text-amber-600' : 'text-neutral-500 dark:text-neutral-400'}`}

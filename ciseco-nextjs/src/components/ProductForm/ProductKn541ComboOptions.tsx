@@ -2,6 +2,7 @@
 
 import clsx from 'clsx'
 import type { OptionCombination, OptionGroup } from '@/hooks/useOptionGroups'
+import { formatPrice } from '@/lib/formatPrice'
 
 interface Props {
   groups: OptionGroup[]
@@ -92,7 +93,7 @@ export default function ProductKn541ComboOptions({
 
       {selectedCombo && (
         <p className="text-sm text-neutral-600 dark:text-neutral-400">
-          추가금액: +{Number(selectedCombo.add_price).toLocaleString('ko-KR')}원
+          추가금액: +{formatPrice(Number(selectedCombo.add_price))}
           {' '}| 재고: {selectedCombo.stock_qty.toLocaleString('ko-KR')}개
         </p>
       )}
