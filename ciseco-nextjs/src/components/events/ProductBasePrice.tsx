@@ -2,6 +2,7 @@
 
 import Prices from '@/components/Prices'
 import { usePreopenHidePrice } from '@/lib/preopenPrice'
+import { formatPrice } from '@/lib/formatPrice'
 
 interface Props {
   salePrice: number
@@ -24,7 +25,7 @@ export default function ProductBasePrice({ salePrice, consumerPrice, discountRat
       <Prices contentClass="text-3xl font-bold" price={salePrice} />
       {showStrike && (
         <span className="text-base text-neutral-400 line-through mb-0.5">
-          {consumerPrice.toLocaleString('ko-KR')}원
+          {formatPrice(consumerPrice)}
         </span>
       )}
     </div>

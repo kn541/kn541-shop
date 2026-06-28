@@ -1,12 +1,16 @@
 /**
- * KN541 한국어 가격 문자열 (예: 88,888원)
- * — en/zh 등 다른 로케일 포맷은 이 파일의 `formatPriceKo`만 사용하고,
- *   별도 분기가 필요하면 다른 모듈에서 처리한다.
+ * KN541 한국어 가격 포맷 (예: "88,888원")
+ *
+ * 모든 가격 표시에 이 함수를 사용합니다.
+ * - NaN/undefined 방어: Number(amount) || 0
+ * - 소수점 반올림: Math.round
+ * - 천단위 구분: Intl.NumberFormat('ko-KR')
+ * - 원 접미사 자동 추가
  */
-export function formatPriceKo(amount: number): string {
+export function formatPrice(amount: number): string {
   const n = Math.round(Number(amount) || 0)
   return `${new Intl.NumberFormat('ko-KR').format(n)}원`
 }
 
-/** 신규 코드용 별칭 — 기존 `formatPriceKo` 호출은 유지 */
-export const formatPrice = formatPriceKo
+/** @deprecated formatPrice를 사용하세요 */
+export const formatPriceKo = formatPrice
