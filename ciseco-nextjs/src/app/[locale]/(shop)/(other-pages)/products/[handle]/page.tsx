@@ -153,7 +153,7 @@ export default async function Page({
   const isSoldout = Boolean(p.isSoldout || p.is_soldout)
   const isDiscontinued = Boolean(p.isDiscontinued || p.is_discontinued)
   const sourceType = String(
-    rawProduct?.source_type ?? rawProduct?.sourceType ?? p.source_type ?? p.sourceType ?? ''
+    rawProduct?.source_type ?? (rawProduct as unknown as Record<string, unknown>)?.sourceType ?? ''
   ).toUpperCase()
   const stockIsReal = sourceType !== 'KMC'
   const isSoldoutOrUnavailable = isSoldout || isDiscontinued ||
