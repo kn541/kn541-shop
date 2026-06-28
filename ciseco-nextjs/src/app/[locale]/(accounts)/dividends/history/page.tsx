@@ -6,6 +6,7 @@ import {
   useDividendHistory,
   type CommissionHistoryItem,
 } from '@/lib/mypage/useDividendHistory'
+import { formatPrice } from '@/lib/formatPrice'
 
 type PeriodKey = 'THIS_MONTH' | 'LAST_MONTH' | 'ALL' | 'CUSTOM'
 
@@ -16,7 +17,6 @@ const PERIOD_LABELS: Record<PeriodKey, string> = {
   CUSTOM: '직접입력',
 }
 
-/** 기간 키 → from/to YYYY-MM-DD (실제 오늘 날짜 기준, 하드코딩 없음) */
 function periodToDates(
   period: PeriodKey,
   customFrom: string,
@@ -40,20 +40,15 @@ function periodToDates(
   if (period === 'CUSTOM') {
     return { from: customFrom || undefined, to: customTo || undefined }
   }
-  // ALL — 날짜 필터 없음
   return { from: undefined, to: undefined }
 }
 
-/**
- * 배당 내역 행 컴포넌트 (M5: BE 실 필드 기반)
- * DividendCard 대체 — MLM/EQUITY/AGIT 하드코딩 없음
- */
 function CommissionRow({ item }: { item: CommissionHistoryItem }) {
   const dateStr = item.created_at.slice(0, 10)
   const isNegative = item.amount < 0
   const amountDisplay = isNegative
-    ? `${item.amount.toLocaleString('ko-KR')}원`
-    : `+${item.amount.toLocaleString('ko-KR')}원`
+    ? `${formatPrice(item.amount)}`
+    : `+${formatPrice(item.amount)}`
   const amountColor = isNegative
     ? 'var(--mp-color-error, #DC2626)'
     : 'var(--mp-color-success)'
@@ -213,7 +208,7 @@ function HistoryContent() {
               }}
             >
               {totalAmount >= 0 ? '+' : ''}
-              {totalAmount.toLocaleString('ko-KR')}원
+              {formatPrice(totalAmount)}
             </strong>
           </div>
         )}
