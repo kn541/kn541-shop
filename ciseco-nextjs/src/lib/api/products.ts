@@ -83,6 +83,8 @@ export interface Product {
   updated_at: string | null
   kmc_item_id?: string | null
   kmc_serial?: string | null
+  source_type?: string | null
+  tax_type?: number | null
   // 단건 조회 추가 필드
   options?: Array<{
     id: string
