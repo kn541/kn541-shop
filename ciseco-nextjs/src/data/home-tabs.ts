@@ -10,6 +10,7 @@ export type HomeNavTab = {
   key: string
   label: string
   href: string
+  dataTodo?: boolean
 }
 
 export const HOME_TABS: HomeNavTab[] = [
