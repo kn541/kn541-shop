@@ -1,7 +1,7 @@
 'use client'
 
 import clsx from 'clsx'
-import { formatPriceKo } from '@/lib/formatPrice'
+import { formatPrice } from '@/lib/formatPrice'
 import { usePreopenHidePrice, HIDDEN_PRICE_LABEL } from '@/lib/preopenPrice'
 import { useLocale } from 'next-intl'
 import { FC } from 'react'
@@ -18,7 +18,6 @@ const Prices: FC<PricesProps> = ({
   contentClass = 'py-1 px-2 md:py-1.5 md:px-2.5 text-sm font-medium',
 }) => {
   const locale = useLocale()
-  // 프리오픈(폐쇄몰) 모드 + 비로그인 → 가격 숨김 (오픈 시 env false로 전원 노출)
   const hidePrice = usePreopenHidePrice()
 
   if (hidePrice) {
@@ -38,7 +37,7 @@ const Prices: FC<PricesProps> = ({
     <div className={clsx(className)}>
       <div className={`flex items-center ${contentClass}`}>
         {locale === 'ko' ? (
-          <span className="font-semibold text-neutral-900 dark:text-neutral-100">{formatPriceKo(price)}</span>
+          <span className="font-semibold text-neutral-900 dark:text-neutral-100">{formatPrice(price)}</span>
         ) : (
           <span className="font-semibold text-neutral-900 dark:text-neutral-100">
             {formattedNum}

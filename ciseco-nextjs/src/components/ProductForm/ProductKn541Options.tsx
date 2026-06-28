@@ -1,6 +1,7 @@
 'use client'
 
 import clsx from 'clsx'
+import { formatPrice } from '@/lib/formatPrice'
 
 export type Kn541ProductOption = {
   id: string
@@ -46,7 +47,7 @@ export default function ProductKn541Options({
               )}
             >
               {opt.option_name}
-              {opt.add_price > 0 && ` (+${opt.add_price.toLocaleString('ko-KR')}원)`}
+              {opt.add_price > 0 && ` (+${formatPrice(opt.add_price)})`}
             </button>
           )
         })}
