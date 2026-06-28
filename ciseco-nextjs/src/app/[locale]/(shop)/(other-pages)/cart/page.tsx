@@ -17,6 +17,7 @@ import { useTranslations } from 'next-intl'
 import { useCart, calcItemShipping } from '@/lib/cart-context'
 import { useCartEventDiscount } from '@/hooks/useCartEventDiscount'
 import toast from 'react-hot-toast'
+import { formatPrice } from '@/lib/formatPrice'
 
 type PendingCartDelete =
   | { kind: 'item'; id: string }
@@ -185,7 +186,7 @@ export default function CartPage() {
                             <p className="mt-1 text-xs text-neutral-400">
                               {t('shippingFeeLabel')}: {itemShipping === 0
                                 ? <span className="font-medium text-green-600">{t('shippingFree')}</span>
-                                : `${itemShipping.toLocaleString('ko-KR')}원`
+                                : `${formatPrice(itemShipping)}`
                               }
                             </p>
                           )}
@@ -215,11 +216,11 @@ export default function CartPage() {
                           <p className={`text-base font-semibold ${
                             isSoldOut ? 'text-neutral-400 line-through' : 'text-neutral-900 dark:text-neutral-100'
                           } ${ev?.event_id && !isSoldOut ? 'text-red-600' : ''}`}>
-                            {lineFinal.toLocaleString('ko-KR')}원
+                            {formatPrice(lineFinal)}
                           </p>
                           {ev?.event_id && !isSoldOut && lineFinal < lineGross && (
                             <p className="text-xs text-neutral-400 line-through">
-                              {lineGross.toLocaleString('ko-KR')}원
+                              {formatPrice(lineGross)}
                             </p>
                           )}
                           <p className="text-xs text-neutral-400">{t('unitPrice', { price: price.toLocaleString('ko-KR') })}</p>
@@ -258,7 +259,7 @@ export default function CartPage() {
                         {item.name} ×{Number(item.quantity) || 1}
                         {soldOutIds.has(item.id) && <span className="ml-1 text-red-400">({t('soldOutBadge')})</span>}
                       </span>
-                      <span>{((Number(item.price)||0)*(Number(item.quantity)||1)).toLocaleString('ko-KR')}원</span>
+                      <span>{formatPrice(((Number(item.price)||0)*(Number(item.quantity)||1)))}</span>
                     </div>
                   ))}
                 </div>
@@ -268,18 +269,18 @@ export default function CartPage() {
 
               <div className="space-y-2.5 text-sm text-neutral-600 dark:text-neutral-400">
                 <div className="flex justify-between">
-                  <span>{t('productAmount')}</span><span>{selectedPrice.toLocaleString('ko-KR')}원</span>
+                  <span>{t('productAmount')}</span><span>{formatPrice(selectedPrice)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>{t('shippingFeeLabel')}</span>
                   <span className={selectedShipping === 0 ? 'font-medium text-green-600' : ''}>
-                    {selectedShipping === 0 ? t('shippingFree') : `${selectedShipping.toLocaleString('ko-KR')}원`}
+                    {selectedShipping === 0 ? t('shippingFree') : `${formatPrice(selectedShipping)}`}
                   </span>
                 </div>
                 {eventDiscountTotal > 0 && (
                   <div className="flex justify-between text-red-600">
                     <span>{t('eventDiscount')}</span>
-                    <span>-{eventDiscountTotal.toLocaleString('ko-KR')}원</span>
+                    <span>-{formatPrice(eventDiscountTotal)}</span>
                   </div>
                 )}
               </div>
@@ -289,7 +290,7 @@ export default function CartPage() {
               <div className="flex items-center justify-between">
                 <span className="font-bold text-neutral-900 dark:text-neutral-100">{t('totalPayment')}</span>
                 <span className="text-xl font-bold text-primary-600">
-                  {payableTotal.toLocaleString('ko-KR')}원
+                  {formatPrice(payableTotal)}
                 </span>
               </div>
 

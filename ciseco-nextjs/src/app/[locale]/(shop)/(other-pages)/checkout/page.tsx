@@ -32,6 +32,7 @@ import { useCart, calcItemShipping } from '@/lib/cart-context'
 import toast from 'react-hot-toast'
 
 import { apiUrl } from '@/lib/api/base'
+import { formatPrice } from '@/lib/formatPrice'
 
 // ── 무통장 입금 계좌 정보 ──────────────────────────────────────────────────
 const BANK_ACCOUNT = {
@@ -684,7 +685,7 @@ export default function CheckoutPage() {
                   <div className="flex flex-col gap-0.5 sm:flex-row sm:justify-between border-t border-amber-200 pt-2.5 dark:border-amber-700">
                     <span className="text-amber-700 dark:text-amber-400">입금금액</span>
                     <span className="text-xl font-bold text-amber-900 dark:text-amber-200">
-                      {summaryTotal.toLocaleString()}원
+                      {formatPrice(summaryTotal)}
                     </span>
                   </div>
                 </div>
@@ -715,7 +716,7 @@ export default function CheckoutPage() {
                       <p className="text-xs text-neutral-400">×{item.quantity}</p>
                     </div>
                     <p className="text-sm font-semibold">
-                      {((Number(item.price)||0)*(Number(item.quantity)||1)).toLocaleString()}원
+                      {formatPrice(((Number(item.price)||0)*(Number(item.quantity)||1)))}
                     </p>
                   </div>
                 </div>
@@ -726,13 +727,13 @@ export default function CheckoutPage() {
 
             <div className="space-y-2.5 text-sm text-neutral-600 dark:text-neutral-400">
               <div className="flex justify-between">
-                <span>상품금액</span><span>{orderTotal.toLocaleString()}원</span>
+                <span>상품금액</span><span>{formatPrice(orderTotal)}</span>
               </div>
               {!isDigitalOnly && (
               <div className="flex justify-between">
                 <span>배송비</span>
                 <span className={orderShipping === 0 ? 'font-medium text-green-600' : ''}>
-                  {orderShipping === 0 ? '무료' : `${orderShipping.toLocaleString()}원`}
+                  {orderShipping === 0 ? '무료' : `${formatPrice(orderShipping)}`}
                 </span>
               </div>
               )}
@@ -742,7 +743,7 @@ export default function CheckoutPage() {
 
             <div className="flex items-center justify-between">
               <span className="font-bold">총 결제금액</span>
-              <span className="text-xl font-bold text-primary-600">{summaryTotal.toLocaleString()}원</span>
+              <span className="text-xl font-bold text-primary-600">{formatPrice(summaryTotal)}</span>
             </div>
 
             <ButtonPrimary className="mt-6 w-full" onClick={handlePay}
@@ -758,12 +759,12 @@ export default function CheckoutPage() {
               ) : payMethod === 'BANK_TRANSFER' ? (
                 <span className="flex items-center gap-2">
                   <BuildingLibraryIcon className="h-4 w-4" />
-                  {summaryTotal.toLocaleString()}원 주문하기
+                  {formatPrice(summaryTotal)} 주문하기
                 </span>
               ) : (
                 <span className="flex items-center gap-2">
                   <LockClosedIcon className="h-4 w-4" />
-                  {summaryTotal.toLocaleString()}원 결제하기
+                  {formatPrice(summaryTotal)} 결제하기
                 </span>
               )}
             </ButtonPrimary>
@@ -771,7 +772,7 @@ export default function CheckoutPage() {
             {payMethod === 'BANK_TRANSFER' && (
               <p className="mt-3 text-center text-xs text-amber-600">
                 주문 후 {BANK_ACCOUNT.bank} {BANK_ACCOUNT.number}으로<br/>
-                {summaryTotal.toLocaleString()}원 입금해 주세요
+                {formatPrice(summaryTotal)} 입금해 주세요
               </p>
             )}
 

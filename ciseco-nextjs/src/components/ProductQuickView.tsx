@@ -30,6 +30,7 @@ import { FC, useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useTranslations } from 'next-intl'
 import { useAside } from './aside'
+import { formatPrice } from '@/lib/formatPrice'
 
 interface ProductQuickViewProps {
   className?: string
@@ -55,11 +56,11 @@ function QuickViewSkeleton() {
 // ── 배송비 텍스트 생성 ─────────────────────────────────────
 function getShippingText(scType: number, shippingFee: number, freeShippingOver: number): string {
   if (scType === 1 || shippingFee === 0) return '무료배송'
-  const feeStr = shippingFee.toLocaleString('ko-KR')
+  const feeStr = formatPrice(shippingFee)
   if (freeShippingOver > 0) {
-    return `${feeStr}원 (${freeShippingOver.toLocaleString('ko-KR')}원 이상 무료)`
+    return `${feeStr} (${formatPrice(freeShippingOver)} 이상 무료)`
   }
-  return `${feeStr}원`
+  return `${feeStr}`
 }
 
 const ProductQuickView: FC<ProductQuickViewProps> = ({ className }) => {
@@ -111,7 +112,7 @@ const ProductQuickView: FC<ProductQuickViewProps> = ({ className }) => {
   const returnFee = Number(delivery.return_fee ?? 0)
   const deliveryDays = Number(delivery.delivery_days ?? 3)
   const shippingText = getShippingText(scType, shippingFee, freeShippingOver)
-  const returnText = returnFee > 0 ? `반품 ${returnFee.toLocaleString('ko-KR')}원` : '반품 무료'
+  const returnText = returnFee > 0 ? `반품 ${formatPrice(returnFee)}` : '반품 무료'
   const isFreeShipping = scType === 1 || shippingFee === 0
 
   const stockQty = Number(product.stockQty ?? 0)
@@ -314,7 +315,7 @@ const ProductQuickView: FC<ProductQuickViewProps> = ({ className }) => {
                       ].join(' ')}
                     >
                       {opt.option_name}
-                      {opt.add_price > 0 && ` (+${opt.add_price.toLocaleString('ko-KR')}원)`}
+                      {opt.add_price > 0 && ` (+${formatPrice(opt.add_price)})`}
                     </button>
                   ))}
                 </div>

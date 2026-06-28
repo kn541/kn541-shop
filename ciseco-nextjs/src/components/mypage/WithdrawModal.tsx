@@ -8,6 +8,7 @@ import { MypageApiError, mypageFetch } from '@/lib/mypage/api'
 import { applyWithdraw } from '@/lib/mypage/useWithdrawals'
 import type { WithdrawSummaryData } from '@/lib/mypage/useWithdrawSummary'
 import { clampCashRatio, formatWon, MAX_CASH_RATIO } from '@/lib/mypage/withdrawUtils'
+import { formatPrice } from '@/lib/formatPrice'
 
 interface Props {
   open: boolean
@@ -276,7 +277,7 @@ export default function WithdrawModal({ open, summary, onClose, onApplied }: Pro
                     </div>
                     <div className="flex justify-between pl-2 text-red-600">
                       <span>{taxLabel}</span>
-                      <span>-{preview.cash_tax.toLocaleString('ko-KR')}원</span>
+                      <span>-{formatPrice(preview.cash_tax)}</span>
                     </div>
                     <div className="flex justify-between pl-2 font-bold">
                       <span>실수령</span>

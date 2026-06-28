@@ -16,6 +16,7 @@ import { toast } from 'react-hot-toast'
 import L3Guard from '@/components/mypage/L3Guard'
 
 import { apiUrl } from '@/lib/api/base'
+import { formatPrice } from '@/lib/formatPrice'
 
 function getHeaders() {
   const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
@@ -482,7 +483,7 @@ function MyShopPageContent() {
                             {row.product_name}
                           </p>
                           <p className="text-sm text-primary-600">
-                            {Number(row.sale_price ?? 0).toLocaleString()}원
+                            {formatPrice(Number(row.sale_price ?? 0))}
                           </p>
                           {row.is_discontinued ? (
                             <span className="text-xs text-neutral-400">단종 상품</span>
@@ -528,7 +529,7 @@ function MyShopPageContent() {
                 <div className="flex-1">
                   <p className="font-medium">{p.product_name}</p>
                   <p className="text-sm text-neutral-500">{p.category_name}</p>
-                  <p className="text-sm font-semibold text-primary-600">{Number(p.effective_price).toLocaleString()}원</p>
+                  <p className="text-sm font-semibold text-primary-600">{formatPrice(Number(p.effective_price))}</p>
                   {p.is_soldout && <span className="text-xs text-red-500">품절</span>}
                   {p.is_discontinued && <span className="text-xs text-neutral-400">단종</span>}
                 </div>
@@ -562,8 +563,8 @@ function MyShopPageContent() {
           {[
             { label: '오늘 방문', value: `${dashboard?.today_visits || 0}명` },
             { label: '이번 달 주문', value: `${dashboard?.month_orders || 0}건` },
-            { label: '이번 달 매출', value: `${Number(dashboard?.month_sales || 0).toLocaleString()}원` },
-            { label: '미지급 수당', value: `${Number(dashboard?.pending_commission || 0).toLocaleString()}원` },
+            { label: '이번 달 매출', value: `${formatPrice(Number(dashboard?.month_sales || 0))}` },
+            { label: '미지급 수당', value: `${formatPrice(Number(dashboard?.pending_commission || 0))}` },
             { label: '진열 상품', value: `${dashboard?.active_product_count || 0}개` },
             { label: '전체 상품', value: `${dashboard?.product_count || 0}개` },
           ].map(item => (

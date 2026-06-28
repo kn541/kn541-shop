@@ -8,6 +8,7 @@ import Image from 'next/image'
 import { ShoppingBagIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 
 import { apiUrl } from '@/lib/api/base'
+import { formatPrice } from '@/lib/formatPrice'
 
 function getToken() {
   if (typeof window === 'undefined') return null
@@ -153,7 +154,7 @@ export default function MyOrdersPage() {
                       {formatDate(order.created_at)} · 주문번호 {order.order_no}
                     </p>
                     <p className="mt-1 text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                      {order.total_amount.toLocaleString('ko-KR')}원
+                      {formatPrice(order.total_amount)}
                     </p>
                   </div>
                 </div>

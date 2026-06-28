@@ -3,6 +3,7 @@
 // API: GET/POST/PATCH /my/shop, /my/shop/products, /my/shop/dashboard, /my/shop/share-link
 
 import { useState, useEffect } from 'react'
+import { formatPrice } from '@/lib/formatPrice'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL
 
@@ -214,8 +215,8 @@ export default function MyShopPage() {
                     {p.thumbnail_url && <img src={p.thumbnail_url} alt={p.product_name} className="h-14 w-14 rounded-xl object-cover" />}
                     <div className="flex-1">
                       <p className="text-sm font-medium text-neutral-800 dark:text-neutral-200">{p.product_name}</p>
-                      <p className="text-xs text-neutral-400">원가 {(p.original_price ?? 0).toLocaleString()}원
-                        {p.custom_price ? ` / 판매가 ${p.custom_price.toLocaleString()}원` : ' / 원가 판매'}
+                      <p className="text-xs text-neutral-400">원가 {formatPrice((p.original_price ?? 0))}
+                        {p.custom_price ? ` / 판매가 ${formatPrice(p.custom_price)}` : ' / 원가 판매'}
                       </p>
                     </div>
                     <button onClick={() => toggleProduct(p.product_id, p.is_active)}
@@ -235,7 +236,7 @@ export default function MyShopPage() {
           {[
             { label: '총 방문수', value: dashboard.total_visits ?? 0 },
             { label: '총 판매수', value: dashboard.total_sales ?? 0 },
-            { label: '총 매출', value: `${(dashboard.total_revenue ?? 0).toLocaleString()}원` },
+            { label: '총 매출', value: `${formatPrice((dashboard.total_revenue ?? 0))}` },
           ].map(item => (
             <div key={item.label} className="rounded-2xl border border-neutral-200 p-5 dark:border-neutral-700">
               <p className="mb-1 text-xs text-neutral-400">{item.label}</p>

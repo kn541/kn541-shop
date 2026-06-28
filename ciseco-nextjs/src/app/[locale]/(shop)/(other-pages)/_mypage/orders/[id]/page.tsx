@@ -11,6 +11,7 @@ import { ShoppingBagIcon, MapPinIcon, CreditCardIcon, ChevronLeftIcon, XCircleIc
 import toast from 'react-hot-toast'
 
 import { apiUrl } from '@/lib/api/base'
+import { formatPrice } from '@/lib/formatPrice'
 
 function getToken() {
   if (typeof window === 'undefined') return null
@@ -100,7 +101,7 @@ function CancelModal({
           {!isPending && (
             <>
               <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">취소 금액</p>
-              <p className="text-lg font-bold text-red-600">{totalAmount.toLocaleString('ko-KR')}원 환불</p>
+              <p className="text-lg font-bold text-red-600">{formatPrice(totalAmount)} 환불</p>
             </>
           )}
           {isPending && (
@@ -303,10 +304,10 @@ export default function OrderDetailPage() {
                       )}
                       {item.option_name && <p className="text-xs text-neutral-400">{item.option_name}</p>}
                       <p className="text-xs text-neutral-400">
-                        {item.sale_price.toLocaleString('ko-KR')}원 × {item.quantity}
+                        {formatPrice(item.sale_price)} × {item.quantity}
                       </p>
                     </div>
-                    <p className="text-sm font-semibold">{item.subtotal.toLocaleString('ko-KR')}원</p>
+                    <p className="text-sm font-semibold">{formatPrice(item.subtotal)}</p>
                   </div>
                 </div>
               ))}
@@ -317,17 +318,17 @@ export default function OrderDetailPage() {
             <SectionTitle>결제 정보</SectionTitle>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
-                <span>상품금액</span><span>{subtotal.toLocaleString('ko-KR')}원</span>
+                <span>상품금액</span><span>{formatPrice(subtotal)}</span>
               </div>
               <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
                 <span>배송비</span>
                 <span className={order.shipping_fee === 0 ? 'text-green-600 font-medium' : ''}>
-                  {order.shipping_fee === 0 ? '무료' : `${order.shipping_fee.toLocaleString('ko-KR')}원`}
+                  {order.shipping_fee === 0 ? '무료' : `${formatPrice(order.shipping_fee)}`}
                 </span>
               </div>
               <div className="flex justify-between border-t border-neutral-100 pt-2 font-bold dark:border-neutral-800">
                 <span>총 결제금액</span>
-                <span className="text-primary-600">{order.total_amount.toLocaleString('ko-KR')}원</span>
+                <span className="text-primary-600">{formatPrice(order.total_amount)}</span>
               </div>
               {order.payment_method && (
                 <div className="flex items-center gap-2 pt-1 text-neutral-500">

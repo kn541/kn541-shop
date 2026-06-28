@@ -8,6 +8,7 @@ import { useOrderDetail } from '@/lib/mypage/useOrderDetail'
 import type { OrderDetailLineItem } from '@/lib/mypage/types'
 import { mypageFetch, MypageApiError } from '@/lib/mypage/api'
 import { canCancelOrderStatus, orderStatusLabelKo, showTrackingStatus, deliveryStatusLabelKo, showItemTrackingButton, paymentMethodLabelKo, formatKST } from '@/lib/mypage/orderStatusKo'
+import { formatPrice } from '@/lib/formatPrice'
 
 const PLACEHOLDER = '/placeholder-product.jpg'
 
@@ -169,7 +170,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ orderId:
           <div><p className="text-xs text-neutral-500">결제수단</p><p className="font-medium">{paymentMethodLabelKo(data.payment_method)}</p></div>
         )}
         <div><p className="text-xs text-neutral-500">결제금액</p>
-          <p className="text-lg font-bold text-primary-600">{(data.total_amount ?? 0).toLocaleString('ko-KR')}원</p></div>
+          <p className="text-lg font-bold text-primary-600">{formatPrice((data.total_amount ?? 0))}</p></div>
       </div>
 
       {(recipient || a1) && (
@@ -202,7 +203,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ orderId:
                   <p className="font-medium">{lineName(row)}</p>
                   {row.product_code && <p className="text-xs text-neutral-400 font-mono">상품코드 {row.product_code}</p>}
                   <p className="text-sm text-neutral-500">
-                    {Number(linePrice(row)).toLocaleString('ko-KR')}원 × {lineQty(row)}
+                    {formatPrice(Number(linePrice(row)))} × {lineQty(row)}
                   </p>
                   {itemDeliveryStatus && (
                     <p className="mt-1 text-xs font-medium text-blue-600 dark:text-blue-400">
@@ -213,7 +214,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ orderId:
                   {canShowTracking && itemId && <TrackingPanel orderId={orderId} itemId={itemId} hasTrackingNo={!!itemTrackingNo} />}
                 </div>
                 <p className="shrink-0 text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                  {lineSubtotal(row).toLocaleString('ko-KR')}원
+                  {formatPrice(lineSubtotal(row))}
                 </p>
               </li>
             )

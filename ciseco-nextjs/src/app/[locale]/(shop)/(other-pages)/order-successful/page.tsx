@@ -17,6 +17,7 @@ import {
 import Image from 'next/image'
 
 import { apiUrl } from '@/lib/api/base'
+import { formatPrice } from '@/lib/formatPrice'
 
 // ── 무통장 입금 계좌 정보 ──────────────────────────────────────────────────
 const BANK_ACCOUNT = {
@@ -203,7 +204,7 @@ function OrderContent() {
               <div className="flex items-center justify-between rounded-xl bg-amber-400/30 px-4 py-3 dark:bg-amber-800/40">
                 <span className="text-sm font-semibold text-amber-700 dark:text-amber-400">입금금액</span>
                 <span className="text-2xl font-bold text-amber-900 dark:text-amber-100">
-                  {total.toLocaleString('ko-KR')}원
+                  {formatPrice(total)}
                 </span>
               </div>
             </div>
@@ -240,7 +241,7 @@ function OrderContent() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-amber-700 dark:text-amber-400">{t('vaAmount')}</span>
-                  <span className="font-bold text-amber-900 dark:text-amber-200">{total.toLocaleString('ko-KR')}원</span>
+                  <span className="font-bold text-amber-900 dark:text-amber-200">{formatPrice(total)}</span>
                 </div>
                 <p className="mt-3 text-xs text-amber-600 dark:text-amber-500">{t('vaWarning')}</p>
               </div>
@@ -284,7 +285,7 @@ function OrderContent() {
                       {item.option_name && <p className="text-xs text-neutral-400">{item.option_name}</p>}
                       <p className="text-sm text-neutral-400">×{item.quantity}</p>
                     </div>
-                    <p className="font-semibold">{item.subtotal.toLocaleString('ko-KR')}원</p>
+                    <p className="font-semibold">{formatPrice(item.subtotal)}</p>
                   </div>
                 </div>
               ))}
@@ -296,13 +297,13 @@ function OrderContent() {
 
         {/* 결제 요약 */}
         <div className={`mt-6 space-y-3 text-sm transition-all duration-700 delay-300 ${show ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
-          <RowItem label={t('productAmount')} value={`${subtotal.toLocaleString('ko-KR')}원`} />
+          <RowItem label={t('productAmount')} value={`${formatPrice(subtotal)}`} />
           <RowItem label={t('shippingFee')}
-            value={shipping === 0 ? <span className="text-green-600 font-medium">{t('shippingFree')}</span> : `${shipping.toLocaleString('ko-KR')}원`}
+            value={shipping === 0 ? <span className="text-green-600 font-medium">{t('shippingFree')}</span> : `${formatPrice(shipping)}`}
           />
           <div className="border-t border-neutral-200 pt-3 dark:border-neutral-700">
             <RowItem label={isBT ? '입금금액' : t('actualPayment')}
-              value={`${total.toLocaleString('ko-KR')}원`} highlight />
+              value={`${formatPrice(total)}`} highlight />
           </div>
         </div>
 

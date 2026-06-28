@@ -21,6 +21,7 @@ import ProductBasePrice from '@/components/events/ProductBasePrice'
 import Link from 'next/link'
 import { formatSalesCountDetail } from '@/lib/sales-count'
 import { getTranslations } from 'next-intl/server'
+import { formatPrice } from '@/lib/formatPrice'
 
 export const dynamic = 'force-dynamic'
 
@@ -107,12 +108,12 @@ export default async function Page({
 
   const shippingText = (() => {
     if (scType === 1 || shippingFee === 0) return '무료배송'
-    const feeStr = shippingFee.toLocaleString('ko-KR')
-    if (freeShippingOver > 0) return `${feeStr}원 (${freeShippingOver.toLocaleString('ko-KR')}원 이상 무료배송)`
-    return `${feeStr}원`
+    const feeStr = formatPrice(shippingFee)
+    if (freeShippingOver > 0) return `${feeStr} (${formatPrice(freeShippingOver)} 이상 무료배송)`
+    return `${feeStr}`
   })()
 
-  const returnText = returnFee > 0 ? `반품 ${returnFee.toLocaleString('ko-KR')}원` : '반품 무료'
+  const returnText = returnFee > 0 ? `반품 ${formatPrice(returnFee)}` : '반품 무료'
 
   // ★ 브레드크럼: 홈 + 카테고리 계층 (각 카테고리 클릭 시 해당 카테고리 상품리스트로 이동)
   const breadcrumbs: { name: string; href?: string }[] = [
