@@ -159,6 +159,8 @@ function TreeContent() {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const userIdRef = useRef<string>('')
   const treeContainerRef = useRef<HTMLDivElement>(null)
+  // fix: ref 콜백 중복 실행 방지 — 초기 translate 설정 1회만
+  const translateInitRef = useRef(false)
 
   const loadTree = useCallback(async (uid: string, d: number) => {
     setLoading(true); setError(null)
@@ -196,6 +198,8 @@ function TreeContent() {
 
   const handleDepthChange = useCallback((d: number) => {
     setDepth(d)
+    // depth 변경 시 translate 재계산 허용
+    translateInitRef.current = false
     if (userIdRef.current) void loadTree(userIdRef.current, d)
   }, [loadTree])
 
@@ -214,7 +218,11 @@ function TreeContent() {
   }, [])
 
   useEffect(() => {
-    const handler = () => setIsFullscreen(!!document.fullscreenElement)
+    const handler = () => {
+      setIsFullscreen(!!document.fullscreenElement)
+      // 전체화면 전환 시 translate 재계산 허용
+      translateInitRef.current = false
+    }
     document.addEventListener('fullscreenchange', handler)
     return () => document.removeEventListener('fullscreenchange', handler)
   }, [])
@@ -224,6 +232,16 @@ function TreeContent() {
   const totalCount = root ? countNodes(root) - 1 : 0
 
   const renderNode = useCallback((props: CustomNodeElementProps) => <Club2000Node {...props} />, [])
+
+  // fix: ref 콜백을 useCallback으로 안정화 — 매 렌더마다 새 함수 생성 방지
+  const containerRefCallback = useCallback((el: HTMLDivElement | null) => {
+    treeContainerRef.current = el
+    if (el && !translateInitRef.current) {
+      translateInitRef.current = true
+      const { width } = el.getBoundingClientRect()
+      setTranslate({ x: Math.round(width / 2), y: 80 })
+    }
+  }, [])
 
   return (
     <>
@@ -268,13 +286,7 @@ function TreeContent() {
 
       {/* 트리 영역 */}
       {!loading && !error && treeData && (
-        <div ref={(el) => {
-          treeContainerRef.current = el
-          if (el) {
-            const { width } = el.getBoundingClientRect()
-            setTranslate({ x: width / 2, y: 80 })
-          }
-        }} style={{
+        <div ref={containerRefCallback} style={{
           width: '100%',
           height: isFullscreen ? '100vh' : 'calc(100vh - 250px)',
           minHeight: isFullscreen ? '100vh' : 600,
@@ -347,7 +359,11 @@ function TreeContent() {
             pathClassFunc={() => 'club2000-path'}
             enableLegacyTransitions={false} hasInteractiveNodes
             scaleExtent={{ min: 0.1, max: 2 }}
-            onUpdate={({ zoom: z }) => { if (z !== zoom) setZoom(z) }}
+            onUpdate={({ zoom: z }) => {
+              // fix: 부동소수점 비교 안정화 — 무한루프 방지
+              const rounded = Math.round(z * 100) / 100
+              setZoom(prev => Math.round(prev * 100) / 100 === rounded ? prev : rounded)
+            }}
           />
           <style>{`
             .club2000-path { stroke: #90a4ae !important; stroke-width: 1.5px !important; fill: none !important; }
