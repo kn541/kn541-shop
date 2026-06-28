@@ -18,7 +18,7 @@
     "@tosspayments/tosspayments-sdk": "^2.7.0",
     "clsx": "^2.1.1",
     "embla-carousel-react": "^8.6.0",
-    "isomorphic-dompurify": "^3.15.0",
+    "isomorphic-dompurify": "^3.18.0",
     "next": "^16.1.1",
     "next-intl": "^4.4.0",
     "rc-slider": "^11.1.9",
@@ -26,8 +26,7 @@
     "react-d3-tree": "^3.6.3",
     "react-dom": "^19.2.3",
     "react-hot-toast": "^2.5.2",
-    "sanitize-html": "^2.17.4",
-    "sass": "^1.87.0"
+    "sanitize-html": "^2.17.4"
   },
   "devDependencies": {
     "@supabase/supabase-js": "^2.105.3",
