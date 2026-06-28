@@ -80,7 +80,7 @@ export default function MyShopPublicView({ code, locale }: Props) {
             <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-white shadow-sm dark:bg-neutral-800 md:h-24 md:w-24">
               <NcImage
                 containerClassName="relative h-full w-full"
-                src={{ src: data.logo_url, width: 200, height: 200, alt: data.shop_name || '로고' }}
+                src={{ src: data.logo_url, width: 200, height: 200 }}
                 alt={data.shop_name || '로고'}
                 fill
                 className="object-contain p-2"
