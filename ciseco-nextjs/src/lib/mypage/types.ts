@@ -60,6 +60,8 @@ export interface OrderListResponse {
 
 /** GET /mypage/orders/{id} — 백엔드 필드 유연 매핑 */
 export interface OrderDetailLineItem {
+  id?: string
+  item_id?: string
   product_id?: string
   product_code?: string | null
   product_name?: string
@@ -74,6 +76,10 @@ export interface OrderDetailLineItem {
   price?: number
   line_amount?: number
   amount?: number
+  tracking_no?: string | null
+  tracking_number?: string | null
+  tracking_company?: string | null
+  delivery_status?: string | null
 }
 
 export interface OrderDetail {
