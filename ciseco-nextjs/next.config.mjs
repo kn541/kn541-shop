@@ -32,6 +32,25 @@ const nextConfig = {
     ]
   },
 
+  // 보안 헤더 (WORK-023 Phase A: 외부 서비스 충돌 없는 안전 헤더만)
+  // CSP는 별도 Phase B에서 Report-Only 모드로 진행 예정
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'X-DNS-Prefetch-Control', value: 'on' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=()',
+          },
+        ],
+      },
+    ]
+  },
+
   images: {
     minimumCacheTTL: 2678400 * 12,
     remotePatterns: [
