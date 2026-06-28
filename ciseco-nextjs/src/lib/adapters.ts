@@ -125,7 +125,7 @@ export function adaptProduct(p: Product): TProductItem {
     detailImageSrcs: detailImgs.map(i => i.src),      // DETAIL 타입만 (하단 스크롤)
     salesCount: readSalesCount(p),
     productType: p.product_type ?? '',
-  } as TProductItem & Record<string, any>
+  } as unknown as TProductItem & Record<string, any>
 }
 
 export function adaptProducts(items: Product[]): TProductItem[] {
