@@ -17,9 +17,36 @@ import { useTranslations } from 'next-intl'
  * 유형별 집계 카드 (M5-2: BE rule_type_code 기반, 하드코딩 없음)
  * DividendColors/MLM/EQUITY/AGIT 의존 제거
  */
-function TypeCard({ label, amount }: { label: string; amount: number }) {
+function TypeCard({
+  label,
+  amount,
+  selected,
+  dimmed,
+  onClick,
+}: {
+  label: string
+  amount: number
+  selected?: boolean
+  dimmed?: boolean
+  onClick?: () => void
+}) {
   return (
-    <div className="flex-1 rounded-2xl border border-neutral-200 bg-white p-3 text-center dark:border-neutral-700 dark:bg-neutral-900">
+    <div
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onClick?.()
+        }
+      }}
+      className={`flex-1 cursor-pointer rounded-2xl border bg-white p-3 text-center transition-all dark:bg-neutral-900 ${
+        selected
+          ? 'border-violet-500 ring-2 ring-violet-500 bg-violet-50 dark:bg-violet-900/20'
+          : 'border-neutral-200 dark:border-neutral-700'
+      } ${dimmed ? 'opacity-50' : ''}`}
+    >
       <div className="mb-2 text-xs font-bold text-neutral-600 dark:text-neutral-300">
         {label}
       </div>
@@ -115,6 +142,7 @@ function DashboardContent() {
   // 출금 요약 — 출금가능잔액 + 계좌 보유여부(팝업 입력란 노출 판정)
   const { data: withdrawSummary, loading: wLoading, reload: reloadWithdraw } = useWithdrawSummary()
   const [withdrawOpen, setWithdrawOpen] = useState(false)
+  const [selectedType, setSelectedType] = useState<string | null>(null)
 
   // BE recent_items에서 rule_type_code → label 맵 구성
   // total_by_type 등 집계 섹션 라벨에 활용 (없으면 코드 그대로 표시)
@@ -130,7 +158,9 @@ function DashboardContent() {
     withdrawSummary?.withdrawable_balance ?? data?.withdrawable_balance ?? 0
   const thisMonth = data?.this_month_by_type ?? {}
   const totalByType = data?.total_by_type ?? {}
-  const totalAll = Object.values(totalByType).reduce((a, b) => a + b, 0)
+  const displayTotal = selectedType
+    ? totalByType[selectedType] ?? 0
+    : Object.values(totalByType).reduce((a, b) => a + b, 0)
   const recentItems = data?.recent_items ?? []
 
   return (
@@ -173,20 +203,39 @@ function DashboardContent() {
           </div>
 
           {/* 이번 달 배당 */}
-          <SectionHeader title="이번 달 배당" />
+          <div className="flex items-center justify-between px-1 pt-2">
+            <h3 className="text-base font-bold">이번 달 배당</h3>
+            {selectedType && (
+              <button
+                type="button"
+                onClick={() => setSelectedType(null)}
+                className="text-sm text-gray-400 transition hover:text-gray-600"
+              >
+                전체 보기
+              </button>
+            )}
+          </div>
           {Object.keys(thisMonth).length === 0 ? (
             <div className="py-4 text-center text-sm text-neutral-400">
               이번 달 배당 내역이 없어요.
             </div>
           ) : (
             <div className="flex flex-wrap gap-2.5 px-1">
-              {Object.entries(thisMonth).map(([code, amount]) => (
-                <TypeCard
-                  key={code}
-                  label={labelsMap[code] ?? code}
-                  amount={amount}
-                />
-              ))}
+              {Object.entries(thisMonth).map(([code, amount]) => {
+                const label = labelsMap[code] ?? code
+                return (
+                  <TypeCard
+                    key={code}
+                    label={label}
+                    amount={amount}
+                    selected={selectedType === label}
+                    dimmed={!!selectedType && selectedType !== label}
+                    onClick={() =>
+                      setSelectedType(prev => (prev === label ? null : label))
+                    }
+                  />
+                )
+              })}
             </div>
           )}
 
@@ -194,9 +243,11 @@ function DashboardContent() {
           <SectionHeader title="누적 배당" />
           <div className="mx-1 rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-900">
             <div className="mb-3 flex justify-between">
-              <span className="text-[15px] font-semibold">총 누적</span>
+              <span className="text-[15px] font-semibold">
+                {selectedType ? `총 누적 · ${selectedType}` : '총 누적'}
+              </span>
               <span className="text-lg font-extrabold">
-                {totalAll.toLocaleString('ko-KR')}
+                {displayTotal.toLocaleString('ko-KR')}
                 <span className="ml-1 text-sm font-semibold text-gray-400">GWCP</span>
               </span>
             </div>
@@ -205,20 +256,22 @@ function DashboardContent() {
                 누적 배당 내역이 없어요.
               </div>
             ) : (
-              Object.entries(totalByType).map(([code, amount]) => (
-                <div
-                  key={code}
-                  className="flex items-center justify-between border-t border-neutral-200 py-2 dark:border-neutral-700"
-                >
-                  <span className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">
-                    {labelsMap[code] ?? code}
-                  </span>
-                  <span className="text-[15px] font-bold">
-                    {amount.toLocaleString('ko-KR')}
-                    <span className="ml-1 text-xs font-semibold text-gray-400">GWCP</span>
-                  </span>
-                </div>
-              ))
+              Object.entries(totalByType)
+                .filter(([code]) => !selectedType || (labelsMap[code] ?? code) === selectedType)
+                .map(([code, amount]) => (
+                  <div
+                    key={code}
+                    className="flex items-center justify-between border-t border-neutral-200 py-2 dark:border-neutral-700"
+                  >
+                    <span className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">
+                      {labelsMap[code] ?? code}
+                    </span>
+                    <span className="text-[15px] font-bold">
+                      {amount.toLocaleString('ko-KR')}
+                      <span className="ml-1 text-xs font-semibold text-gray-400">GWCP</span>
+                    </span>
+                  </div>
+                ))
             )}
           </div>
 
