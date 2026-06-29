@@ -1,5 +1,6 @@
 'use client'
 // KN541 상품 상세 — 장바구니 담기 / 바로구매
+// fix(2026-06-29): 폐쇄몰 — 비로그인 시 장바구니/바로구매 차단, 로그인 페이지로 이동
 
 import NcInputNumber from '@/components/NcInputNumber'
 import { ProductDetailWishlistHeart } from '@/components/ProductDetailWishlistHeart'
@@ -201,7 +202,20 @@ export default function ProductActions({
     stockQty: selectedCombo ? selectedCombo.stock_qty : stock,
   })
 
+  // ── 폐쇄몰 로그인 가드 ────────────────────────────────────────────
+  // ProductDetailPricing이 가격을 "로그인 후 가격 확인"으로 숨기는 것과
+  // 동일한 레벨에서 구매 액션도 차단해야 함
+  const requireLogin = (): boolean => {
+    const token = localStorage.getItem('access_token')
+    if (!token) {
+      router.push(`/${locale}/login?returnUrl=${encodeURIComponent(pathname)}`)
+      return true
+    }
+    return false
+  }
+
   const handleAddToCart = () => {
+    if (requireLogin()) return
     runWithValidation(() => {
       addItem(cartPayload())
       toast.success(
@@ -223,6 +237,7 @@ export default function ProductActions({
   }
 
   const handleBuyNow = () => {
+    if (requireLogin()) return
     runWithValidation(() => {
       clearCart()
       addItem(cartPayload())
