@@ -24,7 +24,7 @@ function TypeCard({ label, amount }: { label: string; amount: number }) {
         {label}
       </div>
       <div className="text-base font-extrabold">{amount.toLocaleString('ko-KR')}</div>
-      <div className="text-xs text-neutral-500">GWCP</div>
+      <div className="text-xs text-gray-400">GWCP</div>
     </div>
   )
 }
@@ -155,7 +155,7 @@ function DashboardContent() {
             <div className="mb-1 text-4xl font-black text-violet-600 sm:text-5xl">
               {balance.toLocaleString('ko-KR')}
             </div>
-            <div className="mb-5 text-xl font-semibold text-violet-600">GWCP</div>
+            <div className="mb-5 text-xl font-semibold text-gray-400">GWCP</div>
 
             <div className="px-6">
               <button
@@ -196,7 +196,8 @@ function DashboardContent() {
             <div className="mb-3 flex justify-between">
               <span className="text-[15px] font-semibold">총 누적</span>
               <span className="text-lg font-extrabold">
-                {totalAll.toLocaleString('ko-KR')}GWCP
+                {totalAll.toLocaleString('ko-KR')}
+                <span className="ml-1 text-sm font-semibold text-gray-400">GWCP</span>
               </span>
             </div>
             {Object.keys(totalByType).length === 0 ? (
@@ -213,7 +214,8 @@ function DashboardContent() {
                     {labelsMap[code] ?? code}
                   </span>
                   <span className="text-[15px] font-bold">
-                    {amount.toLocaleString('ko-KR')}GWCP
+                    {amount.toLocaleString('ko-KR')}
+                    <span className="ml-1 text-xs font-semibold text-gray-400">GWCP</span>
                   </span>
                 </div>
               ))
