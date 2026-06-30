@@ -37,7 +37,7 @@ function lineThumb(row: OrderDetailLineItem) {
 type TrackingStep = { time?: string; where?: string; kind?: string; telno?: string; remark?: string }
 type TrackingResult = { trackingDetails?: TrackingStep[]; lastStateDetail?: string; completeYN?: string; error?: string; mock?: boolean; message?: string }
 
-function TrackingPanel({ orderId, itemId, hasTrackingNo }: { orderId: string; itemId: string; hasTrackingNo: boolean }) {
+function TrackingPanel({ trackingNo, trackingCompany, hasTrackingNo }: { trackingNo: string; trackingCompany?: string; hasTrackingNo: boolean }) {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<TrackingResult | null>(null)
   const [open, setOpen] = useState(false)
@@ -47,10 +47,11 @@ function TrackingPanel({ orderId, itemId, hasTrackingNo }: { orderId: string; it
     if (!hasTrackingNo) { toast('송장번호가 아직 등록되지 않았습니다.', { icon: 'ℹ️' }); return }
     setLoading(true)
     try {
-      const res = await mypageFetch<{ data: { tracking_info: TrackingResult } }>(
-        `/mypage/orders/${encodeURIComponent(orderId)}/items/${encodeURIComponent(itemId)}/tracking`
-      )
-      const info = res?.data?.tracking_info ?? (res as unknown as TrackingResult)
+      const qs = new URLSearchParams({
+        tracking_no: trackingNo.replace(/-/g, ''),
+        ...(trackingCompany ? { company: trackingCompany } : {}),
+      })
+      const info = await mypageFetch<TrackingResult>(`/tracking?${qs.toString()}`)
       if (info?.error) { toast.error('잠시 후 다시 시도하세요.'); return }
       setResult(info); setOpen(true)
     } catch (e) {
@@ -103,7 +104,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ orderId:
   const statusKo = orderStatusLabelKo(rawStatus)
   const canCancel = canCancelOrderStatus(rawStatus)
   const showTrack = showTrackingStatus(rawStatus)
-  const tracking = data?.tracking_number || data?.invoice_no
+  const tracking = data?.tracking_no || data?.tracking_number || data?.invoice_no
 
   const addr = data?.shipping_address
   const recipient = addr?.recipient_name || data?.recipient_name
@@ -189,7 +190,6 @@ export default function OrderDetailPage({ params }: { params: Promise<{ orderId:
           ) : items.map((row, idx) => {
             const thumb = lineThumb(row)
             const pid = row.product_id || `line-${idx}`
-            const itemId = row.id || row.item_id || ''
             const itemTrackingNo = row.tracking_no || row.tracking_number || ''
             const itemDeliveryStatus = row.delivery_status || ''
             const canShowTracking = showTrack || showItemTrackingButton(itemDeliveryStatus)
@@ -211,7 +211,13 @@ export default function OrderDetailPage({ params }: { params: Promise<{ orderId:
                       {itemTrackingNo && <span className="ml-2 font-mono text-neutral-500">{itemTrackingNo}{row.tracking_company && ` (${row.tracking_company})`}</span>}
                     </p>
                   )}
-                  {canShowTracking && itemId && <TrackingPanel orderId={orderId} itemId={itemId} hasTrackingNo={!!itemTrackingNo} />}
+                  {canShowTracking && itemTrackingNo && (
+                    <TrackingPanel
+                      trackingNo={itemTrackingNo}
+                      trackingCompany={row.tracking_company || undefined}
+                      hasTrackingNo={!!itemTrackingNo}
+                    />
+                  )}
                 </div>
                 <p className="shrink-0 text-sm font-semibold text-neutral-900 dark:text-neutral-100">
                   {formatPrice(lineSubtotal(row))}
