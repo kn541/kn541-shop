@@ -30,8 +30,8 @@ export default function AutoLoginPage() {
     // 토큰 저장
     localStorage.setItem('access_token', token)
 
-    // 마이페이지로 이동
-    router.replace('/mypage/settings')
+    // 마이페이지(내정보)로 이동
+    router.replace('/account')
   }, [searchParams, router])
 
   if (status === 'error') {
