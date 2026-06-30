@@ -65,10 +65,10 @@ export default function WithdrawModal({ open, summary, onClose, onApplied }: Pro
     }
   }, [open, hasBank])
 
-  // 팝업이 열릴 때 출금 금액을 전액으로 초기화 (기본 동작 = 전액)
+  // 팝업이 열릴 때 출금 금액을 빈칸으로 초기화 (사용자가 직접 입력)
   useEffect(() => {
-    if (open) setAmountStr(total > 0 ? total.toLocaleString('ko-KR') : '')
-  }, [open, total])
+    if (open) setAmountStr('')
+  }, [open])
 
   const cashRatio = useMemo(() => {
     const n = parseFloat(cashRatioStr)
@@ -208,7 +208,7 @@ export default function WithdrawModal({ open, summary, onClose, onApplied }: Pro
                   inputMode="numeric"
                   value={amountStr}
                   onChange={e => handleAmountChange(e.target.value)}
-                  placeholder="0"
+                  placeholder="출금할 금액을 입력하세요"
                   className={`min-w-0 flex-1 rounded-xl border px-3 py-2.5 text-right text-sm outline-none focus:ring-2 dark:bg-neutral-800 ${
                     amountOver
                       ? 'border-red-400 focus:ring-red-200'
