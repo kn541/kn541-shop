@@ -149,7 +149,7 @@ export default function ChangeUsernamePage() {
           </button>
           <button
             type="submit"
-            disabled={loading || !duplicateChecked}
+            disabled={loading}
             className="flex-1 rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
           >
             {loading ? '변경 중...' : '아이디 변경'}
