@@ -162,6 +162,9 @@ function DashboardContent() {
     ? totalByType[selectedType] ?? 0
     : Object.values(totalByType).reduce((a, b) => a + b, 0)
   const recentItems = data?.recent_items ?? []
+  const filteredRecent = selectedType
+    ? recentItems.filter(item => item.commission_type_label === selectedType)
+    : recentItems
 
   return (
     <>
@@ -278,7 +281,7 @@ function DashboardContent() {
           {/* 전체 배당 */}
           <div className="mx-1">
             <div className="flex items-center justify-between py-4">
-              <span className="text-base font-bold">전체 배당</span>
+              <span className="text-base font-bold">{selectedType ?? '전체배당'}</span>
               <Link
                 href="/dividends/history"
                 className="text-sm font-semibold text-primary-600"
@@ -286,12 +289,12 @@ function DashboardContent() {
                 전체 ▶
               </Link>
             </div>
-            {recentItems.length === 0 ? (
+            {filteredRecent.length === 0 ? (
               <div className="py-4 text-center text-sm text-neutral-400">
-                전체 배당 내역이 없어요.
+                {selectedType ? `${selectedType} 내역이 없어요.` : '전체 배당 내역이 없어요.'}
               </div>
             ) : (
-              recentItems.map(item => (
+              filteredRecent.map(item => (
                 <RecentRow key={item.commission_id} item={item} />
               ))
             )}
