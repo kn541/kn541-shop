@@ -4,6 +4,9 @@ import { useAuth } from '@/hooks/useAuth'
 import { useTranslations } from 'next-intl'
 import { useEffect, useState } from 'react'
 
+// NOTE: v_user_full.user_type_name에서 동적으로 가져오는 것이 이상적이나,
+// useAuth()의 user 객체는 JWT 페이로드 기반이라 user_type_name 필드가 없어(/me 미호출)
+// 하드코딩 fallback을 유지한다. user_type 코드(001~008)는 거의 변경되지 않음.
 /** 시스템 회원 유형 (표시명) — 006은 유료회원으로 통일 */
 const USER_TYPE_LABEL: Record<string, string> = {
   '001': '관리자',
