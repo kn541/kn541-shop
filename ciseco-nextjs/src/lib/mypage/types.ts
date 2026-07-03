@@ -89,6 +89,9 @@ export interface OrderDetail {
   status?: string
   created_at?: string
   ordered_at?: string
+  product_amount?: number       // ← 추가
+  shipping_amount?: number      // ← 추가
+  discount_amount?: number      // ← 추가
   total_amount?: number
   payment_method?: string | null
   tracking_number?: string | null

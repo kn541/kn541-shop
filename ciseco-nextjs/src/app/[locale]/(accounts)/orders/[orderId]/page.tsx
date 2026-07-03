@@ -170,8 +170,26 @@ export default function OrderDetailPage({ params }: { params: Promise<{ orderId:
         {data.payment_method && (
           <div><p className="text-xs text-neutral-500">결제수단</p><p className="font-medium">{paymentMethodLabelKo(data.payment_method)}</p></div>
         )}
-        <div><p className="text-xs text-neutral-500">결제금액</p>
-          <p className="text-lg font-bold text-primary-600">{formatPrice((data.total_amount ?? 0))}</p></div>
+        <div className="sm:col-span-2 mt-1 border-t border-neutral-200 pt-4 dark:border-neutral-700">
+          <div className="flex justify-between text-sm">
+            <span className="text-neutral-500">주문금액</span>
+            <span className="font-medium">{formatPrice(data.product_amount ?? data.total_amount ?? 0)}</span>
+          </div>
+          <div className="mt-2 flex justify-between text-sm">
+            <span className="text-neutral-500">배송비</span>
+            <span className="font-medium">{formatPrice(data.shipping_amount ?? 0)}</span>
+          </div>
+          {(data.discount_amount ?? 0) > 0 && (
+            <div className="mt-2 flex justify-between text-sm">
+              <span className="text-neutral-500">할인</span>
+              <span className="font-medium text-red-600">-{formatPrice(data.discount_amount ?? 0)}</span>
+            </div>
+          )}
+          <div className="mt-3 flex justify-between border-t border-neutral-200 pt-3 dark:border-neutral-700">
+            <span className="text-base font-semibold">총 결제금액</span>
+            <span className="text-lg font-bold text-primary-600">{formatPrice(data.total_amount ?? 0)}</span>
+          </div>
+        </div>
       </div>
 
       {(recipient || a1) && (
