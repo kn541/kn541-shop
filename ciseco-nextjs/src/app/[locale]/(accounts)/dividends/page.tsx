@@ -13,6 +13,9 @@ import { useWithdrawSummary } from '@/lib/mypage/useWithdrawSummary'
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 
+// ★ 시스템 점검 플래그 — 출금 재개 시 false로 변경
+const WITHDRAWAL_MAINTENANCE = true
+
 /**
  * 유형별 집계 카드 (M5-2: BE rule_type_code 기반, 하드코딩 없음)
  * DividendColors/MLM/EQUITY/AGIT 의존 제거
@@ -166,6 +169,14 @@ function DashboardContent() {
     ? recentItems.filter(item => item.commission_type_label === selectedType)
     : recentItems
 
+  // 출금 버튼 비활성화 조건
+  const withdrawDisabled = WITHDRAWAL_MAINTENANCE || wLoading || balance <= 0
+  const withdrawLabel = WITHDRAWAL_MAINTENANCE
+    ? '🔧 시스템 점검 중'
+    : balance > 0
+      ? '출금 요청'
+      : '출금 가능 잔액 없음'
+
   return (
     <>
       <h1 className="text-2xl font-semibold sm:text-3xl">{t('dividends')}</h1>
@@ -193,14 +204,16 @@ function DashboardContent() {
             <div className="px-6">
               <button
                 type="button"
-                disabled={wLoading || balance <= 0}
-                onClick={() => setWithdrawOpen(true)}
+                disabled={withdrawDisabled}
+                onClick={() => !WITHDRAWAL_MAINTENANCE && setWithdrawOpen(true)}
                 className="w-full rounded-full bg-violet-600 py-3 text-sm font-bold text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {balance > 0 ? '출금 요청' : '출금 가능 잔액 없음'}
+                {withdrawLabel}
               </button>
               <p className="mt-2 text-xs text-neutral-400">
-                동사가치배당금을 현금으로 출금 신청합니다 (현금 최대 50%, 나머지 포인트 전환)
+                {WITHDRAWAL_MAINTENANCE
+                  ? '정산 데이터 점검 중입니다. 점검 완료 후 출금이 재개됩니다.'
+                  : '동사가치배당금을 현금으로 출금 신청합니다 (현금 최대 50%, 나머지 포인트 전환)'}
               </p>
             </div>
           </div>
@@ -308,7 +321,7 @@ function DashboardContent() {
             </Link>
           </div>
 
-          {withdrawSummary && (
+          {withdrawSummary && !WITHDRAWAL_MAINTENANCE && (
             <WithdrawModal
               open={withdrawOpen}
               summary={withdrawSummary}
