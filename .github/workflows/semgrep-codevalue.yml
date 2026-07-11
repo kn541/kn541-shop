@@ -1,0 +1,29 @@
+name: KN541 쇼핑몰 코드값 정합성 검사 (Semgrep)
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+jobs:
+  codevalue-audit:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install semgrep
+      - name: 쇼핑몰 코드값 검사
+        run: semgrep --config .semgrep/kn541_shop.yaml ciseco-nextjs/src/ --json -o sg_shop.json || true
+      - name: 검출 건수 확인
+        run: echo "쇼핑몰: $(jq '.results | length' sg_shop.json) 건"
+      - name: 결과 DB 저장
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          jq -c --arg rid "$GITHUB_RUN_ID-shop" '{p_semgrep_json: {results: .results}, p_run_id: $rid}' sg_shop.json > payload.json
+          curl -sS -X POST "$SUPABASE_URL/rest/v1/rpc/fn_load_source_audit" \
+            -H "apikey: $SUPABASE_SERVICE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_KEY" \
+            -H "Content-Type: application/json" \
+            --data-binary @payload.json
+          echo ""
