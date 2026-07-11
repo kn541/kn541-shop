@@ -1,4 +1,6 @@
 rules:
+  # KN541 쇼핑몰 코드값 정합성 검사 룰
+  # 기준: 전역변수는 숫자코드 저장, 사람이 보는 출력만 한글
   - id: kn541-shop-payment-status
     patterns:
       - pattern-either:
@@ -65,7 +67,7 @@ rules:
       - pattern-regex: "['\"](001|002|003|004|005|006|007)['\"]\\s*:\\s*['\"][가-힣]"
     message: >
       코드값→한글 라벨을 프론트에서 자체 정의. 정본(system_codes) 기준과 어긋날 수 있음.
-      어드민과 라벨이 다른 사례 존재(SHIPPED: 어드민 '발송완료' vs 쇼핑몰 '배송중').
+      실제 사례: SHIPPED → 어드민 '발송완료' vs 쇼핑몰 '배송중'
     languages: [typescript, javascript]
     severity: WARNING
 
