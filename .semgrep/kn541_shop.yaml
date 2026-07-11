@@ -1,0 +1,81 @@
+rules:
+  - id: kn541-shop-payment-status
+    patterns:
+      - pattern-either:
+          - pattern: $X === "PAID"
+          - pattern: $X === "FAILED"
+    message: payment_status 하드코딩. 정산(INSTANT) 직결.
+    languages: [typescript, javascript]
+    severity: WARNING
+
+  - id: kn541-shop-order-status
+    patterns:
+      - pattern-either:
+          - pattern: $X === "PREPARING"
+          - pattern: $X === "SHIPPED"
+          - pattern: $X === "CANCELLED"
+          - pattern: $X === "REFUNDED"
+    message: order_status 하드코딩.
+    languages: [typescript, javascript]
+    severity: WARNING
+
+  - id: kn541-shop-delivery-status
+    patterns:
+      - pattern-either:
+          - pattern: $X === "SHIPPING"
+          - pattern: $X === "DELIVERED"
+          - pattern: $X === "RETURNING"
+          - pattern: $X === "RETURNED"
+    message: delivery_status 하드코딩.
+    languages: [typescript, javascript]
+    severity: WARNING
+
+  - id: kn541-shop-product-status
+    patterns:
+      - pattern-either:
+          - pattern: $X === "ON_SALE"
+          - pattern: $X === "SOLDOUT"
+          - pattern: $X === "DISCONTINUED"
+    message: product_status 하드코딩.
+    languages: [typescript, javascript]
+    severity: WARNING
+
+  - id: kn541-shop-commission-status
+    patterns:
+      - pattern-either:
+          - pattern: $X === "WITHDRAWABLE"
+          - pattern: $X === "WITHDRAWN"
+          - pattern: $X === "DECLARED"
+          - pattern: $X === "REVERSED"
+    message: commission_status 하드코딩. 정산 핵심.
+    languages: [typescript, javascript]
+    severity: WARNING
+
+  - id: kn541-shop-dividend-type
+    patterns:
+      - pattern-either:
+          - pattern: $X === "MLM"
+          - pattern: $X === "EQUITY"
+    message: dividend_type 하드코딩.
+    languages: [typescript, javascript]
+    severity: WARNING
+
+  - id: kn541-shop-korean-label-map
+    patterns:
+      - pattern-regex: "['\"](001|002|003|004|005|006|007)['\"]\\s*:\\s*['\"][가-힣]"
+    message: >
+      코드값→한글 라벨을 프론트에서 자체 정의. 정본(system_codes) 기준과 어긋날 수 있음.
+      어드민과 라벨이 다른 사례 존재(SHIPPED: 어드민 '발송완료' vs 쇼핑몰 '배송중').
+    languages: [typescript, javascript]
+    severity: WARNING
+
+  - id: kn541-shop-ambiguous
+    patterns:
+      - pattern-either:
+          - pattern: $X === "PENDING"
+          - pattern: $X === "COMPLETED"
+          - pattern: $X === "APPROVED"
+          - pattern: $X === "ACTIVE"
+    message: 코드값 하드코딩 (여러 category 공용 — 문맥 확인 필요).
+    languages: [typescript, javascript]
+    severity: WARNING
