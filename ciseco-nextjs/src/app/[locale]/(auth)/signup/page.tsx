@@ -1,6 +1,7 @@
 'use client'
 // KN541 쇼핑몰 — 회원가입 페이지
 // fix: next-intl Link/useRouter — locale 경로는 '/' 기준 사용
+// 2026-07-12 W3-2: 아지트 선택 UI 제거 — 아지트는 추천인 상속 (회원 입력 불필요)
 
 import { Suspense, useState, useTransition, useCallback, useRef, useEffect } from 'react'
 import Image from 'next/image'
@@ -19,9 +20,6 @@ const USER_TYPE_MEMBER = '002'
 const USER_TYPE_PAID_MEMBER = '006'
 
 type MemberType = 'normal' | 'startup'
-
-// 아지트 목록 — 어드민 아지트 관리(system_codes agit) 동적 로드 (하드코딩 금지)
-const AGIT_LIST_EMPTY: { value: string; label: string }[] = []
 
 function CheckIcon() {
   return (
@@ -79,24 +77,6 @@ function SignupPageContent() {
   const searchParams = useSearchParams()
 
   const [memberType, setMemberType] = useState<MemberType>('normal')
-  const [agitList, setAgitList] = useState(AGIT_LIST_EMPTY)
-
-  // 아지트 목록 동적 로드 — 어드민 아지트 관리(system_codes agit) 운영중만
-  useEffect(() => {
-    const base = process.env.NEXT_PUBLIC_API_URL
-    if (!base) return
-    fetch(`${base}/system-codes?category=agit`)
-      .then(r => r.json())
-      .then(json => {
-        const items = json?.data?.items ?? json?.data ?? []
-        const list = items
-          .filter((c: any) => c.is_active !== false)
-          .map((c: any) => ({ value: c.code || '', label: c.code_name || c.code_value || '' }))
-          .sort((a: any, b: any) => a.value.localeCompare(b.value))
-        if (list.length > 0) setAgitList(list)
-      })
-      .catch(() => {})
-  }, [])
 
   /** /signup?type=paid · /signup?user_type=006 등으로 창업회원 가입 진입 */
   useEffect(() => {
@@ -120,7 +100,6 @@ function SignupPageContent() {
   const [agreeTerms, setAgreeTerms] = useState(false)
   const [agreePrivacy, setAgreePrivacy] = useState(false)
 
-  const [agitCode, setAgitCode] = useState('')
   const [bankCode, setBankCode] = useState('')
   const [bankName, setBankName] = useState('')
   const [bankList, setBankList] = useState<BankCodeItem[]>([])
@@ -193,7 +172,6 @@ function SignupPageContent() {
     if (!recommenderCode.trim()) return '추천인 코드를 입력해주세요.'
     if (recommenderValid === 'invalid') return '유효한 추천인 코드를 입력해주세요.'
     if (recommenderValid === 'checking') return '추천인 확인 중입니다. 잠시 후 다시 시도해주세요.'
-    if (!agitCode) return '소속 아지트를 선택해주세요.'
     if (!agreeTerms || !agreePrivacy) return '필수 약관에 동의해주세요.'
     return ''
   }
@@ -211,7 +189,6 @@ function SignupPageContent() {
           password,
           user_type: memberType === 'startup' ? USER_TYPE_PAID_MEMBER : USER_TYPE_MEMBER,
           recommender_code: recommenderCode.trim(),
-          agit_code: agitCode,
         }
         if (phone.trim()) body.phone = phone.trim().replace(/-/g, '')
         if (memberType === 'startup' && bankCode && accountNo && accountHolder) {
@@ -449,26 +426,6 @@ function SignupPageContent() {
               )}
               {!recommenderCode && (
                 <p className="text-xs text-neutral-400 mt-1">추천인 회원번호를 입력해주세요.</p>
-              )}
-            </div>
-
-            <div>
-              <label className={labelCls}>소속 아지트 <span className="text-red-400">*</span></label>
-              <select
-                value={agitCode}
-                onChange={e => setAgitCode(e.target.value)}
-                className={`${inputCls} ${!agitCode ? 'text-neutral-400' : ''}`}
-              >
-                <option value="">아지트를 선택해주세요</option>
-                {agitList.map(agit => (
-                  <option key={agit.value} value={agit.value}>{agit.label}</option>
-                ))}
-              </select>
-              {!agitCode && (
-                <p className="text-xs text-neutral-400 mt-1.5">소속 아지트를 선택해주세요.</p>
-              )}
-              {agitCode && (
-                <p className="text-xs text-green-500 mt-1.5">✓ {agitList.find(a => a.value === agitCode)?.label} 아지트를 선택했습니다.</p>
               )}
             </div>
 
