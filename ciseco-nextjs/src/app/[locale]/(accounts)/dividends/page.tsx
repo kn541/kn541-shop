@@ -14,7 +14,7 @@ import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 
 // ★ 시스템 점검 플래그 — 출금 재개 시 false로 변경
-const WITHDRAWAL_MAINTENANCE = true
+const WITHDRAWAL_MAINTENANCE = false
 
 /**
  * 유형별 집계 카드 (M5-2: BE rule_type_code 기반, 하드코딩 없음)
