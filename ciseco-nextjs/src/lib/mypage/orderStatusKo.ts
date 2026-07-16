@@ -89,12 +89,18 @@ export function paymentMethodLabelKo(code: string | undefined | null): string {
 }
 
 /**
- * UTC 타임스탬프 → KST 한국어 날짜 문자열.
- * 백엔드가 UTC 타임스탬프를 Z 없이 보낼 수 있으므로 보정 후 변환.
+ * 타임스탬프 → KST 한국어 날짜 문자열.
+ *
+ * ⚠ DB timezone = Asia/Seoul → timezone 없는 값은 KST로 해석해야 함.
+ *   기존에 'Z'(UTC)를 붙여서 9시간 이중변환 오류가 발생했음.
+ *   fix(2026-07-16): timezone 없으면 '+09:00'(KST) 붙여서 해석.
  */
 export function formatKST(ts: string | undefined | null): string {
   if (!ts) return '—'
-  const normalized = ts.endsWith('Z') || ts.includes('+') ? ts : ts + 'Z'
+  // timezone 정보가 이미 있으면 그대로 사용
+  const hasTimezone = /Z$/i.test(ts) || /[+-]\d{2}:?\d{2}$/.test(ts)
+  // DB timezone = Asia/Seoul → timezone 없는 값은 KST(+09:00)
+  const normalized = hasTimezone ? ts : ts.replace(' ', 'T') + '+09:00'
   try {
     return new Date(normalized).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })
   } catch {
