@@ -26,7 +26,7 @@ export default function PointsPage() {
   const t = useTranslations('Account')
   const [tab, setTab] = useState<TabKey>('ALL')
   const [pointType, setPointType] = useState<string | undefined>(undefined)
-  const { data, loading } = usePoints(TAB_TO_FILTER[tab], pointType)
+  const { data, loading, hasMore, loadMore, loadingMore } = usePoints(TAB_TO_FILTER[tab], pointType)
 
   const balances = data?.balances ?? []
   const hasTypes = balances.length > 0
@@ -109,6 +109,25 @@ export default function PointsPage() {
               })}
             </tbody>
           </table>
+        )}
+        {/* 더보기 버튼 */}
+        {!loading && hasMore && (
+          <div className="border-t border-neutral-200 py-4 text-center dark:border-neutral-700">
+            <button
+              onClick={loadMore}
+              disabled={loadingMore}
+              className="inline-flex items-center gap-2 rounded-full bg-neutral-100 px-6 py-2.5 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-200 disabled:opacity-50 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+            >
+              {loadingMore ? (
+                <>
+                  <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                  불러오는 중…
+                </>
+              ) : (
+                <>더보기 ({data?.items.length ?? 0} / {data?.total ?? 0})</>
+              )}
+            </button>
+          </div>
         )}
       </div>
     </div>
