@@ -1,8 +1,10 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { PointsResponse, PointChangeType, PointLedgerItem, PointTypeBalance } from './types'
 import { MOCK_POINTS } from './mocks'
 import { mypageFetch, MypageApiError } from './api'
+
+const PAGE_SIZE = 20
 
 function mockData(filter: PointChangeType | 'ALL'): PointsResponse {
   const filtered =
@@ -32,11 +34,13 @@ interface RawPointsData {
   balances?: RawBalance[]
   items?: RawPointItem[]
   total?: number
+  page?: number
+  size?: number
 }
 
 /**
  * 백엔드(flat: balance/created_at/seq/memo) → 화면 타입(PointsResponse: current_balance/occurred_at/ledger_id/reason) 매핑.
- * 매핑 부재로 잔액 0원·Invalid Date가 발생하던 것을 어댑터로 해결.
+ * 매핑 불능으로 잔액 0원·Invalid Date가 발생해도 것을 어댑터로 해가.
  * 타입별 분리(QA 13): balances[]·total_balance 매핑 추가. 백엔드 미제공 시 빈 배열·balance 폴백(graceful).
  */
 function adaptPoints(raw: RawPointsData): PointsResponse {
@@ -89,9 +93,13 @@ export function usePoints(
 ) {
   const [data, setData] = useState<PointsResponse | null>(null)
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const pageRef = useRef(1)
 
+  // filter/pointType 변경 시 page=1 리셋 + 전체 재조회
   useEffect(() => {
     let cancelled = false
+    pageRef.current = 1
     setLoading(true)
 
     const run = async () => {
@@ -99,8 +107,10 @@ export function usePoints(
         const params = new URLSearchParams()
         if (filter !== 'ALL') params.set('change_type', filter)
         if (pointType) params.set('point_type', pointType)
+        params.set('page', '1')
+        params.set('size', String(PAGE_SIZE))
         const qs = params.toString()
-        const res = await mypageFetch<RawPointsData>(`/mypage/points${qs ? `?${qs}` : ''}`)
+        const res = await mypageFetch<RawPointsData>(`/mypage/points?${qs}`)
         if (!cancelled) {
           setData(adaptPoints(res))
           setLoading(false)
@@ -122,5 +132,39 @@ export function usePoints(
     }
   }, [filter, pointType])
 
-  return { data, loading }
+  const hasMore = data ? data.items.length < data.total : false
+
+  const loadMore = useCallback(async () => {
+    if (!data || loadingMore || !hasMore) return
+
+    const nextPage = pageRef.current + 1
+    setLoadingMore(true)
+
+    try {
+      const params = new URLSearchParams()
+      if (filter !== 'ALL') params.set('change_type', filter)
+      if (pointType) params.set('point_type', pointType)
+      params.set('page', String(nextPage))
+      params.set('size', String(PAGE_SIZE))
+      const qs = params.toString()
+      const res = await mypageFetch<RawPointsData>(`/mypage/points?${qs}`)
+      const adapted = adaptPoints(res)
+
+      pageRef.current = nextPage
+      setData(prev => {
+        if (!prev) return adapted
+        return {
+          ...prev,
+          items: [...prev.items, ...adapted.items],
+          total: adapted.total,
+        }
+      })
+    } catch (e) {
+      console.error('[usePoints] loadMore failed:', e)
+    } finally {
+      setLoadingMore(false)
+    }
+  }, [data, loadingMore, hasMore, filter, pointType])
+
+  return { data, loading, hasMore, loadMore, loadingMore }
 }
