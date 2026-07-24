@@ -1,4 +1,5 @@
 // 밸류업 상품 목록 — 카테고리 페이지와 동일한 디자인/기능
+// 2026-07-22: fix — sc_type 기본값 1→3 (배송비 미전달 시 유료 기본)
 // 2026-06-16: #13 정렬 파라미터 연동 — ?sort= URL → API sort_by/sort_order
 import { Suspense } from 'react'
 import ProductsPageClient from '../products/ProductsPageClient'
@@ -35,7 +36,8 @@ function mapProduct(p: any) {
     options: [],
     selectedOptions: [],
     delivery: {
-      sc_type: p.sc_type ?? 1,
+      // ★ [2026-07-22] 기본값 3(유료) — API에서 sc_type 미전달 시 무료배송으로 오표시되던 버그 수정
+      sc_type: p.sc_type ?? 3,
       shipping_fee: p.shipping_fee ?? 0,
       free_over: p.free_shipping_over ?? null,
     },
