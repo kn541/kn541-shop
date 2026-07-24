@@ -1,6 +1,7 @@
 'use client'
 
 // KN541 상품 카드
+// fix(2026-07-22): 배송비 표시 — sc_type === 1 일때만 무료배송. shipping_fee fallback 제거
 // fix: next-intl Link는 locale 자동 추가 → href에 locale 포함 금지 (/products/UUID만)
 // fix: 장바구니 버튼 버블링 방지 + useCart 실제 연동
 
@@ -39,12 +40,15 @@ const ProductCard: FC<Props> = ({ className = '', data, isLiked, hrefSearch, car
   const { open: openAside, setProductQuickViewHandle } = useAside()
 
   // 배송 정보
+  // ★ [2026-07-22] sc_type만으로 판정. shipping_fee fallback 제거
+  //   sc_type: 1=무료, 3=유료(고정), 4=조건부
+  //   이전: delivery?.shipping_fee ?? 0 === 0 → API가 shipping_fee 미전달 시 무조건 무료 판정 버그
   const delivery = (data as any).delivery as {
     sc_type?: number
     shipping_fee?: number
     free_over?: number | null
   } | undefined
-  const isFreeShipping = delivery?.sc_type === 1 || (delivery?.shipping_fee ?? 0) === 0
+  const isFreeShipping = delivery?.sc_type === 1
 
   const rawPs = String((data as { productStatus?: string }).productStatus ?? '').toUpperCase()
   // 품절 여부 (is_soldout/SOLDOUT 단일 소스)
@@ -103,7 +107,7 @@ const ProductCard: FC<Props> = ({ className = '', data, isLiked, hrefSearch, car
       price: Number(price) || 0,
       quantity: 1,
       image: featuredImage?.src || '',
-      shippingFee: Number(deliveryData.shipping_fee ?? 0),
+      shippingFee: Number(deliveryData.shipping_fee ?? deliveryData.sc_price ?? 0),
       freeShippingOver: Number(deliveryData.free_over ?? 0),
       scType: Number(deliveryData.sc_type ?? 1),
       stockQty: Number((data as any).stockQty ?? 0),
