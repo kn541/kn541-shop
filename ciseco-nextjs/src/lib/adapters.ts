@@ -1,5 +1,6 @@
 /**
  * KN541 API 데이터 → Ciseco 컴포넌트 형식 변환 어댑터
+ * fix(2026-07-22): delivery.sc_type 기본값 1→3 (유료 기본 — 무료배송 오표시 수정)
  * fix: thumbnailImageSrcs / detailImageSrcs 분리 필드 추가
  * fix: status 기본값 '판매중'
  * fix: categoryId / categoryId1 / categoryId2 추가 (브레드크럼 링크용)
@@ -86,7 +87,8 @@ export function adaptProduct(p: Product): TProductItem {
     selectedOptions: [],
     description: p.description || p.summary || '',
     delivery: {
-      sc_type: p.sc_type ?? 1,
+      // ★ [2026-07-22] 기본값 3(유료) — API에 sc_type 없으면 유료 기본으로 안전 처리
+      sc_type: p.sc_type ?? 3,
       shipping_fee: shippingFee,
       free_over: freeOver,
       return_fee: p.return_fee ?? 0,
