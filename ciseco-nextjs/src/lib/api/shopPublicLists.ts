@@ -1,5 +1,6 @@
 /**
  * Shop 5 pages — 공개 목록 API (/public/products/*)
+ * fix(2026-07-22): ShopPublicListItem에 sc_type/shipping_fee 추가, mapShopListItemToProduct 하드코딩 제거
  * 클라이언트 컴포넌트에서 도청하므로 CORS 우회를 위해 Next.js API Route 프록시 사용
  * 클라이언트 → /api/shop-list/{kind} → Railway API (server-to-server)
  */
@@ -44,6 +45,9 @@ export interface ShopPublicListItem {
   sort_sales_count?: number | null
   sort_review_count?: number | null
   sort_review_avg?: number | null
+  // ★ [2026-07-22] 배송비 정보 — API에서 전달
+  sc_type?: number | null
+  shipping_fee?: number | null
 }
 
 export interface ShopPublicListResponse {
@@ -166,7 +170,8 @@ export function mapMainPageProductToProduct(row: MainPageProductItem): Product {
     is_soldout: soldOut,
     is_discontinued: false,
     is_recommended: false,
-    sc_type: 2,
+    // ★ [2026-07-22] 메인 진열은 배송비 정보 없으므로 유료 기본
+    sc_type: 3,
     sc_price: 0,
     sc_minimum: null,
     sc_qty: 0,
@@ -232,11 +237,12 @@ export function mapShopListItemToProduct(row: ShopPublicListItem): Product {
     is_discontinued: false,
     is_recommended: !!row.is_recommended,
     sale_discount_rate: undefined,
-    sc_type: 2,
+    // ★ [2026-07-22] API 응답의 실제 sc_type/shipping_fee 사용 (하드코딩 제거)
+    sc_type: row.sc_type ?? 3,
     sc_price: 0,
     sc_minimum: null,
     sc_qty: 0,
-    shipping_fee: 0,
+    shipping_fee: Number(row.shipping_fee ?? 0),
     free_shipping_over: null,
     return_fee: 0,
     exchange_fee: 0,
