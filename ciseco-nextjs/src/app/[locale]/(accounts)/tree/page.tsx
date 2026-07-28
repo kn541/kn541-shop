@@ -36,7 +36,7 @@ const DEFAULT_DEPTH = 3
 const NODE_W = 200
 const NODE_H = 160
 
-// ── 유틸 ─────────────────────────────────────────────────────────────────
+// ── 유틸 ──────────────────────────────────────────────────────────────────
 function fmtDate(s: string | null | undefined) { return s ? s.slice(0, 10) : '' }
 function fmtNum(n: number) { return n ? n.toLocaleString('ko-KR') : '0' }
 function getLevelColor(code: string | null) {
@@ -130,7 +130,7 @@ function Club2000Node({ nodeDatum, toggleNode }: CustomNodeElementProps) {
         </div>
         {(hasChildren || childCount > 0) && (
           <div style={{ textAlign: 'center', fontSize: 10, color: colors.headerBg, fontWeight: 700, padding: '0 0 2px' }}>
-            {hasRendered ? `▲ ${childCount}명` : `▼ ${childCount}명`}
+            {hasRendered ? `▲ ${childCount}갯` : `▼ ${childCount}명`}
           </div>
         )}
       </div>
@@ -145,7 +145,7 @@ const zoomBtnStyle: React.CSSProperties = {
   justifyContent: 'center', fontFamily: 'Arial, sans-serif',
 }
 
-// ── 메인 컴포넌트 ────────────────────────────────────────────────────────
+// ── 메인 컴포넌트 ─────────────────────────────────────────────────────────
 function TreeContent() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
@@ -359,10 +359,11 @@ function TreeContent() {
             pathClassFunc={() => 'club2000-path'}
             enableLegacyTransitions={false} hasInteractiveNodes
             scaleExtent={{ min: 0.1, max: 2 }}
-            onUpdate={({ zoom: z }) => {
-              // fix: 부동소수점 비교 안정화 — 무한루프 방지
+            onUpdate={({ zoom: z, translate: t }) => {
+              // fix: zoom + translate 모두 state 반영 — 드래그/줌 위치 유지
               const rounded = Math.round(z * 100) / 100
               setZoom(prev => Math.round(prev * 100) / 100 === rounded ? prev : rounded)
+              if (t) setTranslate(prev => prev.x === t.x && prev.y === t.y ? prev : t)
             }}
           />
           <style>{`
