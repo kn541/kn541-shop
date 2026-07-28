@@ -7,7 +7,7 @@ import { toast } from 'react-hot-toast'
 import { useOrderDetail } from '@/lib/mypage/useOrderDetail'
 import type { OrderDetailLineItem } from '@/lib/mypage/types'
 import { mypageFetch, MypageApiError } from '@/lib/mypage/api'
-import { canCancelOrderStatus, orderStatusLabelKo, showTrackingStatus, deliveryStatusLabelKo, showItemTrackingButton, paymentMethodLabelKo, formatKST } from '@/lib/mypage/orderStatusKo'
+import { canCancelOrderStatus, canConfirmOrderStatus, orderStatusLabelKo, showTrackingStatus, deliveryStatusLabelKo, showItemTrackingButton, paymentMethodLabelKo, formatKST } from '@/lib/mypage/orderStatusKo'
 import { formatPrice } from '@/lib/formatPrice'
 
 const PLACEHOLDER = '/placeholder-product.jpg'
@@ -99,10 +99,13 @@ export default function OrderDetailPage({ params }: { params: Promise<{ orderId:
   const { data, loading, error, refetch } = useOrderDetail(orderId)
   const [cancelOpen, setCancelOpen] = useState(false)
   const [canceling, setCanceling] = useState(false)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [confirming, setConfirming] = useState(false)
 
   const rawStatus = data?.order_status || data?.status || ''
   const statusKo = orderStatusLabelKo(rawStatus)
   const canCancel = canCancelOrderStatus(rawStatus)
+  const canConfirm = canConfirmOrderStatus(rawStatus)
   const showTrack = showTrackingStatus(rawStatus)
   const tracking = data?.tracking_no || data?.tracking_number || data?.invoice_no
 
@@ -130,6 +133,23 @@ export default function OrderDetailPage({ params }: { params: Promise<{ orderId:
     } finally { setCanceling(false) }
   }
 
+  // feat(2026-07-28): 구매확정 — 발송완료(SHIPPED) 건만 허용.
+  //   백엔드는 order_status 만 COMPLETED 로 바꾸며 커미션·등급 엔진을 호출하지 않는다.
+  //   ⚠ 확정 후에는 주문취소가 불가하고 환불만 가능하므로 반드시 확인 모달을 거친다.
+  const handleConfirmPurchase = async () => {
+    setConfirming(true)
+    try {
+      await mypageFetch<unknown>(`/mypage/orders/${encodeURIComponent(orderId)}/confirm`, {
+        method: 'POST',
+      })
+      toast.success('구매확정이 완료됐습니다.')
+      setConfirmOpen(false)
+      await refetch()
+    } catch (e) {
+      toast.error(e instanceof MypageApiError ? e.message : '구매확정에 실패했습니다.')
+    } finally { setConfirming(false) }
+  }
+
   if (loading) return (
     <div className="flex justify-center py-20">
       <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary-500 border-t-transparent" />
@@ -152,12 +172,20 @@ export default function OrderDetailPage({ params }: { params: Promise<{ orderId:
             주문번호 <span className="font-medium text-neutral-800 dark:text-neutral-200">{data.order_no || data.order_id}</span>
           </p>
         </div>
-        {canCancel && (
-          <button type="button" onClick={() => setCancelOpen(true)}
-            className="rounded-xl border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 dark:border-red-900/50 dark:hover:bg-red-950/30">
-            주문취소
-          </button>
-        )}
+        <div className="flex flex-wrap gap-2">
+          {canConfirm && (
+            <button type="button" onClick={() => setConfirmOpen(true)}
+              className="rounded-xl bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700">
+              구매확정
+            </button>
+          )}
+          {canCancel && (
+            <button type="button" onClick={() => setCancelOpen(true)}
+              className="rounded-xl border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 dark:border-red-900/50 dark:hover:bg-red-950/30">
+              주문취소
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="grid gap-4 rounded-2xl border border-neutral-200 p-5 dark:border-neutral-700 sm:grid-cols-2">
@@ -245,6 +273,25 @@ export default function OrderDetailPage({ params }: { params: Promise<{ orderId:
           })}
         </ul>
       </div>
+
+      {confirmOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl dark:bg-neutral-900">
+            <h3 className="text-lg font-semibold">구매를 확정할까요?</h3>
+            <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+              구매확정 후에는 주문취소가 불가하며 환불만 가능합니다. 계속하시겠습니까?
+            </p>
+            <div className="mt-6 flex justify-end gap-2">
+              <button type="button" onClick={() => setConfirmOpen(false)} disabled={confirming}
+                className="rounded-xl border border-neutral-200 px-4 py-2 text-sm font-medium dark:border-neutral-600">닫기</button>
+              <button type="button" onClick={() => void handleConfirmPurchase()} disabled={confirming}
+                className="rounded-xl bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-50">
+                {confirming ? '처리 중…' : '구매확정'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {cancelOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
