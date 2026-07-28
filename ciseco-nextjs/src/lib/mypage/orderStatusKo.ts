@@ -32,6 +32,18 @@ export function canCancelOrderStatus(code: string | undefined | null): boolean {
   return ['001', '002', '003', 'PENDING', 'PAID', 'PREPARING'].includes(c)
 }
 
+/**
+ * 구매확정 버튼 표시 여부.
+ *
+ * 발송완료(004/SHIPPED) 건만 허용 — 백엔드
+ * POST /mypage/orders/{id}/confirm 의 허용 조건과 반드시 일치시킬 것.
+ * ⛔ DELIVERED 는 order_status 값이 아니다(탭 개념). 추가하지 말 것.
+ */
+export function canConfirmOrderStatus(code: string | undefined | null): boolean {
+  const c = (code || '').trim().toUpperCase()
+  return ['004', 'SHIPPED', 'SHIPPING'].includes(c)
+}
+
 export function showTrackingStatus(code: string | undefined | null): boolean {
   const c = (code || '').trim().toUpperCase()
   return ['004', '005', 'SHIPPED', 'SHIPPING', 'DELIVERED', 'COMPLETED'].includes(c)
