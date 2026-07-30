@@ -9,8 +9,8 @@ export const COMPANY_INFO = {
   bizCheckUrl: 'https://www.ftc.go.kr/bizCommPop.do?wrkr_no=7568702795',
   mailOrderNo: '제 2024-서울강남-05319호',
   fax: '02-3436-0542',
-  email: 'kn541club@naver.com',
-  privacyOfficer: '최문수',
+  email: 'kn541club@gmail.com',
+  privacyOfficer: '서영주',
   cs: {
     phone: '070-4436-0928',
     /** placeholder — 실제 카카오 채널 URL 연결 시 교체 */
